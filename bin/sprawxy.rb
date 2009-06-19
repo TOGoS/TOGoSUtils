@@ -15,7 +15,6 @@ module TOGoS
         sl = cs.gets.strip
         req = Request.new
         if sl =~ /^(\S+) (\S+) (\S+)$/
-          STDERR.puts sl
           req.verb = $1
           req.uri = $2
           req.protocol = $3
@@ -190,12 +189,48 @@ module TOGoS
     end
 
     class Server
+      def should_log?( req )
+        return req.uri =~ %r<^http://(custdev|ordersdev)>
+      end
+
+      def aliases
+        @aliases ||= {}
+        @alias_file_mtime ||= Time.at(0)
+        @alias_file = 'aliases'
+        if File.exist? @alias_file and File.mtime(@alias_file) > @alias_file_mtime
+          @aliases = {}
+          open(@alias_file) do |s|
+            while line = s.gets
+              line.strip
+              next if line =~ /^#/ || line == ''
+              if line =~ /\s+/
+                @aliases[$`] = $'
+              end
+            end
+          end
+          @alias_file_mtime = File.mtime(@alias_file)
+        end
+        return @aliases
+      end
+
+      def apply_aliases( uri )
+        for (k,v) in aliases
+          if uri[0...(k.length)] == k
+            return v + uri[(k.length)..-1]
+          end
+        end
+        return uri
+      end
+
       def handle_connection(cs)
         begin
           STDERR.puts "Connection"
           begin
             req = RRIO.read_request(cs)
-            res = Client.instance.do_request( req )
+            subreq = req.clone
+            subreq.uri = apply_aliases( req.uri )
+            STDERR.puts "#{req.verb} #{subreq.uri} #{req.protocol}"
+            res = Client.instance.do_request( subreq )
             unless res.is_a? Response
               raise "Didn't get a response!"
             end
@@ -207,10 +242,10 @@ module TOGoS
             res.content = "Proxy error: " + e.message + "\n\t" + e.backtrace.join("\n\t")
           end
           
-          if req
+          if subreq and should_log?( subreq )
             logname = Time.new.strftime('%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
             open( 'logs/' + logname + '.log', 'w' ) do |logstream|
-              RRIO.write_request( logstream, req )
+              RRIO.write_request( logstream, subreq )
               logstream.puts "-"*75
               RRIO.write_response( logstream, res )
             end
