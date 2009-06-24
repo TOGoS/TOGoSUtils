@@ -1,0 +1,65 @@
+@echo off
+ruby -x %~f0 %*
+goto:eof
+
+#!/usr/bin/ruby
+
+require 'fileutils'
+
+USAGE = <<EOS
+Usage: organize-incoming-convos -dest <dir> [input dir] ...
+EOS
+
+$input_dirs = []
+$dest = nil
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-dest'
+    $dest = args.shift
+  when '-h', '-?', '--help'
+    STDOUT << USAGE
+    exit 0
+  when /^[^-]/
+    $input_dirs << arg
+  else
+    STDERR.puts "Unrecognised argument: " + arg
+    STDERR << USAGE
+    exit 1
+  end
+end
+
+def walk( dir, &prok )
+  if File.directory? dir
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &prok )
+    end
+  else
+    prok.call( dir )
+  end
+end
+
+if $input_dirs.length == 0
+  STDERR.puts "No input dirs specified"
+end
+
+if $dest == nil
+  STDERR.puts "No -dest specified"
+  exit 1
+end
+
+for dir in $input_dirs
+  walk( dir ) do |file|
+    bn = File.basename( file )
+    if bn =~ /(\d\d\d\d)\.(\d\d)\.(\d\d)/
+      (y,m,d) = [$1,$2,$3]
+      outfile = "#{$dest}/#{y}/#{m}/#{bn}"
+      if dir = File.dirname( outfile )
+        FileUtils.mkdir_p( dir )
+      end
+      FileUtils.mv( file, outfile )
+    end
+  end
+end
