@@ -136,7 +136,7 @@ module TOGoS
           @host_map = {}
           open(@host_file) do |s|
             while line = s.gets
-              line.strip
+              line.strip!
               next if line =~ /^#/ || line == ''
               parts = line.split /\s+/
               ipaddy = parts[0]
@@ -190,7 +190,7 @@ module TOGoS
 
     class Server
       def should_log?( req )
-        return req.uri =~ %r<^http://(custdev|ordersdev)>
+        return req.uri =~ %r<orders.bdsdev>
       end
 
       def aliases
@@ -201,7 +201,7 @@ module TOGoS
           @aliases = {}
           open(@alias_file) do |s|
             while line = s.gets
-              line.strip
+              line.strip!
               next if line =~ /^#/ || line == ''
               if line =~ /\s+/
                 @aliases[$`] = $'
