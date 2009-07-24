@@ -53,7 +53,7 @@ if $image_dest == nil
   STDERR.puts "No image dest dir specified"
 end
 
-if $video_dest == nul
+if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
@@ -68,15 +68,28 @@ def walk( dir, &prok )
   end
 end
 
+def sys( stuff )
+  system stuff
+end
+
+def copy( infile, outfile )
+  FileUtils.mkdir_p( File.dirname(outfile) )
+  FileUtils.cp( infile, outfile )
+end
+
+def copy_mtime( infile, outfile )
+  sys "touch -r \"#{infile}\" \"#{outfile}\""
+end
+
 def process_image( infile )
   return unless $image_dest
   mtime = File.mtime(infile)
   return if $newer_than and mtime <= $newer_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
-  FileUtils.mkdir_p( File.dirname(outfile) )
-  FileUtils.cp( infile, outfile )
-  system "jhead -autorot \"#{outfile}\""
+  copy infile, outfile
+  sys "jhead -autorot \"#{outfile}\""
+  copy_mtime infile, outfile
   $files_copied_count += 1
 end
 
@@ -86,8 +99,8 @@ def process_video( infile )
   return if $newer_than and mtime <= $newer_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
-  FileUtils.mkdir_p( File.dirname(outfile) )
-  FileUtils.cp( infile, outfile )
+  copy infile, outfile
+  copy_mtime infile, outfile
   $files_copied_count += 1
 end
 
