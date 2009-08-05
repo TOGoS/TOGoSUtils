@@ -182,7 +182,7 @@ module TOGoS
         if resolved = host_map[host]
           return [resolved,port]
         else
-          return [$`,port]
+          return [host,port]
         end
       end
     end
@@ -198,6 +198,9 @@ module TOGoS
           raise "Don't know how to handle #{req.uri}"
         end
         (host,port) = Resolver.instance.resolve(hostname)
+        if host == nil or host == ''
+          raise "No host returned when resolving '#{hostname}'"
+        end
         cs = TCPSocket.new( host, port )
         subreq = req.clone
         subreq.protocol = 'HTTP/1.0'
