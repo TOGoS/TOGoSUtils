@@ -2,9 +2,32 @@
 
 require 'stringio'
 require 'socket'
+require 'fileutils'
 
 module TOGoS
   module Sprawxy
+    class ConfigFile
+      def initialize( filename, &parser )
+        @filename = filename
+        @parser = parser
+      end
+
+      def parse( stream )
+        @parser.call( stream )
+      end
+
+      def data
+        filemt = File.mtime( @filename )
+        if @data == nil or @mtime == nil or @mtime < filemt
+          open(@filename) do |stream|
+            @data = parse( stream )
+          end
+          @mtime = filemt
+        end
+        return @data
+      end
+    end
+
     class RRIO
       # Capitalize header key
       def self.chk( k )
@@ -128,26 +151,24 @@ module TOGoS
     class Resolver
       def self.instance ; @instance ||= Resolver.new ; end
 
-      def host_map
-        @host_map ||= {}
-        @host_file_mtime ||= Time.at(0)
-        @host_file = 'hosts'
-        if File.exist? @host_file and File.mtime(@host_file) > @host_file_mtime
-          @host_map = {}
-          open(@host_file) do |s|
-            while line = s.gets
-              line.strip!
-              next if line =~ /^#/ || line == ''
-              parts = line.split /\s+/
-              ipaddy = parts[0]
-              for name in parts[1..-1]
-                @host_map[name] = ipaddy
-              end
+      def initialize
+        @host_file = ConfigFile.new( 'hosts' ) do |s|
+          host_map = {}
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            parts = line.split /\s+/
+            ipaddy = parts[0]
+            for name in parts[1..-1]
+              host_map[name] = ipaddy
             end
           end
-          @host_file_mtime = File.mtime(@host_file)
+          host_map
         end
-        return @host_map
+      end
+
+      def host_map
+        return @host_file.data
       end
 
       # Turn a host[:port] string into a [resolved_host,resolved_port]
@@ -189,28 +210,39 @@ module TOGoS
     end
 
     class Server
+      def initialize
+        @alias_file = ConfigFile.new( 'aliases' ) do |s|
+          aliases = {}
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            if line =~ /\s+/
+              aliases[$`] = $'
+            end
+          end
+          aliases
+        end
+
+        @loguri_file = ConfigFile.new( 'loguris' ) do |s|
+          loguris = []
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            loguris << line
+          end
+          loguris
+        end
+      end
+
       def should_log?( req )
-        return req.uri =~ %r<orders.bdsdev>
+        for l in @loguri_file.data
+          return true if req.uri.include?( l )
+        end
+        return false
       end
 
       def aliases
-        @aliases ||= {}
-        @alias_file_mtime ||= Time.at(0)
-        @alias_file = 'aliases'
-        if File.exist? @alias_file and File.mtime(@alias_file) > @alias_file_mtime
-          @aliases = {}
-          open(@alias_file) do |s|
-            while line = s.gets
-              line.strip!
-              next if line =~ /^#/ || line == ''
-              if line =~ /\s+/
-                @aliases[$`] = $'
-              end
-            end
-          end
-          @alias_file_mtime = File.mtime(@alias_file)
-        end
-        return @aliases
+        return @alias_file.data
       end
 
       def apply_aliases( uri )
@@ -224,7 +256,7 @@ module TOGoS
 
       def handle_connection(cs)
         begin
-          STDERR.puts "Connection"
+          # STDERR.puts "Connection"
           begin
             req = RRIO.read_request(cs)
             subreq = req.clone
@@ -243,12 +275,15 @@ module TOGoS
           end
           
           if subreq and should_log?( subreq )
-            logname = Time.new.strftime('%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
-            open( 'logs/' + logname + '.log', 'w' ) do |logstream|
+            logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
+            logfile = 'logs/' + logname + '.log'
+            FileUtils.mkdir_p( File.dirname(logfile) )
+            open( logfile, 'w' ) do |logstream|
               RRIO.write_request( logstream, subreq )
               logstream.puts "-"*75
               RRIO.write_response( logstream, res )
             end
+            STDERR.puts "Logged #{logfile}"
           end
           
           RRIO.write_response( cs, res )
