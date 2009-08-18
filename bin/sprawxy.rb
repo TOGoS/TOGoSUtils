@@ -62,7 +62,6 @@ module TOGoS
         end
         cs.write "\r\n"
         cs.write res.content
-        cs.close
       end
 
       def self.write_request( cs, req )
@@ -95,6 +94,33 @@ module TOGoS
           raise "Unrecognised response line: #{sl}"
         end
       end
+
+      def self.connect_streams( *socks )
+        catch(:eof) do
+          while select_result = select( socks, nil, socks )
+            for fromsock in select_result[0]
+              begin
+                data = fromsock.readpartial(1024)
+                for tosock in socks
+                  next if tosock == fromsock
+                  tosock.write(data)
+                end
+              rescue IOError
+                throw :eof
+              end
+            end
+            if select_result[2].length > 0
+              throw :eof
+            end
+          end
+        end
+        for sock in socks
+          begin
+            sock.close
+          rescue IOError
+          end
+        end
+      end
     end
 
     class RR
@@ -122,6 +148,10 @@ module TOGoS
     class Response < RR
       attr_accessor :status_code
       attr_accessor :status_text
+    end
+
+    class ConnectResponse < Response
+      attr_accessor :connect_stream
     end
 
     class Util
@@ -191,24 +221,34 @@ module TOGoS
       def self.instance ; @instance ||= Client.new ; end
 
       def do_request( req )
-        if req.uri =~ %r<^http://([^/]+)/>
+        if req.verb == 'CONNECT'
+          hostname = req.uri
+          (host,port) = Resolver.instance.resolve(hostname)
+          cs = TCPSocket.new( host, port )
+          res = ConnectResponse.new
+          res.content = nil
+          res.connect_stream = cs
+          res.status_code = 200
+          res.status_text = 'Connection Established'
+          return res
+        elsif req.uri =~ %r<^http://([^/]+)/>
           hostname = $1
           path = "/#{$'}"
+          (host,port) = Resolver.instance.resolve(hostname)
+          if host == nil or host == ''
+            raise "No host returned when resolving '#{hostname}'"
+          end
+          cs = TCPSocket.new( host, port )
+          subreq = req.clone
+          subreq.protocol = 'HTTP/1.0'
+          subreq.uri = path
+          subreq.headers['host'] = hostname
+          RRIO.write_request(cs, subreq)
+          res = RRIO.read_response(cs)
+          return res
         else
           raise "Don't know how to handle #{req.uri}"
         end
-        (host,port) = Resolver.instance.resolve(hostname)
-        if host == nil or host == ''
-          raise "No host returned when resolving '#{hostname}'"
-        end
-        cs = TCPSocket.new( host, port )
-        subreq = req.clone
-        subreq.protocol = 'HTTP/1.0'
-        subreq.uri = path
-        subreq.headers['host'] = hostname
-        RRIO.write_request(cs, subreq)
-        res = RRIO.read_response(cs)
-        return res
       end
     end
 
@@ -288,8 +328,17 @@ module TOGoS
             end
             STDERR.puts "Logged #{logfile}"
           end
-          
+
           RRIO.write_response( cs, res )
+          if res.is_a? ConnectResponse
+            RRIO.connect_streams( cs, res.connect_stream )
+          end
+
+          begin
+            cs.close unless cs.closed?
+          rescue IOError
+            STDERR.puts "IOError while closing client connection."
+          end
         rescue Errno::EPIPE
           STDERR.puts "Broken pipe."
         end
