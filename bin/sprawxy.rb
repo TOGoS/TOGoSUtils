@@ -28,6 +28,35 @@ module TOGoS
       end
     end
 
+    class ContentStream
+      def initialize( stream, length=nil )
+        @stream = stream
+        @length = length
+      end
+
+      def read( amount=nil )
+        if l = @length
+          if (amount and amount > l) or !amount
+            amount = l
+          end
+        end
+        if amount
+          data = []
+          while amount > 0 and f = @stream.read(amount)
+            data << f
+            amount -= f.length
+          end
+          return data.join
+        else
+          return @stream.read
+        end        
+      end
+
+      def to_s
+        return @data ||= read()
+      end
+    end
+
     class RRIO
       # Capitalize header key
       def self.chk( k )
@@ -45,10 +74,9 @@ module TOGoS
             req.headers[$`.downcase] = $'.strip
           end
           if cl = req.headers['content-length']
-            req.content = cs.read(cl.to_i)
-          else
-            req.content = ""
+            req.content = ContentStream.new(  cs, cl.to_i )
           end
+          
           return req
         else
           raise "Unrecognised request line: #{sl}"
@@ -61,7 +89,7 @@ module TOGoS
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
-        cs.write res.content
+        cs.write res.content.to_s
       end
 
       def self.write_request( cs, req )
@@ -70,7 +98,7 @@ module TOGoS
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
-        cs.write req.content
+        cs.write req.content.to_s
         cs.flush
       end
 
@@ -85,10 +113,11 @@ module TOGoS
             res.headers[$`.downcase] = $'.strip
           end
           if cl = res.headers['content-length']
-            res.content = cs.read(cl.to_i)
+            cl = cl.to_i
           else
-            res.content = cs.read
+            cl = nil
           end
+          res.content = ContentStream.new( cs, cl )
           return res
         else
           raise "Unrecognised response line: #{sl}"
