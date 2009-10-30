@@ -2,9 +2,61 @@
 
 require 'stringio'
 require 'socket'
+require 'fileutils'
 
 module TOGoS
   module Sprawxy
+    class ConfigFile
+      def initialize( filename, &parser )
+        @filename = filename
+        @parser = parser
+      end
+
+      def parse( stream )
+        @parser.call( stream )
+      end
+
+      def data
+        filemt = File.mtime( @filename )
+        if @data == nil or @mtime == nil or @mtime < filemt
+          open(@filename) do |stream|
+            @data = parse( stream )
+          end
+          @mtime = filemt
+        end
+        return @data
+      end
+    end
+
+    class ContentStream
+      def initialize( stream, length=nil )
+        @stream = stream
+        @length = length
+      end
+
+      def read( amount=nil )
+        if l = @length
+          if (amount and amount > l) or !amount
+            amount = l
+          end
+        end
+        if amount
+          data = []
+          while amount > 0 and f = @stream.read(amount)
+            data << f
+            amount -= f.length
+          end
+          return data.join
+        else
+          return @stream.read
+        end        
+      end
+
+      def to_s
+        return @data ||= read()
+      end
+    end
+
     class RRIO
       # Capitalize header key
       def self.chk( k )
@@ -22,10 +74,9 @@ module TOGoS
             req.headers[$`.downcase] = $'.strip
           end
           if cl = req.headers['content-length']
-            req.content = cs.read(cl.to_i)
-          else
-            req.content = ""
+            req.content = ContentStream.new(  cs, cl.to_i )
           end
+          
           return req
         else
           raise "Unrecognised request line: #{sl}"
@@ -38,8 +89,7 @@ module TOGoS
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
-        cs.write res.content
-        cs.close
+        cs.write res.content.to_s
       end
 
       def self.write_request( cs, req )
@@ -48,7 +98,7 @@ module TOGoS
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
-        cs.write req.content
+        cs.write req.content.to_s
         cs.flush
       end
 
@@ -63,13 +113,41 @@ module TOGoS
             res.headers[$`.downcase] = $'.strip
           end
           if cl = res.headers['content-length']
-            res.content = cs.read(cl.to_i)
+            cl = cl.to_i
           else
-            res.content = cs.read
+            cl = nil
           end
+          res.content = ContentStream.new( cs, cl )
           return res
         else
           raise "Unrecognised response line: #{sl}"
+        end
+      end
+
+      def self.connect_streams( *socks )
+        catch(:eof) do
+          while select_result = select( socks, nil, socks )
+            for fromsock in select_result[0]
+              begin
+                data = fromsock.readpartial(1024)
+                for tosock in socks
+                  next if tosock == fromsock
+                  tosock.write(data)
+                end
+              rescue IOError
+                throw :eof
+              end
+            end
+            if select_result[2].length > 0
+              throw :eof
+            end
+          end
+        end
+        for sock in socks
+          begin
+            sock.close
+          rescue IOError
+          end
         end
       end
     end
@@ -101,6 +179,10 @@ module TOGoS
       attr_accessor :status_text
     end
 
+    class ConnectResponse < Response
+      attr_accessor :connect_stream
+    end
+
     class Util
       def self.copystream( sin, sout )
         return if sin == nil
@@ -128,26 +210,24 @@ module TOGoS
     class Resolver
       def self.instance ; @instance ||= Resolver.new ; end
 
-      def host_map
-        @host_map ||= {}
-        @host_file_mtime ||= Time.at(0)
-        @host_file = 'hosts'
-        if File.exist? @host_file and File.mtime(@host_file) > @host_file_mtime
-          @host_map = {}
-          open(@host_file) do |s|
-            while line = s.gets
-              line.strip!
-              next if line =~ /^#/ || line == ''
-              parts = line.split /\s+/
-              ipaddy = parts[0]
-              for name in parts[1..-1]
-                @host_map[name] = ipaddy
-              end
+      def initialize
+        @host_file = ConfigFile.new( 'hosts' ) do |s|
+          host_map = {}
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            parts = line.split /\s+/
+            ipaddy = parts[0]
+            for name in parts[1..-1]
+              host_map[name] = ipaddy
             end
           end
-          @host_file_mtime = File.mtime(@host_file)
+          host_map
         end
-        return @host_map
+      end
+
+      def host_map
+        return @host_file.data
       end
 
       # Turn a host[:port] string into a [resolved_host,resolved_port]
@@ -161,7 +241,7 @@ module TOGoS
         if resolved = host_map[host]
           return [resolved,port]
         else
-          return [$`,port]
+          return [host,port]
         end
       end
     end
@@ -170,47 +250,71 @@ module TOGoS
       def self.instance ; @instance ||= Client.new ; end
 
       def do_request( req )
-        if req.uri =~ %r<^http://([^/]+)/>
+        if req.verb == 'CONNECT'
+          hostname = req.uri
+          (host,port) = Resolver.instance.resolve(hostname)
+          cs = TCPSocket.new( host, port )
+          res = ConnectResponse.new
+          res.content = nil
+          res.connect_stream = cs
+          res.status_code = 200
+          res.status_text = 'Connection Established'
+          return res
+        elsif req.uri =~ %r<^http://([^/]+)/>
           hostname = $1
           path = "/#{$'}"
+          (host,port) = Resolver.instance.resolve(hostname)
+          if host == nil or host == ''
+            raise "No host returned when resolving '#{hostname}'"
+          end
+          cs = TCPSocket.new( host, port )
+          subreq = req.clone
+          subreq.protocol = 'HTTP/1.0'
+          subreq.uri = path
+          subreq.headers['host'] = hostname
+          RRIO.write_request(cs, subreq)
+          res = RRIO.read_response(cs)
+          return res
         else
           raise "Don't know how to handle #{req.uri}"
         end
-        (host,port) = Resolver.instance.resolve(hostname)
-        cs = TCPSocket.new( host, port )
-        subreq = req.clone
-        subreq.protocol = 'HTTP/1.0'
-        subreq.uri = path
-        subreq.headers['host'] = hostname
-        RRIO.write_request(cs, subreq)
-        res = RRIO.read_response(cs)
-        return res
       end
     end
 
     class Server
+      def initialize
+        @alias_file = ConfigFile.new( 'aliases' ) do |s|
+          aliases = {}
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            if line =~ /\s+/
+              aliases[$`] = $'
+            end
+          end
+          aliases
+        end
+
+        @loguri_file = ConfigFile.new( 'loguris' ) do |s|
+          loguris = []
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            loguris << line
+          end
+          loguris
+        end
+      end
+
       def should_log?( req )
-        return req.uri =~ %r<orders.bdsdev>
+        for l in @loguri_file.data
+          return true if req.uri.include?( l )
+        end
+        return false
       end
 
       def aliases
-        @aliases ||= {}
-        @alias_file_mtime ||= Time.at(0)
-        @alias_file = 'aliases'
-        if File.exist? @alias_file and File.mtime(@alias_file) > @alias_file_mtime
-          @aliases = {}
-          open(@alias_file) do |s|
-            while line = s.gets
-              line.strip!
-              next if line =~ /^#/ || line == ''
-              if line =~ /\s+/
-                @aliases[$`] = $'
-              end
-            end
-          end
-          @alias_file_mtime = File.mtime(@alias_file)
-        end
-        return @aliases
+        return @alias_file.data
       end
 
       def apply_aliases( uri )
@@ -224,7 +328,7 @@ module TOGoS
 
       def handle_connection(cs)
         begin
-          STDERR.puts "Connection"
+          # STDERR.puts "Connection"
           begin
             req = RRIO.read_request(cs)
             subreq = req.clone
@@ -243,15 +347,27 @@ module TOGoS
           end
           
           if subreq and should_log?( subreq )
-            logname = Time.new.strftime('%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
-            open( 'logs/' + logname + '.log', 'w' ) do |logstream|
+            logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
+            logfile = 'logs/' + logname + '.log'
+            FileUtils.mkdir_p( File.dirname(logfile) )
+            open( logfile, 'w' ) do |logstream|
               RRIO.write_request( logstream, subreq )
               logstream.puts "-"*75
               RRIO.write_response( logstream, res )
             end
+            STDERR.puts "Logged #{logfile}"
           end
-          
+
           RRIO.write_response( cs, res )
+          if res.is_a? ConnectResponse
+            RRIO.connect_streams( cs, res.connect_stream )
+          end
+
+          begin
+            cs.close unless cs.closed?
+          rescue IOError
+            STDERR.puts "IOError while closing client connection."
+          end
         rescue Errno::EPIPE
           STDERR.puts "Broken pipe."
         end
