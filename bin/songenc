@@ -1,0 +1,224 @@
+#!/usr/bin/ruby
+
+require 'TOGoS/Riptool3/Encodings'
+include TOGoS::Riptool3
+
+def esc( str )
+  str = str.clone
+  str.gsub!(/\\/,'\\\\')
+  str.gsub!(/"/,'\\"')
+  str = "\"#{str}\""
+end
+
+DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4'
+DEFAULT_ARTIST = "TOGoS"
+COMMANDLINE_HELLO = "q=quit, e=encode, ?=more help"
+COMMANDLINE_HELP = <<EOS
+Commands:
+  ? - show this help
+  q - quit songenc
+  d - return to main loop
+  <foo>=<bar> - set variable named <foo> to <bar>
+  c - clear variables
+  s - show variables
+  e - encode
+  save,load - save and load variables to ~/.songenc-vars
+EOS
+
+def promptinput( name, default=NIL )
+  if default
+    STDERR.print "#{name} [#{default}]> "
+  else
+    STDERR.print "#{name}> "
+  end
+  value = STDIN.readline()
+  value.strip!
+  value = default if value == ''
+  return value
+end
+
+def clearvars()
+  $vars.clear()
+end
+
+def commandlinehelp( stream=STDERR )
+  stream.print( "\n", COMMANDLINE_HELP, "\n" )
+end
+def commandline( default=NIL )
+  while cmd = promptinput( 'cmd', default )
+    case cmd
+    when '?','help'
+      commandlinehelp()
+    when 'load'
+      loadvars()
+    when 'save'
+      savevars()
+    when 'd','done'
+      return
+    when 'q','quit','exit','bye'
+      exit(0)
+    when 'c','clear'
+      clearvars()
+    when 's','show'
+      displayvars()
+    when /=/
+      $vars[$`] = $'
+    when 'e','enc','encode'
+      encode()
+      exit(0) if default == 'e'
+    else
+      STDERR.print( "Unknown command: '#{cmd}'\nType \"?\" for help\n" )
+    end
+    default = NIL
+  end
+end
+
+def defaultinputs( vars=$vars )
+  attrnames = [
+    'basefile',
+    'title',
+    "author [#{DEFAULT_ARTIST}]",
+    'genre',
+    'date',
+    'comment',
+  ]
+  for i in attrnames
+    if( i =~ /\s*\[(.*)\]\s*$/ )
+      default = $1 ; i = $`
+    else
+      default = NIL
+    end
+    vars[i] = promptinput( i, default ) unless vars[i]
+  end
+  STDERR.print( "Valid encodings: ", Encodings::ByName.keys.join(', '), "\n" )
+  vars['encodings'] = promptinput( 'encodings', DEFAULT_ENCODINGS )
+end
+
+def displaycommandlinehello()
+  STDERR.print( COMMANDLINE_HELLO, "\n" )
+end
+def displayvars()
+  STDERR.print "\nSong Attributes:\n"
+  for (k,v) in $vars
+    STDERR.print "  #{k}: #{v}\n"
+  end
+  STDERR.print "\n"
+end
+
+def loadvars( vars=NIL )
+  vars ||= ($vars ||= {})
+  open( "#{ENV['HOME']}/.songenc-vars", 'r' ) do |stream|
+    while( line = stream.gets() )
+      line.strip!
+      if line =~ /:\s*/
+	vars[$`] = $'
+      end
+    end
+  end  
+end
+def savevars( vars=$vars )
+  open( "#{ENV['HOME']}/.songenc-vars", 'w' ) do |stream|
+    for (k,v) in vars
+      stream.write( "#{k}: #{v}\n" )
+    end
+  end
+end
+
+def encode( vars=$vars )
+  encodings = vars['encodings']
+  (encodings = encodings.split(/[, ]+/)) if encodings.is_a?( String )
+  begin
+    savevars()
+  rescue
+    STDERR.print( "Couldn't save vars: #{$!}" )
+  end
+  for encname in encodings
+    if( enc = Encodings::ByName[ encname ] )
+      infile = "#{vars['basefile']}.wav"
+      outfile = "#{vars['basefile']}#{enc.postfix}"
+      if( vars['overwrite'] or !File.exist?( outfile ) )
+	STDOUT.print("Creating #{outfile}\n")
+	enc.encode( infile,outfile,vars )
+      else
+	STDOUT.print("#{outfile} already exists, skipping\n")
+      end
+    else
+      STDOUT.print("No such encoding: #{encname}\n")
+    end
+  end
+end
+
+def abort_usage( errcode=1 )
+  stream = (errcode == 0) ? STDOUT : STDERR
+  stream.write <<EOS
+Usage: songenc [options] [basefile]
+  where <basefile> is the filename, without extension
+Options:
+  -i   ; interactive mode (default)
+  -c   ; command-line mode
+  -x   ; overwrite existing files
+  -restore ; restore old settings
+EOS
+  exit(1)
+end
+
+
+clbns = []
+args = $*.clone
+runmode = NIL
+defaultcommand = NIL
+$vars = {}
+
+while arg = args.shift()
+  case arg
+  when '-h','-help','-?','--help'
+    abort_usage(0)
+  when '-i'
+    raise "Runmode already slected as '#{runmode}'" if runmode
+    runmode = 'interactive'
+  when '-restore'
+    runmode = 'commandline'
+    loadvars()
+    defaultcommand = 'e'
+  when '-c'
+    raise "Runmode already slected as '#{runmode}'" if runmode
+    runmode = 'commandline'
+  when '-x','-overwrite'
+    $vars['overwrite'] = TRUE
+  when '-set'
+    name = args.shift
+    value = arg.shift
+    $vars[name] = value
+  when /^[^-]/
+    clbns << arg
+  else
+    abort_usage()
+  end
+end
+
+runmode ||= 'interactive'
+
+case runmode
+when 'commandline'
+  (clbn = clbns[0]) ? ($vars['basefile'] = clbn) : NIL
+  commandline( defaultcommand )
+when 'interactive'
+  STDERR.print "Welcome to song encoder!\n"
+
+  if clbns == []
+    clbns << promptinput( 'basefile' ) 
+  end
+  for clbn in clbns
+    STDERR.print "Enter info for #{clbn}\n"
+    $vars['basefile'] = clbn
+    defaultinputs()
+    
+    displayvars()
+    displaycommandlinehello()
+
+    commandline( 'e' )
+  end
+else
+  STDERR.print( "Invalid run mode: '#{runmode}'\n" )
+  exit(1)
+end
