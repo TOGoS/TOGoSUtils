@@ -332,7 +332,11 @@ module TOGoS
           begin
             req = RRIO.read_request(cs)
             subreq = req.clone
-            subreq.uri = apply_aliases( req.uri )
+            if subreq.uri[0] == ?/ and host = subreq.headers['host']
+              newuri = 'http://'+host+subreq.uri
+              subreq.uri = newuri
+            end
+            subreq.uri = apply_aliases( subreq.uri )
             STDERR.puts "#{req.verb} #{subreq.uri} #{req.protocol}"
             res = Client.instance.do_request( subreq )
             unless res.is_a? Response
