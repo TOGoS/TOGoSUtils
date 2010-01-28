@@ -342,8 +342,8 @@ module TOGoS
         elsif req.uri =~ %r<^file://(?=/)>
           path = URI.decode($')
           subres = Response.new
-          # TODO: Show directory indexes
           # TODO: Return a File type that can be written lazily instead of loading to string
+          # TODO: Split out directory index generation
           if File.exist?( path )
             subres.status_code = 200
             if File.directory?( path )
