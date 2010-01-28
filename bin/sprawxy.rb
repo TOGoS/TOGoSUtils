@@ -4,10 +4,15 @@ require 'stringio'
 require 'socket'
 require 'fileutils'
 require 'uri'
+require 'cgi'
 
 module TOGoS
   module Sprawxy
     class Util
+      def self.xml_escape( text )
+        return CGI.escapeHTML( text )
+      end
+
       def self.guess_content_type( path )
         if path =~ /\.([^\.]+)$/
           ext = $1.downcase
@@ -15,6 +20,7 @@ module TOGoS
           when 'jpg'  ; return 'image/jpeg'
           when 'png'  ; return 'image/png'
           when 'txt'  ; return 'text/plain'
+          when 'log'  ; return 'text/plain'
           when 'html' ; return 'text/html'
           when 'css'  ; return 'text/css'
           when 'xml'  ; return 'text/xml'
@@ -340,9 +346,57 @@ module TOGoS
           # TODO: Return a File type that can be written lazily instead of loading to string
           if File.exist?( path )
             subres.status_code = 200
-            subres.status_text = "You've got file"
-            subres.headers['content-type'] = Util.guess_content_type( path )
-            subres.content = File.read( path )
+            if File.directory?( path )
+              if path[-1] == ?/
+                prefix = ''
+                dir = path[0..-1]
+              else
+                path =~ /\/([^\/]+)$/
+                prefix = $1+'/'
+                dir = path
+              end
+              subres.status_text = "You've got directory"
+              subres.headers['content-type'] = 'text/html';
+              title = "Index of #{path}"
+              subres.content = "<html>\n" \
+                "<head><title>#{Util.xml_escape(title)}</title></head>\n" \
+                "<body>\n" \
+                "<h2>#{Util.xml_escape(title)}</h2>\n" \
+                "<ul>\n"
+              entries = []
+              Dir.foreach( path ) do |fn|
+                next if fn[0] == ?.
+                entries << fn
+              end
+              entries.sort! do |a,b|
+                apath = "#{dir}/#{a}"
+                bpath = "#{dir}/#{b}"
+                adir = File.directory?(a)
+                bdir = File.directory?(b)
+                if adir && !bdir
+                  -1
+                elsif bdir && !adir
+                  1
+                else
+                  a.downcase <=> b.downcase
+                end
+              end
+              for fn in entries
+                depath = "#{dir}/#{fn}"
+                name = fn
+                if File.directory? depath
+                  name += '/'
+                end
+                href = URI.escape(prefix + name)
+                subres.content << "<li><a href=\"#{Util.xml_escape(href)}\">#{Util.xml_escape(name)}</a></li>\n"
+              end
+              subres.content << "</ul>\n"
+              subres.content << "</body>\n</html>\n"
+            else
+              subres.status_text = "You've got file"
+              subres.headers['content-type'] = Util.guess_content_type( path )
+              subres.content = File.read( path )
+            end
           else
             subres.status_code = 404
             subres.status_text = 'File not found'
