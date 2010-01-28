@@ -3,9 +3,70 @@
 require 'stringio'
 require 'socket'
 require 'fileutils'
+require 'uri'
 
 module TOGoS
   module Sprawxy
+    class Util
+      def self.guess_content_type( path )
+        if path =~ /\.([^\.]+)$/
+          ext = $1.downcase
+          case ext
+          when 'jpg'  ; return 'image/jpeg'
+          when 'png'  ; return 'image/png'
+          when 'txt'  ; return 'text/plain'
+          when 'html' ; return 'text/html'
+          when 'css'  ; return 'text/css'
+          when 'xml'  ; return 'text/xml'
+          when 'js'   ; return 'text/javascript'
+          end
+        end
+        return 'application/octet-stream'
+      end
+
+      def self.uri_to_path( uri )
+        if uri =~ /^file:\/\/(?=\/)/
+          return URI.unescape($')
+        elsif uri =~ /^\//
+          return uri # Already path
+        else
+          raise "Don't know how to convert '#{uri}' to a path"
+        end
+      end
+      
+      def self.path_to_uri( path )
+        if path =~ /^file:/
+          return path # Already a URI
+        elsif path =~ /^\//
+          return 'file://' + URI.escape(path)
+        else
+          raise "Don't know how to convert '#{path}' to a URI"
+        end
+      end
+
+      def self.copystream( sin, sout )
+        return if sin == nil
+        begin
+          if sin.respond_to? :readpartial
+            while data = sin.readpartial(1024)
+              sout.write(data)
+            end
+          else
+            while data = sin.gets
+              sout.write(data)
+            end
+          end
+        rescue EOFError
+        end
+      end
+
+      def self.copystreams( a, b )
+        t1 = Thread.new { copystream(a,b) }
+        copystream(b,a)
+        t1.join
+      end
+    end
+
     class ConfigFile
       def initialize( filename, &parser )
         @filename = filename
@@ -25,6 +86,27 @@ module TOGoS
           @mtime = filemt
         end
         return @data
+      end
+    end
+
+    class MappingFile < ConfigFile
+      def initialize( filename, &processor )
+        super( filename ) do |s|
+          mappings = {}
+          while line = s.gets
+            line.strip!
+            next if line =~ /^#/ || line == ''
+            if processor
+              kv = processor.call(line)
+            else
+              kv = line.split(/\s+/)
+            end
+            if kv
+              mappings[kv[0]] = kv[1]
+            end
+          end
+          mappings
+        end
       end
     end
 
@@ -183,30 +265,6 @@ module TOGoS
       attr_accessor :connect_stream
     end
 
-    class Util
-      def self.copystream( sin, sout )
-        return if sin == nil
-        begin
-          if sin.respond_to? :readpartial
-            while data = sin.readpartial(1024)
-              sout.write(data)
-            end
-          else
-            while data = sin.gets
-              sout.write(data)
-            end
-          end
-        rescue EOFError
-        end
-      end
-
-      def self.copystreams( a, b )
-        t1 = Thread.new { copystream(a,b) }
-        copystream(b,a)
-        t1.join
-      end
-    end
-
     class Resolver
       def self.instance ; @instance ||= Resolver.new ; end
 
@@ -275,6 +333,23 @@ module TOGoS
           RRIO.write_request(cs, subreq)
           res = RRIO.read_response(cs)
           return res
+        elsif req.uri =~ %r<^file://(?=/)>
+          path = URI.decode($')
+          subres = Response.new
+          # TODO: Show directory indexes
+          # TODO: Return a File type that can be written lazily instead of loading to string
+          if File.exist?( path )
+            subres.status_code = 200
+            subres.status_text = "You've got file"
+            subres.headers['content-type'] = Util.guess_content_type( path )
+            subres.content = File.read( path )
+          else
+            subres.status_code = 404
+            subres.status_text = 'File not found'
+            subres.headers['content-type'] = 'text/plain'
+            subres.content = "Could not find file: #{path}"
+          end
+          return subres
         else
           raise "Don't know how to handle #{req.uri}"
         end
@@ -283,16 +358,15 @@ module TOGoS
 
     class Server
       def initialize
-        @alias_file = ConfigFile.new( 'aliases' ) do |s|
-          aliases = {}
-          while line = s.gets
-            line.strip!
-            next if line =~ /^#/ || line == ''
-            if line =~ /\s+/
-              aliases[$`] = $'
-            end
+        @alias_file = MappingFile.new( 'aliases' )
+        @overrides_file = MappingFile.new( 'overrides' ) do |line|
+          if line =~ /\s+/
+            key = $`
+            value = Util.path_to_uri( $' )
+            [key,value]
+          else
+            nil
           end
-          aliases
         end
 
         @loguri_file = ConfigFile.new( 'loguris' ) do |s|
@@ -326,6 +400,23 @@ module TOGoS
         return uri
       end
 
+      def override_aliases
+        return @overrides_file.data
+      end
+
+      def apply_override_aliases( uri )
+        for (k,v) in override_aliases
+          if uri[0...(k.length)] == k
+            fileuri = v + uri[(k.length)..-1]
+            filepath = Util.uri_to_path( fileuri )
+            if File.exist?( filepath ) and !File.directory?( filepath )
+              return Util.path_to_uri( fileuri )
+            end
+          end
+        end
+        return uri
+      end
+
       def handle_connection(cs)
         begin
           # STDERR.puts "Connection"
@@ -337,6 +428,7 @@ module TOGoS
               subreq.uri = newuri
             end
             subreq.uri = apply_aliases( subreq.uri )
+            subreq.uri = apply_override_aliases( subreq.uri )
             STDERR.puts "#{req.verb} #{subreq.uri} #{req.protocol}"
             res = Client.instance.do_request( subreq )
             unless res.is_a? Response
