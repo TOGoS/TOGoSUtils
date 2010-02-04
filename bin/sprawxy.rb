@@ -306,7 +306,7 @@ module TOGoS
           host_map = {}
           while line = s.gets
             line.strip!
-            next if line =~ /^#/ || line == ''
+            next if line =~ /^\s*(?:#.*)?$/
             parts = line.split /\s+/
             ipaddy = parts[0]
             for name in parts[1..-1]
@@ -529,6 +529,10 @@ module TOGoS
         end
       end
 
+      def server_signature
+        return "Sprawxy server, ID #{@server_id}"
+      end
+
       def should_log?( req )
         for l in @loguri_file.data
           return true if l === req.uri
@@ -611,7 +615,8 @@ module TOGoS
             res.status_code = '500'
             res.status_text = "Proxy Error"
             res.headers = {'Content-Type'=>'text/plain'}
-            res.content = "Proxy error: " + e.message + "\n\t" + e.backtrace.join("\n\t")
+            res.content = "Proxy error: " << e.message << "\n\t" << e.backtrace.join("\n\t") <<
+              "\n\n----------------\n\n" << server_signature
           end
           
           if subreq and should_log?( subreq )
