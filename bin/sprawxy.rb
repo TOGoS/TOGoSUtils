@@ -657,15 +657,6 @@ module TOGoS
             if proxy = proxy_for( subreq.uri )
               STDERR.puts "#{req.verb} #{origuri} -> #{subreq.uri} #{req.protocol} via #{proxy}"
               res = HttpProxyClient.new( proxy ).do_request( subreq )
-              if res.content
-                if l = res.content.length
-                  STDERR.puts "  #{l} bytes in response content"
-                else
-                  STDERR.puts "  Unknown response content length"
-                end
-              else
-                STDERR.puts "  No response content"
-              end
             else
               STDERR.puts "#{req.verb} #{origuri} -> #{subreq.uri} #{req.protocol}"
               res = Client.instance.do_request( subreq )
@@ -681,9 +672,21 @@ module TOGoS
             res.content = "Proxy error: " << e.message << "\n\t" << e.backtrace.join("\n\t") <<
               "\n\n----------------\n\n" << server_signature
           end
+
+          if res.content
+            if l = res.content.length
+              STDERR.puts "  #{l} bytes in response content"
+            else
+              STDERR.puts "  Unknown response content length"
+            end
+          else
+            STDERR.puts "  No response content"
+          end
           
           if res.content.is_a? String or res.content.is_a? ContentStream
-            res.headers['content-length'] = res.content.length
+            if l = res.content.length
+              res.headers['content-length'] = l.to_s
+            end
           end
 
           if subreq and should_log?( subreq )
