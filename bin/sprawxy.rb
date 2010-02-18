@@ -147,6 +147,7 @@ module TOGoS
         @position = 0
       end
 
+      protected
       def _adjust_read_amount( amount )
         # If length is known, adjust amount to
         # ensure we don't read past the end of the stream.
@@ -162,9 +163,14 @@ module TOGoS
         return amount
       end
 
+      public
+      attr_reader :length
+
       def readpartial( maxlen, outbuf )
         amount = _adjust_read_amount(amount)
-        if amount
+        if amount == 0
+          return nil
+        elsif amount
           outbuf = @stream.readpartial( amount, outbuf )
         else
           outbuf = @stream.readpartial( 4096, outbuf )
@@ -206,11 +212,19 @@ module TOGoS
           req.verb = $1
           req.uri = $2
           req.protocol = $3
-          while line = cs.gets and line =~ /:\s*/
-            req.headers[$`.downcase] = $'.strip
+          while line = cs.gets
+            line.rstrip!
+            if line.length == 0
+              break
+            end
+            if line =~ /:\s*/
+              req.headers[$`.downcase] = $'
+            else
+              STDERR.puts "Received weird header line from client: #{line}"
+            end
           end
           if cl = req.headers['content-length']
-            req.content = ContentStream.new(  cs, cl.to_i )
+            req.content = cs.read( cl.to_i )
           end
           
           return req
@@ -232,7 +246,7 @@ module TOGoS
           alldat = ""
           begin
             data = ""
-            while data = res.content.readpartial( 4096, data )
+            while data = res.content.readpartial( 4096, data ) and data.length > 0
               cs.write data
               alldat << data if savecontent
             end
@@ -240,7 +254,8 @@ module TOGoS
           end
           res.content = alldat if savecontent
         elsif res.content != nil
-          cs.write res.content.to_s
+          str = res.content.to_s
+          cs.write str
         end
       end
 
@@ -658,7 +673,7 @@ module TOGoS
               "\n\n----------------\n\n" << server_signature
           end
           
-          if res.content.is_a? String
+          if res.content.is_a? String or res.content.is_a? ContentStream
             res.headers['content-length'] = res.content.length
           end
 
@@ -680,10 +695,15 @@ module TOGoS
           end
 
           begin
-            cs.close unless cs.closed?
+            unless cs.closed?
+              cs.flush
+              cs.close
+            end
           rescue IOError
             STDERR.puts "IOError while closing client connection."
           end
+        rescue Errno::ECONNRESET
+          STDERR.puts "Connection reset by peer."
         rescue Errno::EPIPE
           STDERR.puts "Broken pipe."
         end
