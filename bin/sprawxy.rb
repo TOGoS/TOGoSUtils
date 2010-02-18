@@ -657,6 +657,15 @@ module TOGoS
             if proxy = proxy_for( subreq.uri )
               STDERR.puts "#{req.verb} #{origuri} -> #{subreq.uri} #{req.protocol} via #{proxy}"
               res = HttpProxyClient.new( proxy ).do_request( subreq )
+              if res.content
+                if l = res.content.length
+                  STDERR.puts "  #{l} bytes in response content"
+                else
+                  STDERR.puts "  Unknown response content length"
+                end
+              else
+                STDERR.puts "  No response content"
+              end
             else
               STDERR.puts "#{req.verb} #{origuri} -> #{subreq.uri} #{req.protocol}"
               res = Client.instance.do_request( subreq )
