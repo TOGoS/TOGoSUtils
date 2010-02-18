@@ -25,6 +25,7 @@ module TOGoS
           when 'css'  ; return 'text/css'
           when 'xml'  ; return 'text/xml'
           when 'js'   ; return 'text/javascript'
+          when 'json' ; return 'application/json'
           end
         end
         return 'application/octet-stream'
@@ -113,7 +114,7 @@ module TOGoS
         else
           # Default is 'starts with'
           mstr = token
-          return Regexp.new('^'+Regexp.escape(mstr)+'(.*)$')
+          return Regexp.new('^'+Regexp.escape(mstr))
         end
       end
     end
@@ -143,28 +144,52 @@ module TOGoS
       def initialize( stream, length=nil )
         @stream = stream
         @length = length
+        @position = 0
+      end
+
+      def _adjust_read_amount( amount )
+        # If length is known, adjust amount to
+        # ensure we don't read past the end of the stream.
+        if @length
+          if amount
+            if amount > (@length-@position)
+              amount = @length - @position
+            end
+          else
+            amount = @length-@position # To end
+          end
+        end
+        return amount
+      end
+
+      def readpartial( maxlen, outbuf )
+        amount = _adjust_read_amount(amount)
+        if amount
+          outbuf = @stream.readpartial( amount, outbuf )
+        else
+          outbuf = @stream.readpartial( 4096, outbuf )
+        end        
+        @position += outbuf.length
+        return outbuf
       end
 
       def read( amount=nil )
-        if l = @length
-          if (amount and amount > l) or !amount
-            amount = l
-          end
-        end
+        amount = _adjust_read_amount(amount)
         if amount
-          data = []
-          while amount > 0 and f = @stream.read(amount)
-            data << f
-            amount -= f.length
-          end
-          return data.join
+          outbuf = @stream.read( amount )
         else
-          return @stream.read
-        end        
+          outbuf = @stream.read
+        end
+        @position += outbuf.length
+        return outbuf
       end
 
       def to_s
         return @data ||= read()
+      end
+
+      def read_started?
+        return @position > 0
       end
     end
 
@@ -194,13 +219,27 @@ module TOGoS
         end
       end
 
-      def self.write_response( cs, res )
+      def self.write_response( cs, res, savecontent=false )
         cs.write "#{res.protocol} #{res.status_code} #{res.status_text}\r\n"
         for (k,v) in res.headers
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
-        if res.content != nil
+        if res.content.is_a? ContentStream
+          if res.content.read_started?
+            raise "Cannot output ContentStream - read already started"
+          end
+          alldat = ""
+          begin
+            data = ""
+            while data = res.content.readpartial( 4096, data )
+              cs.write data
+              alldat << data if savecontent
+            end
+          rescue EOFError
+          end
+          res.content = alldat if savecontent
+        elsif res.content != nil
           cs.write res.content.to_s
         end
       end
@@ -619,6 +658,10 @@ module TOGoS
               "\n\n----------------\n\n" << server_signature
           end
           
+          if res.content.is_a? String
+            res.headers['content-length'] = res.content.length
+          end
+
           if subreq and should_log?( subreq )
             logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
             logfile = 'logs/' + logname + '.log'
@@ -626,7 +669,7 @@ module TOGoS
             open( logfile, 'w' ) do |logstream|
               RRIO.write_request( logstream, subreq )
               logstream.puts "-"*75
-              RRIO.write_response( logstream, res )
+              RRIO.write_response( logstream, res, true )
             end
             STDERR.puts "Logged #{logfile}"
           end
@@ -649,6 +692,8 @@ module TOGoS
       def run_server( serversock )
         while consock = serversock.accept
           Thread.new(consock) do |cs|
+            cs.binmode
+            cs.sync = false
             handle_connection(cs)
           end
         end
