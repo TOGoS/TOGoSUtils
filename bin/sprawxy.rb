@@ -239,6 +239,7 @@ module TOGoS
           cs.write "#{chk(k)}: #{v}\r\n"
         end
         cs.write "\r\n"
+
         if res.content.is_a? ContentStream
           if res.content.read_started?
             raise "Cannot output ContentStream - read already started"
@@ -257,6 +258,7 @@ module TOGoS
           str = res.content.to_s
           cs.write str
         end
+        cs.flush
       end
 
       def self.write_request( cs, req )
@@ -302,6 +304,7 @@ module TOGoS
                 for tosock in socks
                   next if tosock == fromsock
                   tosock.write(data)
+                  tosock.flush
                 end
               rescue IOError
                 throw :eof
@@ -398,10 +401,10 @@ module TOGoS
         if req.verb == 'CONNECT'
           hostname = req.uri
           (host,port) = Resolver.instance.resolve(hostname)
-          cs = TCPSocket.new( host, port )
+          ss = TCPSocket.new( host, port )
           res = ConnectResponse.new
           res.content = nil
-          res.connect_stream = cs
+          res.connect_stream = ss
           res.status_code = 200
           res.status_text = 'Connection Established'
           return res
@@ -412,13 +415,13 @@ module TOGoS
           if host == nil or host == ''
             raise "No host returned when resolving '#{hostname}'"
           end
-          cs = TCPSocket.new( host, port )
+          ss = TCPSocket.new( host, port )
           subreq = req.clone
           subreq.protocol = 'HTTP/1.0'
           subreq.uri = path
           subreq.headers['host'] = hostname
-          RRIO.write_request(cs, subreq)
-          res = RRIO.read_response(cs)
+          RRIO.write_request(ss, subreq)
+          res = RRIO.read_response(ss)
           return res
         elsif req.uri =~ %r<^file://(?=/)>
           path = URI.decode($')
@@ -509,11 +512,11 @@ module TOGoS
       def do_request( req )
         if req.verb == 'CONNECT'
           hostname = req.uri
-          cs = TCPSocket.new( resolved_proxy_host, @proxy_port )
-          cs.write "CONNECT #{hostname} HTTP/1.1\r\n"
-          cs.write "Host: #{hostname}\r\n"
-          cs.write "\r\n"
-          cs.flush
+          ss = TCPSocket.new( resolved_proxy_host, @proxy_port )
+          ss.write "CONNECT #{hostname} HTTP/1.1\r\n"
+          ss.write "Host: #{hostname}\r\n"
+          ss.write "\r\n"
+          ss.flush
           subres = RRIO.read_response
           if subres.status_code < 200 or subres.status_code > 200
             return subres
@@ -521,16 +524,16 @@ module TOGoS
           end
           res = ConnectResponse.new
           res.content = nil
-          res.connect_stream = cs
+          res.connect_stream = ss
           res.status_code = 200
           res.status_text = 'Connection Established'
           return res
         elsif req.uri =~ %r<^http://([^/]+)/>
-          cs = TCPSocket.new( resolved_proxy_host, @proxy_port )
+          ss = TCPSocket.new( resolved_proxy_host, @proxy_port )
           subreq = req.clone
           subreq.protocol = 'HTTP/1.0'
-          RRIO.write_request(cs, subreq)
-          res = RRIO.read_response(cs)
+          RRIO.write_request(ss, subreq)
+          res = RRIO.read_response(ss)
           return res
         else
           raise "HTTP Proxy cannot handle #{req.uri}"
@@ -671,16 +674,6 @@ module TOGoS
             res.headers = {'Content-Type'=>'text/plain'}
             res.content = "Proxy error: " << e.message << "\n\t" << e.backtrace.join("\n\t") <<
               "\n\n----------------\n\n" << server_signature
-          end
-
-          if res.content
-            if l = res.content.length
-              STDERR.puts "  #{l} bytes in response content"
-            else
-              STDERR.puts "  Unknown response content length"
-            end
-          else
-            STDERR.puts "  No response content"
           end
           
           if res.content.is_a? String or res.content.is_a? ContentStream
