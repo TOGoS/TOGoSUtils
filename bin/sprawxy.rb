@@ -344,6 +344,16 @@ module TOGoS
     class Request < RR
       attr_accessor :verb
       attr_accessor :uri
+      attr_accessor :context
+      def initialize
+        super
+        @context = {}
+      end
+      def clone
+        k = super
+        k.context = @context.clone
+        return k
+      end
     end
 
     class Response < RR
@@ -444,8 +454,8 @@ module TOGoS
               title = "Index of #{path}"
               subres.content = "<html>\n" \
                 "<head><title>#{Util.xml_escape(title)}</title></head>\n" \
-                "<body>\n" \
-                "<h2>#{Util.xml_escape(title)}</h2>\n" \
+                "<body>\n\n" \
+                "<h2>#{Util.xml_escape(title)}</h2>\n\n" \
                 "<ul>\n"
               entries = []
               Dir.foreach( path ) do |fn|
@@ -474,7 +484,11 @@ module TOGoS
                 href = URI.escape(prefix + name)
                 subres.content << "<li><a href=\"#{Util.xml_escape(href)}\">#{Util.xml_escape(name)}</a></li>\n"
               end
-              subres.content << "</ul>\n"
+              subres.content << "</ul>\n\n"
+              if sig = req.context['server-signature']
+                subres.content << "<hr />\n"
+                subres.content << "<p>" + Util.xml_escape(sig) + "</p>\n\n"
+              end
               subres.content << "</body>\n</html>\n"
             else
               subres.status_text = "You've got file"
@@ -543,7 +557,6 @@ module TOGoS
 
     class Server
       def initialize
-        @server_id = rand(99999999999).to_s
         @alias_file = MappingFile.new( 'aliases' ) do |line|
           if line =~ /\s+/
             key = ConfigFile.parse_matcher($`)
@@ -586,8 +599,20 @@ module TOGoS
         end
       end
 
+      attr_writer :server_name
+      attr_writer :server_id
+      attr_writer :server_signature
+
+      def server_name
+        return @server_name ||= 'unnamed'
+      end
+
+      def server_id
+        return @server_id ||= (self.server_name + ';inst' + rand(99999999999).to_s)
+      end
+
       def server_signature
-        return "Sprawxy server, ID #{@server_id}"
+        return @server_signature ||= "Sprawxy server #{self.server_id}"
       end
 
       def should_log?( req )
@@ -645,18 +670,19 @@ module TOGoS
           # STDERR.puts "Connection"
           begin
             req = RRIO.read_request(cs)
-            if req.headers['x-sps-id'] == @server_id
+            if req.headers['x-sps-id'] == self.server_id
               raise "Hey it's too loopy in here!"
             end
             origuri = req.uri
             subreq = req.clone
+            subreq.context['server-signature'] = server_signature
             if subreq.uri[0] == ?/ and host = subreq.headers['host']
               newuri = 'http://'+host+subreq.uri
               subreq.uri = newuri
             end
             subreq.uri = apply_aliases( subreq.uri )
             subreq.uri = apply_override_aliases( subreq.uri )
-            subreq.headers['x-sps-id'] = @server_id
+            subreq.headers['x-sps-id'] = self.server_id
             if proxy = proxy_for( subreq.uri )
               STDERR.puts "#{req.verb} #{origuri} -> #{subreq.uri} #{req.protocol} via #{proxy}"
               res = HttpProxyClient.new( proxy ).do_request( subreq )
@@ -729,16 +755,20 @@ end
 
 if $0 == __FILE__
   listenport = 3128
+  servername = nil
 
   args = $*.clone
   while arg = args.shift
     case arg
     when '-port' ; listenport = args.shift.to_i
+    when '-server-name' ; servername = args.shift
     else
       raise "Unrecognised arg: #{arg}"
     end
   end
 
   Thread.abort_on_exception = true
-  TOGoS::Sprawxy::Server.new.run_server( TCPServer.new('0.0.0.0',listenport) )
+  server = TOGoS::Sprawxy::Server.new
+  server.server_name = servername
+  server.run_server( TCPServer.new('0.0.0.0',listenport) )
 end
