@@ -6,6 +6,7 @@ goto:eof
 #!ruby
 
 require 'fileutils'
+require 'time'
 
 USAGE = <<EOS
 Usage: copy-incoming-pix [options] [input dir] ...
@@ -53,7 +54,7 @@ if $image_dest == nil
   STDERR.puts "No image dest dir specified"
 end
 
-if $video_dest == nul
+if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
@@ -96,7 +97,7 @@ for indir in $input_dirs
     case file
     when /\.jpe?g$/i
       process_image( file )
-    when /\.(?:avi|mov|wmv)$/i
+    when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
       process_video( file )
     end  
   end
