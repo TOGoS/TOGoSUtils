@@ -69,26 +69,40 @@ def walk( dir, &prok )
   end
 end
 
+def touch( file, mtime )
+  system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
+end
+
+def figger_mtime( file )
+  begin
+    return File.mtime(file)
+  rescue ArgumentError
+    return Time.at(0)
+  end
+end
+
 def process_image( infile )
   return unless $image_dest
-  mtime = File.mtime(infile)
+  mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
   FileUtils.cp( infile, outfile )
+  touch( outfile, mtime )
   system "jhead -autorot \"#{outfile}\""
   $files_copied_count += 1
 end
 
 def process_video( infile )
   return unless $video_dest
-  mtime = File.mtime(infile)
+  mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
   FileUtils.cp( infile, outfile )
+  touch( outfile, mtime )
   $files_copied_count += 1
 end
 
