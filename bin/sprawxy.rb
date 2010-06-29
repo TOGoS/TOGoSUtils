@@ -712,9 +712,12 @@ module TOGoS
             logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
             logfile = 'logs/' + logname + '.log'
             FileUtils.mkdir_p( File.dirname(logfile) )
-            open( logfile, 'w' ) do |logstream|
+            open( logfile, 'wb' ) do |logstream|
               RRIO.write_request( logstream, subreq )
-              logstream.puts "-"*75
+              if subreq.content.is_a? String and subreq.content[-1] != ?\n
+                logstream.write "\r\n"
+              end
+              logstream.write "-"*75 + "\r\n"
               RRIO.write_response( logstream, res, true )
             end
             STDERR.puts "Logged #{logfile}"
