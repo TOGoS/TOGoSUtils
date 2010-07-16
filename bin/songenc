@@ -10,7 +10,7 @@ def esc( str )
   str = "\"#{str}\""
 end
 
-DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4'
+DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4,flac'
 DEFAULT_ARTIST = "TOGoS"
 COMMANDLINE_HELLO = "q=quit, e=encode, ?=more help"
 COMMANDLINE_HELP = <<EOS
