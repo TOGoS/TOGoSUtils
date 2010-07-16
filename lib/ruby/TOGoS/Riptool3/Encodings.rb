@@ -13,6 +13,13 @@ module TOGoS
 
       # Should return a description of the format
       def description ; end
+      
+      def esc( str )
+        str = str.clone
+        str.gsub!(/\\/,'\\\\')
+        str.gsub!(/"/,'\\"')
+        str = "\"#{str}\""
+      end
     end
 
     module Encodings
@@ -30,16 +37,18 @@ module TOGoS
 	end
 	def encode( infile,outfile,tags )
 	  tf = []
-	  if v = tags['title'] ; tf << "TITLE=#{v}" ; end
-	  if v = tags['author'] ; tf << "ARTIST=#{v}" ; end
+	  if v = tags['title'] ; tf << "--tag=TITLE=#{v}" ; end
+	  if v = tags['author'] ; tf << "--tag=ARTIST=#{v}" ; end
 	  if v = tags['date'] || tags['year']
-	    tf << "DATE=#{v}"
+	    tf << "--tag=DATE=#{v}"
 	  end
-	  if v = tags['genre'] ; tf << "GENRE=#{v}" ; end
-	  if v = tags['comment'] ; tf << "COMMENT=#{v}" ; end
+	  if v = tags['genre'] ; tf << "--tag=GENRE=#{v}" ; end
+	  if v = tags['comment'] ; tf << "--tag=COMMENT=#{v}" ; end
+	  if v = tags['cover-art-file'] ; tf << "--picture=#{v}" ; end
 	  
-	  system("flac -#{@compression} #{esc infile} -o #{esc outfile} " +
-	    tf.collect{|t| esc("--tag=#{t}") }.join(' ') )
+	  cmd = "flac -#{@compression} #{esc infile} -o #{esc outfile} " +
+	    tf.collect{|t| esc(t) }.join(' ')
+	  system( cmd )
 	end
       end
       
