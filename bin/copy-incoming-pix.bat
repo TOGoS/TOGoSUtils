@@ -5,6 +5,8 @@ goto:eof
 
 #!ruby
 
+# See note about the required 'touch' version below...
+
 require 'fileutils'
 require 'time'
 
@@ -69,6 +71,10 @@ def walk( dir, &prok )
   end
 end
 
+# This relies on the coreutils version of the touch command being installed.
+# The UnxUtils version's -t argument takes a different syntax that is incompatible
+# with that of touch found on my Linux machines.  Get the coreutils version from
+# http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 def touch( file, mtime )
   system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
