@@ -89,6 +89,7 @@ def defaultinputs( vars=$vars )
   for i in attrnames
     if( i =~ /\s*\[(.*)\]\s*$/ )
       default = $1 ; i = $`
+      default = nil if default.length == 0
     else
       default = NIL
     end
