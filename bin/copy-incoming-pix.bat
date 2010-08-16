@@ -5,7 +5,10 @@ goto:eof
 
 #!ruby
 
+# See note about the required 'touch' version below...
+
 require 'fileutils'
+require 'time'
 
 USAGE = <<EOS
 Usage: copy-incoming-pix [options] [input dir] ...
@@ -53,7 +56,7 @@ if $image_dest == nil
   STDERR.puts "No image dest dir specified"
 end
 
-if $video_dest == nul
+if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
@@ -68,26 +71,44 @@ def walk( dir, &prok )
   end
 end
 
+# This relies on the coreutils version of the touch command being installed.
+# The UnxUtils version's -t argument takes a different syntax that is incompatible
+# with that of touch found on my Linux machines.  Get the coreutils version from
+# http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
+def touch( file, mtime )
+  system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
+end
+
+def figger_mtime( file )
+  begin
+    return File.mtime(file)
+  rescue ArgumentError
+    return Time.at(0)
+  end
+end
+
 def process_image( infile )
   return unless $image_dest
-  mtime = File.mtime(infile)
+  mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
   FileUtils.cp( infile, outfile )
+  touch( outfile, mtime )
   system "jhead -autorot \"#{outfile}\""
   $files_copied_count += 1
 end
 
 def process_video( infile )
   return unless $video_dest
-  mtime = File.mtime(infile)
+  mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
   FileUtils.cp( infile, outfile )
+  touch( outfile, mtime )
   $files_copied_count += 1
 end
 
@@ -96,7 +117,7 @@ for indir in $input_dirs
     case file
     when /\.jpe?g$/i
       process_image( file )
-    when /\.(?:avi|mov|wmv)$/i
+    when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
       process_video( file )
     end  
   end
