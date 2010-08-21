@@ -1,9 +1,4 @@
-@echo off
-ruby -x %~f0 %*
-if errorlevel 1 pause
-goto:eof
-
-#!ruby
+#!/usr/bin/ruby
 
 # See note about the required 'touch' version below...
 

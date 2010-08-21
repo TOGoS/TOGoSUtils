@@ -1,7 +1,3 @@
-@echo off
-ruby -x %~f0 %*
-goto:eof
-
 #!/usr/bin/ruby
 
 require 'fileutils'
