@@ -62,5 +62,12 @@ namemap = {
   'aaroneit' => 'AaronEIT',
   'calinattw' => 'YC',
   'rspdrinkwater' => 'Atticus',
+  'laskyjw04@gmail.com' => 'Joh',
+  'boxofdumb' => 'Fizz',
+  '-1270101187@chat.facebook.com' => 'cbragg',
+  'kitten17@gmail.com' => 'YC',
+  'jchapiewsky' => 'Jared',
+  '-1663225471@chat.facebook.com' => 'WE2312',
+  'calinattw@yahoo.com' => 'YC',
 }
 import('/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)
