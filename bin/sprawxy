@@ -359,6 +359,12 @@ module TOGoS
     class Response < RR
       attr_accessor :status_code
       attr_accessor :status_text
+      
+      def initialize
+        super
+        @status_code = 200
+        @status_text = 'OK'
+      end
     end
 
     class ConnectResponse < Response
