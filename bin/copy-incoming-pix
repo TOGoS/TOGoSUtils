@@ -108,13 +108,17 @@ def process_video( infile )
 end
 
 for indir in $input_dirs
-  walk( indir ) do |file|
-    case file
-    when /\.jpe?g$/i
-      process_image( file )
-    when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
-      process_video( file )
-    end  
+  begin
+    walk( indir ) do |file|
+      case file
+      when /\.jpe?g$/i
+        process_image( file )
+      when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
+        process_video( file )
+      end  
+    end
+  rescue Errno::ENOENT => e
+    STDERR.puts e.message
   end
 end
 

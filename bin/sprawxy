@@ -359,6 +359,12 @@ module TOGoS
     class Response < RR
       attr_accessor :status_code
       attr_accessor :status_text
+      
+      def initialize
+        super
+        @status_code = 200
+        @status_text = 'OK'
+      end
     end
 
     class ConnectResponse < Response
@@ -433,6 +439,13 @@ module TOGoS
           RRIO.write_request(ss, subreq)
           res = RRIO.read_response(ss)
           return res
+        elsif req.uri =~ %r<^x-sprawxlet:([A-Z0-9_][A-Za-z0-9_]*(::[A-Z0-9_][A-Za-z0-9_]*)*)(/.*)$>
+          slclassname = '::'+$1
+          slpath = $1.gsub('::','/')
+          load( slpath+'.rb' )
+          slclass = eval(slclassname)
+          slinstance = slclass.instance
+          return slinstance.do_request( req )
         elsif req.uri =~ %r<^file://(?=/)>
           path = URI.decode($')
           subres = Response.new
@@ -693,7 +706,7 @@ module TOGoS
             unless res.is_a? Response
               raise "Didn't get a response!"
             end
-          rescue => e
+          rescue Exception => e
             res = Response.new
             res.status_code = '500'
             res.status_text = "Proxy Error"
