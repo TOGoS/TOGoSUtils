@@ -3,14 +3,7 @@
 require 'TOGoS/Riptool3/Encodings'
 include TOGoS::Riptool3
 
-def esc( str )
-  str = str.clone
-  str.gsub!(/\\/,'\\\\')
-  str.gsub!(/"/,'\\"')
-  str = "\"#{str}\""
-end
-
-DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4'
+DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4,flac'
 DEFAULT_ARTIST = "TOGoS"
 COMMANDLINE_HELLO = "q=quit, e=encode, ?=more help"
 COMMANDLINE_HELP = <<EOS
@@ -25,7 +18,7 @@ Commands:
   save,load - save and load variables to ~/.songenc-vars
 EOS
 
-def promptinput( name, default=NIL )
+def promptinput( name, default=nil )
   if default
     STDERR.print "#{name} [#{default}]> "
   else
@@ -74,10 +67,21 @@ def commandline( default=NIL )
 end
 
 def defaultinputs( vars=$vars )
+  if basefile = vars['basefile'] and !(cafile = vars['cover-art-file'])
+    cafile = basefile + ".jpg"
+    cafile = nil unless File.exist? cafile
+    
+    if !cafile && basefile =~ /\.\d+$/
+      cafile = $` + ".jpg"
+      cafile = nil unless File.exist? cafile
+    end
+  end
+
   attrnames = [
     'basefile',
     'title',
     "author [#{DEFAULT_ARTIST}]",
+    "cover-art-file [#{cafile}]",
     'genre',
     'date',
     'comment',
@@ -85,6 +89,7 @@ def defaultinputs( vars=$vars )
   for i in attrnames
     if( i =~ /\s*\[(.*)\]\s*$/ )
       default = $1 ; i = $`
+      default = nil if default.length == 0
     else
       default = NIL
     end

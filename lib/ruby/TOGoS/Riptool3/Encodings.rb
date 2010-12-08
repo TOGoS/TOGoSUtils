@@ -13,10 +13,45 @@ module TOGoS
 
       # Should return a description of the format
       def description ; end
+      
+      def esc( str )
+        str = str.clone
+        str.gsub!(/\\/,'\\\\')
+        str.gsub!(/"/,'\\"')
+        str = "\"#{str}\""
+      end
     end
 
     module Encodings
-
+      class FLAC
+        include Encoding
+        
+        def initialize(compression=8)
+          @compression = compression
+        end
+	def postfix
+	  '.flac'
+	end
+	def description
+	  "FLAC (compression #{@compression})"
+	end
+	def encode( infile,outfile,tags )
+	  tf = []
+	  if v = tags['title'] ; tf << "--tag=TITLE=#{v}" ; end
+	  if v = tags['author'] ; tf << "--tag=ARTIST=#{v}" ; end
+	  if v = tags['date'] || tags['year']
+	    tf << "--tag=DATE=#{v}"
+	  end
+	  if v = tags['genre'] ; tf << "--tag=GENRE=#{v}" ; end
+	  if v = tags['comment'] ; tf << "--tag=COMMENT=#{v}" ; end
+	  if v = tags['cover-art-file'] ; tf << "--picture=#{v}" ; end
+	  
+	  cmd = "flac -#{@compression} #{esc infile} -o #{esc outfile} " +
+	    tf.collect{|t| esc(t) }.join(' ')
+	  system( cmd )
+	end
+      end
+      
       class MP3
 	include Encoding
 
@@ -77,13 +112,13 @@ module TOGoS
       DESCRIPTIONS = <<-EOS
   mp3-<bitrate>  ; (e.g. mp3-192) constant-bitrate MP3
   ogg-q<quality> ; (e.g. ogg-q4)  Ogg with quality setting 0-10
+  flac           ; FLAC
       EOS
 
 
       ByName = {
       }
       class << ByName
-
 	def []( index )
 	  if( self.include?( index ) )
 	    super
@@ -91,6 +126,8 @@ module TOGoS
 	    self[index] = Encodings::MP3.new( $1.to_i )
 	  elsif index =~ /^ogg-q(\d+)$/
 	    self[index] = Encodings::Ogg.new( $1.to_i )
+	  elsif index == 'flac'
+	    self[index] = Encodings::FLAC.new
 	  else
 	    NIL
 	  end

@@ -1,0 +1,84 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+require 'time'
+
+$target_bitrate = 400
+$fps = nil
+
+def walk( dir, &prok )
+  if File.directory?( dir )
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &prok )
+    end
+  else
+    prok.call( dir )
+  end
+end
+
+def sys( *args )
+  cmd = args.collect{|a| '"'+a.to_s.gsub('"','"\'"\'"')+'"'}.join(" ")
+  STDERR.puts "$ #{cmd}"
+  system( cmd )
+end
+
+def process_video( file, dest_dir )
+  bn = File.basename( file )
+  if bn =~ /\.(?:wmv|avi|mov|mpe?g|asf)$/i
+    bn = $`
+  end
+  if file =~ /(\d\d\d\d)[_\.\-](\d\d)[_\.\-](\d\d)\/(\d\d)(\d\d)(\d\d)-[^\/]+$/i
+    # If already following this dir structure, use this time
+    mtime = Time.parse("#{$1}-#{$2}-#{$3} #{$4}:#{$5}:#{$6}")
+  else
+    mtime = File.mtime(file)
+  end
+  dest_file = dest_dir + '/' + mtime.strftime('%Y/%m/%Y_%m_%d') + '/' + bn + '.avi'
+  return if File.exist?( dest_file )
+  if dn = File.dirname( dest_file )
+    FileUtils.mkdir_p( dn )
+  end
+  mencoderargs = [
+    '-oac','mp3lame','-srate',44100,'-ovc','lavc','-lavcopts','vcodec=mpeg4:vpass=1:vbitrate='+$target_bitrate.to_s,
+  ]
+  if $fps
+    mencoderargs.concat [ '-fps',$fps,'-ofps',$fps ]
+  end
+  mencoderargs.concat [
+    '-mc',0,
+    file,'-o',dest_file
+  ]
+  sys 'mencoder', *mencoderargs
+  sys 'touch', '-r', file, dest_file
+  #puts "#{file} -> #{dest_file}"
+end
+
+dirs = []
+dest_dir = nil
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-dest'
+    dest_dir = args.shift
+  when '-bitrate'
+    $target_bitrate = args.shift.to_i
+  when /^[^-]/
+    dirs << arg
+  when '-fps'
+    $fps = args.shift.to_i
+  else
+    raise "What up with '#{arg}'?"
+  end
+end
+
+raise "No -dest specified" unless dest_dir
+
+for dir in dirs
+  walk( dir ) do |file|
+    if file =~ /\.(?:wmv|avi|mov|mpe?g|asf)$/i
+      process_video( file, dest_dir )
+    end
+  end
+end

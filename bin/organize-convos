@@ -1,0 +1,88 @@
+#!/usr/bin/ruby
+# -*- mode:ruby -*-
+
+require 'fileutils'
+
+def walk( dir, &blok )
+  if File.directory?( dir )
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &blok )
+    end
+  else
+    blok.call( dir )
+  end
+end
+
+def cp( src, dest )
+  return false if File.exist?( dest )
+
+  if destdir = File.dirname( dest )
+    FileUtils.mkdir_p( destdir )
+  end
+
+  system "ln \"#{src}\" \"#{dest}\""
+end
+
+USAGE = <<EOS
+organize-convos -dest <dest-dir> <dir1> <dir2> ...
+EOS
+
+# $incoming_convos_dir = File.dirname($0)
+# $dest_convos_dir = "/home/tog/archives/docs/convos/TOGoS"
+$dest_convos_dir = nil
+$incoming_convos_dirs = []
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-?','-h','--help'
+    STDOUT.puts USAGE
+    exit 0
+  when '-dest'
+    $dest_convos_dir = args.shift
+  when /^[^-]/
+    $incoming_convos_dirs << arg
+  else
+    STDERR.puts "Unrecognised argument '#{arg}'"
+    STDERR.puts USAGE
+    exit 1
+  end
+end
+unless $dest_convos_dir
+  STDERR.puts "No -dest specified."
+  STDERR.puts USAGE
+  exit 1
+end
+if $incoming_convos_dirs.length == 0
+  STDERR.puts "No input directories specified."
+  exit 0
+end
+
+def get_dest_location( basename, date )
+  (y,m,d) = date
+  return "#{$dest_convos_dir}/#{y}/#{m}/#{basename}"
+end
+
+$files_preexisting = []
+$files_unmatched = []
+$files_copied = []
+
+for indir in $incoming_convos_dirs
+  walk( indir ) do |file|
+    if file =~ /(\d\d\d\d)\.(\d\d)\.(\d\d)/
+      dest = get_dest_location( File.basename(file), [$1,$2,$3] )
+      if cp( file, dest )
+        $files_copied << file
+      else
+        $files_preexisting << file
+      end
+    else
+      $files_unmatched << file
+    end
+  end
+end
+
+STDERR.puts "%4d files copied" % $files_copied.length
+STDERR.puts "%4d files preexisting" % $files_preexisting.length
+STDERR.puts "%4d files unmatched" % $files_unmatched.length

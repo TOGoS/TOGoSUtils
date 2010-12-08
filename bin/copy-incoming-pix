@@ -1,9 +1,6 @@
-@echo off
-ruby -x %~f0 %*
-if errorlevel 1 pause
-goto:eof
+#!/usr/bin/ruby
 
-#!ruby
+# See note about the required 'touch' version below...
 
 require 'fileutils'
 require 'time'
@@ -69,6 +66,10 @@ def walk( dir, &prok )
   end
 end
 
+# This relies on the coreutils version of the touch command being installed.
+# The UnxUtils version's -t argument takes a different syntax that is incompatible
+# with that of touch found on my Linux machines.  Get the coreutils version from
+# http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 def touch( file, mtime )
   system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
@@ -107,13 +108,17 @@ def process_video( infile )
 end
 
 for indir in $input_dirs
-  walk( indir ) do |file|
-    case file
-    when /\.jpe?g$/i
-      process_image( file )
-    when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
-      process_video( file )
-    end  
+  begin
+    walk( indir ) do |file|
+      case file
+      when /\.jpe?g$/i
+        process_image( file )
+      when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
+        process_video( file )
+      end  
+    end
+  rescue Errno::ENOENT => e
+    STDERR.puts e.message
   end
 end
 
