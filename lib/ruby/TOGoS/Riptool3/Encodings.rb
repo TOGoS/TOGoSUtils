@@ -74,14 +74,16 @@ module TOGoS
 	      end
 	    end
 	  end
-	  system("lame -b #{@bitrate} -h " +
-		 "#{esc infile} " +
-		 "#{esc outfile} " +
-		 ((author = tags['author']) ? "--ta #{esc author} " : '') +
-		 ((genre = tags['genre']  ) ? "--tg #{esc genre} "  : '') +
-		 ((comm = tags['comment'] ) ? "--tc #{esc comm} "   : '') +
-		 ((year                   ) ? "--ty #{esc year} "   : '') +
-		 ((title = tags['title']  ) ? "--tt #{esc title} "  : '') )
+	  
+	  cmd = "lame -b #{@bitrate} -h #{esc infile} #{esc outfile} "
+	  if author = tags['author']  ; cmd << "--ta #{esc author} " ; end
+	  if genre  = tags['genre']   ; cmd << "--tg #{esc genre} "  ; end
+	  if comm   = tags['comment'] ; cmd << "--tc #{esc comm} "   ; end
+	  if year                     ; cmd << "--ty #{esc year} "   ; end
+	  if title  = tags['title']   ; cmd << "--tt #{esc title} "  ; end
+	  if caf = tags['cover-art-file'] ; cmd << "--ti #{esc caf}" ; end
+	  
+	  system( cmd )
 	end
       end
 
