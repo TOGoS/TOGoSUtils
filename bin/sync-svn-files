@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+
+require 'TOGoS/Util/SVNSyncer'
+
+USAGE = <<EOS
+sync-svn-files <src-dir> <to-svn-checkout-dir>
+EOS
+
+args = $*.clone
+if args.length == 0
+  STDERR.puts "Should have 2 arguments, given #{args.length}"
+  STDERR.puts USAGE
+  exit 1
+end
+case args[0]
+when '-?','-h','-help','--help'
+  puts USAGE
+  exit 0
+end
+if args.length != 2
+  STDERR.puts "Should have 2 arguments, given #{args.length}"
+  STDERR.puts USAGE
+  exit 1
+end
+
+src  = args[0]
+dest = args[1]
+
+TOGoS::Util::SVNSyncer.new.sync( src, dest )
