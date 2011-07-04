@@ -64,10 +64,17 @@ namemap = {
   'rspdrinkwater' => 'Atticus',
   'laskyjw04@gmail.com' => 'Joh',
   'boxofdumb' => 'Fizz',
+  'fizz.dumb@gmail.com' => 'Fizz',
   '-1270101187@chat.facebook.com' => 'cbragg',
+  '-511010542@chat.facebook.com' => 'YC',
+  'cbragg80@gmail.com' => 'cbragg',
   'kitten17@gmail.com' => 'YC',
   'jchapiewsky' => 'Jared',
   '-1663225471@chat.facebook.com' => 'WE2312',
   'calinattw@yahoo.com' => 'YC',
+  'adrinkwater@gmail.com' => 'Atticus',
+  'we2312' => 'WE2312',
+  'yannialaska' => 'Joh',
+  'wilymatzo' => 'WilyMatzo',
 }
 import('/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)
