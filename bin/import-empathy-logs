@@ -56,13 +56,17 @@ end
 
 namemap = {
   'aaroneit' => 'AaronEIT',
+  'adam.c.mullin@gmail.com' => 'AdamMullin',
   'adrinkwater@gmail.com' => 'Atticus',
+  'alenaae' => 'Alenaae',
   'bluebasser02' => 'A-Day',
   'boxofdumb' => 'Fizz',
   'calinattw' => 'YC',
   'calinattw@yahoo.com' => 'YC',
+  'caycwang@gmail.com' => 'YC',
   'cbragg80@gmail.com' => 'cbragg',
   'fizz.dumb@gmail.com' => 'Fizz',
+  'fox.christopher.j@gmail.com' => 'chfox',
   'fjordtjie@gmail.com' => 'andrea.smetana',
   'jchapiewsky' => 'Jared',
   'kitten17@gmail.com' => 'YC',
@@ -80,4 +84,33 @@ namemap = {
   '-1845925398@chat.facebook.com' => 'ZeHa',
   '-511010542@chat.facebook.com' => 'YC',
 }
-import('/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)
+
+dest = nil
+srcdirs = []
+
+USAGE = "Usage: import-empathy-logs -dest <dest> <src> [<src> ...]"
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-dest'
+    dest = args.shift
+  when /^[^-]/
+    srcdirs << arg
+  else
+    STDERR.puts "Unrecongised arg: #{arg}"
+    STDERR.puts USAGE
+    exit 1
+  end
+end
+
+if srcdirs.length == 0
+  STDERR.puts "No source dirs given."
+  STDERR.puts USAGE
+  exit 1
+end
+
+for src in srcdirs
+  import src, dest, namemap
+end
+# '/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)
