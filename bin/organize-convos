@@ -21,7 +21,7 @@ def cp( src, dest )
     FileUtils.mkdir_p( destdir )
   end
 
-  system "ln \"#{src}\" \"#{dest}\""
+  system "cp \"#{src}\" \"#{dest}\""
 end
 
 USAGE = <<EOS

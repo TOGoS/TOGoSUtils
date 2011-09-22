@@ -85,6 +85,7 @@ end
 def figger_mtime( file )
   begin
     return File.mtime(file) + $mtime_offset
+    return File.mtime(file)
   rescue ArgumentError
     return Time.at(0)
   end
