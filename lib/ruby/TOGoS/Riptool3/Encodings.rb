@@ -8,7 +8,14 @@ module TOGoS
 
       # Should encode infile to outfile, tagging with tags
       # Comon tags are:
-      #  author, comment, date, genre, title, year
+      #  title   = title of track
+      #  author  = name of artist/author
+      #  album   = name of album
+      #  track   = track number ["/" total track count]
+      #  date    = YYYY-MM-DD of release
+      #  year    = year of release (alternative to specific date)
+      #  genre   = name of genre
+      #  comment = misc. info about track
       def encode( infile, outfile, tags ) ; end
 
       # Should return a description of the format
@@ -37,8 +44,10 @@ module TOGoS
 	end
 	def encode( infile,outfile,tags )
 	  tf = []
-	  if v = tags['title'] ; tf << "--tag=TITLE=#{v}" ; end
+	  if v = tags['title']  ; tf << "--tag=TITLE=#{v}"  ; end
 	  if v = tags['author'] ; tf << "--tag=ARTIST=#{v}" ; end
+          if v = tags['album']  ; tf << "--tag=ALBUM=#{v}"  ; end
+          if v = tags['track']  ; tf << "--tag=TRACKNUMBER=#{v}" ; end
 	  if v = tags['date'] || tags['year']
 	    tf << "--tag=DATE=#{v}"
 	  end
@@ -62,7 +71,7 @@ module TOGoS
 	  ".#{@bitrate}.mp3"
 	end
 	def description
-	  return "#{@bitrate}kbps onstant-bitrate MP3"
+	  return "#{@bitrate}kbps constant-bitrate MP3"
 	end
 	def encode( infile,outfile,tags )
 	  unless year = tags['year']
@@ -74,14 +83,18 @@ module TOGoS
 	      end
 	    end
 	  end
-	  system("lame -b #{@bitrate} -h " +
-		 "#{esc infile} " +
-		 "#{esc outfile} " +
-		 ((author = tags['author']) ? "--ta #{esc author} " : '') +
-		 ((genre = tags['genre']  ) ? "--tg #{esc genre} "  : '') +
-		 ((comm = tags['comment'] ) ? "--tc #{esc comm} "   : '') +
-		 ((year                   ) ? "--ty #{esc year} "   : '') +
-		 ((title = tags['title']  ) ? "--tt #{esc title} "  : '') )
+	  
+	  cmd = "lame -b #{@bitrate} -h #{esc infile} #{esc outfile} "
+          if title  = tags['title']   ; cmd << "--tt #{esc title} "  ; end
+	  if author = tags['author']  ; cmd << "--ta #{esc author} " ; end
+          if album  = tags['album']   ; cmd << "--tl #{esc album} "  ; end
+          if track  = tags['track']   ; cmd << "--tn #{esc track} "  ; end
+          if year                     ; cmd << "--ty #{esc year} "   ; end
+	  if genre  = tags['genre']   ; cmd << "--tg #{esc genre} "  ; end
+	  if comm   = tags['comment'] ; cmd << "--tc #{esc comm} "   ; end
+	  if caf = tags['cover-art-file'] ; cmd << "--ti #{esc caf}" ; end
+	  
+	  system( cmd )
 	end
       end
 
@@ -95,14 +108,19 @@ module TOGoS
 	  ".q#{@quality}.ogg"
 	end
 	def encode( infile,outfile,tags )
-	  system("oggenc #{esc infile} " +
-		 "-o #{esc outfile} -q #{@quality} " +
-		 ((author = tags['author']) ? "--artist #{esc author} " : '') +
-		 ((genre = tags['genre']  ) ? "--genre #{esc genre} "   : '') +
-		 ((date = tags['date']    ) ? "--date #{esc date} "     : '') +
-		 ((comm = tags['comment'] ) ?
-		  "--comment COMMENT=#{esc comm} " : '') +
-		 ((title = tags['title']  ) ? "--title #{esc title} "   : '') )
+          date = tags['date'] || tags['year']
+          
+          cmd = "oggenc #{esc infile} -o #{esc outfile} -q #{@quality} "
+          
+          if title  = tags['title']   ; cmd << "--title #{esc title} "     ; end
+          if author = tags['author']  ; cmd << "--artist #{esc author} "   ; end
+          if album  = tags['album']   ; cmd << "--album #{esc album} "     ; end
+          if track  = tags['track']   ; cmd << "--tracknum #{esc track} "  ; end
+          if date                     ; cmd << "--date #{esc date} "       ; end
+          if genre  = tags['genre']   ; cmd << "--genre #{esc genre} "     ; end
+          if comm   = tags['comment'] ; cmd << "--comment COMMENT=#{esc comm} " ; end
+          
+	  system( cmd )
 	end
 	def description
 	  return "Ogg encoded at quality setting #{@quality} (0=worst,10=best)"

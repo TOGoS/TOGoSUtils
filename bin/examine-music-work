@@ -1,0 +1,24 @@
+#!/usr/bin/ruby
+
+def walk( dir, &prok )
+  if File.directory? dir
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &prok )
+    end
+  else
+    prok.call( dir )
+  end
+end
+
+
+walk('.') do |file|
+  if file !~ /\.rns$/
+    puts "Non-RNS file #{file}"
+  end
+  bn  = File.basename(file)
+  dbn = File.basename(File.dirname(file))
+  if bn[0...(dbn.length)] != dbn and !(file =~ /trakaday/)
+    puts "Filename does not match directory: #{file}"
+  end
+end

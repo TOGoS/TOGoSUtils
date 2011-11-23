@@ -556,7 +556,11 @@ module TOGoS
           res.status_text = 'Connection Established'
           return res
         elsif req.uri =~ %r<^http://([^/]+)/>
-          ss = TCPSocket.new( resolved_proxy_host, @proxy_port )
+          begin
+            ss = TCPSocket.new( resolved_proxy_host, @proxy_port )
+          rescue Exception => e
+            raise e.class, "Error connecting to proxy #{resolved_proxy_host}:#{@proxy_port}: #{e}", e.backtrace
+          end
           subreq = req.clone
           subreq.protocol = 'HTTP/1.0'
           RRIO.write_request(ss, subreq)

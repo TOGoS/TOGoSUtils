@@ -55,12 +55,62 @@ def import( logdir, outdir, namemap )
 end
 
 namemap = {
-  'pittfagan' => 'Pitt',
-  'wbee1223' => 'WE2312',
-  'bluebasser02' => 'A-Day',
-  'loseneggerc' => 'Loseneggerc',
   'aaroneit' => 'AaronEIT',
+  'adam.c.mullin@gmail.com' => 'AdamMullin',
+  'adrinkwater@gmail.com' => 'Atticus',
+  'alenaae' => 'Alenaae',
+  'bluebasser02' => 'A-Day',
+  'boxofdumb' => 'Fizz',
   'calinattw' => 'YC',
+  'calinattw@yahoo.com' => 'YC',
+  'caycwang@gmail.com' => 'YC',
+  'cbragg80@gmail.com' => 'cbragg',
+  'fizz.dumb@gmail.com' => 'Fizz',
+  'fox.christopher.j@gmail.com' => 'chfox',
+  'fjordtjie@gmail.com' => 'andrea.smetana',
+  'jchapiewsky' => 'Jared',
+  'kitten17@gmail.com' => 'YC',
+  'laskyjw04@gmail.com' => 'Joh',
+  'loseneggerc' => 'Loseneggerc',
+  'pittfagan' => 'Pitt',
   'rspdrinkwater' => 'Atticus',
+  'we2312' => 'WE2312',
+  'wbee1223' => 'WE2312',
+  'wilymatzo' => 'WilyMatzo',
+  'yannialaska' => 'Joh',
+  '-1270101187@chat.facebook.com' => 'cbragg',
+  '-1663225471@chat.facebook.com' => 'WE2312',
+  '-1684782300@chat.facebook.com' => 'Zeimo322',
+  '-1845925398@chat.facebook.com' => 'ZeHa',
+  '-511010542@chat.facebook.com' => 'YC',
 }
-import('/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)
+
+dest = nil
+srcdirs = []
+
+USAGE = "Usage: import-empathy-logs -dest <dest> <src> [<src> ...]"
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-dest'
+    dest = args.shift
+  when /^[^-]/
+    srcdirs << arg
+  else
+    STDERR.puts "Unrecongised arg: #{arg}"
+    STDERR.puts USAGE
+    exit 1
+  end
+end
+
+if srcdirs.length == 0
+  STDERR.puts "No source dirs given."
+  STDERR.puts USAGE
+  exit 1
+end
+
+for src in srcdirs
+  import src, dest, namemap
+end
+# '/home/tog/.local/share/Empathy/logs','/home/tog/toarchive/earthit43/docs/convos/TOGoS',namemap)

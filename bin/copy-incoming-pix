@@ -10,8 +10,10 @@ Usage: copy-incoming-pix [options] [input dir] ...
 Options:
   -image-dest <dir> ; dir to put images
   -video-dest <dir> ; dir to put videos
+  -older-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime < given
   -newer-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime > given
   -newer-than-file <file> ; only process files with mtime > that of given one
+  -mtime-offset [+-]<seconds> ; add this many seconds when determining file modification times
 EOS
 
 $input_dirs = []
@@ -19,16 +21,22 @@ $image_dest = nil
 $video_dest = nil
 $files_copied_count = 0
 $newer_than = nil
+$older_than = nil
+$mtime_offset = 0
 
 args = $*.clone
 while arg = args.shift
   case arg
+  when '-mtime-offset'
+    $mtime_offset = args.shift.to_i
   when '-image-dest'
     $image_dest = args.shift
   when '-video-dest'
     $video_dest = args.shift
   when '-newer-than'
     $newer_than = Time.parse(args.shift)
+  when '-older-than'
+    $older_than = Time.parse(args.shift)
   when '-newer-than-file'
     $newer_than = File.mtime(args.shift)
   when '-h', '-?', '--help'
@@ -76,6 +84,7 @@ end
 
 def figger_mtime( file )
   begin
+    return File.mtime(file) + $mtime_offset
     return File.mtime(file)
   rescue ArgumentError
     return Time.at(0)
@@ -86,6 +95,7 @@ def process_image( infile )
   return unless $image_dest
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
+  return if $older_than and mtime >= $older_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
@@ -99,6 +109,7 @@ def process_video( infile )
   return unless $video_dest
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
+  return if $older_than and mtime >= $older_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
