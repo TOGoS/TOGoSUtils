@@ -22,10 +22,19 @@ module TOGoS
       def description ; end
       
       def esc( str )
-        str = str.clone
+        str = str.to_s.clone
         str.gsub!(/\\/,'\\\\')
         str.gsub!(/"/,'\\"')
         str = "\"#{str}\""
+      end
+      
+      def sys( cmd )
+        if cmd.is_a? Array
+          sys cmd.collect{|a| esc(a)}.join(" ")
+        else
+          STDERR.puts "$ #{cmd}"
+          system cmd
+        end
       end
     end
 
@@ -57,45 +66,74 @@ module TOGoS
 	  
 	  cmd = "flac -#{@compression} #{esc infile} -o #{esc outfile} " +
 	    tf.collect{|t| esc(t) }.join(' ')
-	  system( cmd )
+	  sys cmd
 	end
       end
       
-      class MP3
-	include Encoding
+      class AbstractMP3
+        include Encoding
 
-	def initialize( bitrate )
-	  @bitrate = bitrate
-	end
-	def postfix
-	  ".#{@bitrate}.mp3"
-	end
-	def description
-	  return "#{@bitrate}kbps constant-bitrate MP3"
-	end
-	def encode( infile,outfile,tags )
-	  unless year = tags['year']
-	    if date = tags['date']
-	      if date =~ /^(\d\d\d\d)(-\d\d?-\d\d?)?$/
-		year = $1
-	      elsif date =~ /^\d\d\/\d\d\/(\d\d\d\d)/
-		year = $1
-	      end
-	    end
-	  end
-	  
-	  cmd = "lame -b #{@bitrate} -h #{esc infile} #{esc outfile} "
-          if title  = tags['title']   ; cmd << "--tt #{esc title} "  ; end
-	  if author = tags['author']  ; cmd << "--ta #{esc author} " ; end
-          if album  = tags['album']   ; cmd << "--tl #{esc album} "  ; end
-          if track  = tags['track']   ; cmd << "--tn #{esc track} "  ; end
-          if year                     ; cmd << "--ty #{esc year} "   ; end
-	  if genre  = tags['genre']   ; cmd << "--tg #{esc genre} "  ; end
-	  if comm   = tags['comment'] ; cmd << "--tc #{esc comm} "   ; end
-	  if caf = tags['cover-art-file'] ; cmd << "--ti #{esc caf}" ; end
-	  
-	  system( cmd )
-	end
+        def encode( infile,outfile,tags )
+          unless year = tags['year']
+            if date = tags['date']
+              if date =~ /^(\d\d\d\d)(-\d\d?-\d\d?)?$/
+                year = $1
+              elsif date =~ /^\d\d\/\d\d\/(\d\d\d\d)/
+                year = $1
+              end
+            end
+          end
+          
+          cmd = ['lame','-q','0'] # Highest quality, slowest preprocessing!
+          cmd.concat( encoding_args )
+          cmd << infile
+          cmd << outfile
+          if title  = tags['title']   ; cmd << "--tt" << title  ; end
+          if author = tags['author']  ; cmd << "--ta" << author ; end
+          if album  = tags['album']   ; cmd << "--tl" << album  ; end
+          if track  = tags['track']   ; cmd << "--tn" << track  ; end
+          if year                     ; cmd << "--ty" << year   ; end
+          if genre  = tags['genre']   ; cmd << "--tg" << genre  ; end
+          if comm   = tags['comment'] ; cmd << "--tc" << comm   ; end
+          if caf = tags['cover-art-file'] ; cmd << "--ti" << caf; end
+          
+          sys cmd
+        end
+        
+        def encoding_args
+          raise "Can't use "+self.class+" directly; use a subclass that implements #encoding_args."
+        end
+      end
+      
+      class CBRMP3 < AbstractMP3
+        def initialize( bitrate=192 )
+          @bitrate = bitrate
+        end
+        def postfix
+          ".#{@bitrate}.mp3"
+        end
+        def description
+          return "#{@bitrate}kbps constant-bitrate MP3"
+        end
+        def encoding_args
+          return ['-b',@bitrate.to_s]
+        end
+      end
+      MP3 = CBRMP3
+      
+      class VBRMP3 < AbstractMP3
+        def initialize( quality=4 )
+          @quality = quality
+        end
+        def postfix
+          ".v#{@quality}.mp3"
+        end
+        def description
+          return "quality #{@quality} variable-bitrate MP3"
+        end
+        def encoding_args
+          return ['-V',@quality.to_s]
+        end
       end
 
       class Ogg
@@ -120,7 +158,7 @@ module TOGoS
           if genre  = tags['genre']   ; cmd << "--genre #{esc genre} "     ; end
           if comm   = tags['comment'] ; cmd << "--comment COMMENT=#{esc comm} " ; end
           
-	  system( cmd )
+          sys cmd
 	end
 	def description
 	  return "Ogg encoded at quality setting #{@quality} (0=worst,10=best)"
@@ -128,28 +166,25 @@ module TOGoS
       end
 
       DESCRIPTIONS = <<-EOS
-  mp3-<bitrate>  ; (e.g. mp3-192) constant-bitrate MP3
-  ogg-q<quality> ; (e.g. ogg-q4)  Ogg with quality setting 0-10
-  flac           ; FLAC
+  mp3-<bitrate>      ; (e.g. mp3-192) constant-bitrate MP3
+  mp3-v<compression> ; (e.g. mp3-v3)  variable-bitrate MP3;
+                     ; lower value is higher quality
+  ogg-q<quality>     ; (e.g. ogg-q4)  Ogg with quality setting 0-10
+  flac               ; FLAC
       EOS
-
-
-      ByName = {
-      }
-      class << ByName
-	def []( index )
-	  if( self.include?( index ) )
-	    super
-	  elsif index =~ /^mp3-(\d+)$/
-	    self[index] = Encodings::MP3.new( $1.to_i )
-	  elsif index =~ /^ogg-q(\d+)$/
-	    self[index] = Encodings::Ogg.new( $1.to_i )
-	  elsif index == 'flac'
-	    self[index] = Encodings::FLAC.new
-	  else
-	    NIL
-	  end
-	end
+      
+      ByName = Hash.new do |hash,index|
+        if index =~ /^mp3-v(\d+)$/
+          hash[index] = Encodings::VBRMP3.new( $1.to_i )
+        elsif index =~ /^mp3-(\d+)$/
+          hash[index] = Encodings::CBRMP3.new( $1.to_i )
+        elsif index =~ /^ogg-q(\d+)$/
+          hash[index] = Encodings::Ogg.new( $1.to_i )
+        elsif index == 'flac'
+          hash[index] = Encodings::FLAC.new
+        else
+          nil
+        end
       end
     end
   end
