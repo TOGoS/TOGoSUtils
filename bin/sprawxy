@@ -774,6 +774,13 @@ module TOGoS
 end
 
 if $0 == __FILE__
+  USAGE = <<EOS
+Usage: sprawxy [options]
+Options:
+  -port <listen-port>
+  -server-name <name>
+EOS
+
   listenport = 3128
   servername = nil
 
@@ -782,8 +789,12 @@ if $0 == __FILE__
     case arg
     when '-port' ; listenport = args.shift.to_i
     when '-server-name' ; servername = args.shift
+    when '-?','-h','--help'
+      STDOUT << USAGE
+      exit 0
     else
-      raise "Unrecognised arg: #{arg}"
+      STDERR << USAGE
+      exit 1
     end
   end
 
