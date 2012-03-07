@@ -1,0 +1,92 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+require 'time' # For Time.parse
+
+def walk( dir, &prok )
+  if File.directory?( dir )
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &prok )
+    end
+  else
+    prok.call( dir )
+  end
+end
+
+USAGE = <<EOS
+Usage: randelete [options] <dir> ...
+Options:
+  -amount <amount> ; how much to delete, e.g. 4MB, 1GB
+  -over <size>     ; only delete files over a certain size
+  -after <date>    ; only delete files with mtime over a certain date
+  -before <date>   ; only delete files with mtime over before a certain date
+EOS
+
+dirs = []
+min_size = 0
+min_date = nil
+max_date = nil
+schance = 0.1 # Initial chance of deleting a file
+dchance = 0.1 # Delta chance after each match
+amount = nil
+
+chance  = schance - dchance
+deleted = 0
+
+args = $*.clone
+if args.length == 0
+  STDERR.puts USAGE
+  exit 1
+end
+
+def parse_size( size )
+  case size
+  when /^\d+$/      ; size.to_i
+  when /^(\d+)kB$/  ; size.to_i * 1000
+  when /^(\d+)kiB$/ ; size.to_i * 1024
+  when /^(\d+)MB$/  ; size.to_i * 1000000
+  when /^(\d+)MiB$/ ; size.to_i * 1024*1024
+  when /^(\d+)GB$/  ; size.to_i * 1000000000
+  when /^(\d+)GiB$/ ; size.to_i * 1024*1024*1024
+  when /^(\d+)TB$/  ; size.to_i * 1000000000000
+  when /^(\d+)TiB$/ ; size.to_i * 1024*1024*1024*1024
+  else ; raise "Can't parse #{size} as size unit (hint: capitalization is important)"
+  end
+end
+
+while arg = args.shift
+  case arg
+  when '-before'
+    max_date = Time.parse( args.shift )
+  when '-after'
+    min_date = Time.parse( args.shift )
+  when '-amount'
+    amount = parse_size( args.shift.to_s )
+  when /^[^-]/
+    dirs << arg
+  end
+end
+
+for dir in dirs
+  walk( dir ) do |file|
+    break if amount and deleted >= amount
+    
+    fs = File.size(file)
+    ft = File.mtime(file)
+    
+    next if min_size and fs < min_size
+    next if min_date and ft < min_date
+    next if max_date and ft > max_date
+    
+    chance += dchance
+    next if rand() < chance
+    
+    FileUtils.rm( file )
+    puts "rm #{file} (#{ft})"
+    deleted += fs
+    chance = 0.0
+  end
+end
+
+STDERR.puts "Deleted #{deleted} bytes"

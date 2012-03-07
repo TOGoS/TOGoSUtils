@@ -12,18 +12,40 @@ if args.length == 0
   STDERR.puts USAGE
   exit 1
 end
-case args[0]
-when '-?','-h','-help','--help'
-  puts USAGE
-  exit 0
+
+rw = []
+
+files = []
+while arg = args.shift
+  case arg
+  when '-?','-h','-help','--help'
+    puts USAGE
+    exit 0
+  when '--rewrite'
+    pat          = args.shift
+    rewrite_pipe = args.shift
+    rewrite_pattern = Regexp.new('(?:^|/)'+Regexp.escape(pat).gsub('\\*','[^\\\\/]*')+'$')
+    rw << [rewrite_pattern, rewrite_pipe]
+  when /^[^-]/
+    files << arg
+  else
+    STDERR.puts "Error: unrecognised argument: #{arg}"
+    STDERR.puts USAGE
+    exit 1
+  end
 end
-if args.length != 2
-  STDERR.puts "Should have 2 arguments, given #{args.length}"
+
+if files.length != 2
+  STDERR.puts "Error: Should have 2 directory arguments, given #{files.length}"
   STDERR.puts USAGE
   exit 1
 end
 
-src  = args[0]
-dest = args[1]
+src, dest = files
 
-TOGoS::Util::SVNSyncer.new.sync( src, dest )
+syncer = TOGoS::Util::SVNSyncer.new
+for (rwpat,rwpip) in rw
+  syncer.rewrite_pattern = rwpat
+  syncer.rewrite_pipe = rwpip
+end
+syncer.sync( src, dest )
