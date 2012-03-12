@@ -3,7 +3,7 @@
 require 'TOGoS/Riptool3/Encodings'
 include TOGoS::Riptool3
 
-DEFAULT_ENCODINGS = 'mp3-128,mp3-192,ogg-q4,flac'
+DEFAULT_ENCODINGS = 'mp3-192,ogg-q4,flac'
 DEFAULT_ARTIST = "TOGoS"
 COMMANDLINE_HELLO = "q=quit, e=encode, ?=more help"
 COMMANDLINE_HELP = <<EOS
@@ -116,7 +116,8 @@ def loadvars( vars=NIL )
     while( line = stream.gets() )
       line.strip!
       if line =~ /:\s*/
-	vars[$`] = $'
+        v = $'
+        vars[$`] = v if v.length > 0
       end
     end
   end  
