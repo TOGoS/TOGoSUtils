@@ -1,0 +1,70 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+
+USAGE = <<EOS
+Usage: searchreplace -r <string> <replacement> -r ... <dir> ...
+EOS
+
+def walk( dir, &prok )
+  if File.directory?( dir )
+    Dir.foreach( dir ) do |fn|
+      next if fn[0] == ?.
+      walk( "#{dir}/#{fn}", &prok )
+    end
+  else
+    prok.call( dir )
+  end
+end
+
+repls = []
+dirs = []
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-r'
+    repls << [args.shift,args.shift]
+  when /^[^-]/
+    dirs << arg
+  else
+    STDERR.puts "Error: Unrecognised arg: '#{arg}'"
+    STDERR.puts USAGE
+    exit 1
+  end
+end
+
+unless repls.length > 0
+  STDERR.puts "No replacements specified."
+  exit 0
+end
+unless dirs.length > 0
+  STDERR.puts "No files/directories specified."
+  exit 0
+end
+
+for d in dirs
+  walk( d ) do |f|
+    replcount = 0
+    tf = File.dirname(f)+"/."+File.basename(f)+".searchreplacetemp"
+    open( tf, 'w:BINARY' ) do |o|
+      open( f, 'r:BINARY' ) do |s|
+        while l = s.gets
+          rl = l
+          for sr in repls
+            rl = rl.gsub( sr[0], sr[1] )
+          end
+          if rl != l
+            replcount += 1
+          end
+          o.write rl
+        end
+      end
+    end
+    if replcount > 0
+      FileUtils.mv(tf, f)
+    else
+      FileUtils.rm(tf)
+    end
+  end
+end
