@@ -47,8 +47,8 @@ for d in dirs
   walk( d ) do |f|
     replcount = 0
     tf = File.dirname(f)+"/."+File.basename(f)+".searchreplacetemp"
-    open( tf, 'w:BINARY' ) do |o|
-      open( f, 'r:BINARY' ) do |s|
+    open( tf, 'wb:BINARY' ) do |o|
+      open( f, 'rb:BINARY' ) do |s|
         while l = s.gets
           rl = l
           for sr in repls
