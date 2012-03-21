@@ -1,6 +1,5 @@
 module TOGoS
   module Riptool3
-
     # Interface for encodings
     module Encoding
       # Should return a postfix to add to filenames encoded with this format
@@ -43,6 +42,7 @@ module TOGoS
         include Encoding
         
         def initialize(compression=8)
+          # 8 = best compression, slowest to encode
           @compression = compression
         end
 	def postfix

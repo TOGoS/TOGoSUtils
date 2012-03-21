@@ -130,6 +130,11 @@ def savevars( vars=$vars )
 end
 
 def encode( vars=$vars )
+  for (k,v) in vars
+    next unless v
+    v = v.strip
+    vars[k] = nil unless v.length > 0
+  end
   encodings = vars['encodings']
   (encodings = encodings.split(/[, ]+/)) if encodings.is_a?( String )
   begin
