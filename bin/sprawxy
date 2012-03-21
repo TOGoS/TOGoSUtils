@@ -55,7 +55,7 @@ module TOGoS
         return if sin == nil
         begin
           if sin.respond_to? :readpartial
-            while data = sin.readpartial(1024)
+            while data = sin.readpartial(1024*1024)
               sout.write(data)
             end
           else
@@ -726,7 +726,7 @@ module TOGoS
           end
 
           if subreq and should_log?( subreq )
-            logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]/,'-')
+            logname = Time.new.strftime('%Y/%m/%Y_%m_%d/%Y%m%d%H%M%S') + '-' + rand(999999).to_s + '-' + req.uri.gsub(/[^a-zA-Z0-9\_\.]+/,'-')
             logfile = 'logs/' + logname + '.log'
             FileUtils.mkdir_p( File.dirname(logfile) )
             open( logfile, 'wb' ) do |logstream|
@@ -774,6 +774,13 @@ module TOGoS
 end
 
 if $0 == __FILE__
+  USAGE = <<EOS
+Usage: sprawxy [options]
+Options:
+  -port <listen-port>
+  -server-name <name>
+EOS
+
   listenport = 3128
   servername = nil
 
@@ -782,8 +789,12 @@ if $0 == __FILE__
     case arg
     when '-port' ; listenport = args.shift.to_i
     when '-server-name' ; servername = args.shift
+    when '-?','-h','--help'
+      STDOUT << USAGE
+      exit 0
     else
-      raise "Unrecognised arg: #{arg}"
+      STDERR << USAGE
+      exit 1
     end
   end
 
