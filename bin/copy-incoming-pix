@@ -124,7 +124,7 @@ for indir in $input_dirs
       case file
       when /\.jpe?g$/i
         process_image( file )
-      when /\.(?:avi|mov|wmv|asf|mkv|ogv)$/i
+      when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
         process_video( file )
       end  
     end
