@@ -3,6 +3,7 @@
 require 'fileutils'
 
 module TOGoS ; class VidiProcessor
+  # vbitrate will affect vo_opts only if vo_opts is not set separately!
   attr_accessor :vbitrate
   attr_accessor :fps
   attr_accessor :ao_opts
@@ -13,8 +14,11 @@ module TOGoS ; class VidiProcessor
     @vbitrate = 400
     @fps = nil
     @ao_opts = ['-oac','mp3lame','-srate',44100]
-    @vo_opts = ['-ovc','lavc','-lavcopts',"vcodec=mpeg4:vpass=1:vbitrate=#{@vbitrate}"]
     @rotate = nil
+  end
+  
+  def vo_opts
+    return @vo_opts || ['-ovc','lavc','-lavcopts',"vcodec=mpeg4:vpass=1:vbitrate=#{@vbitrate}"]
   end
 
   def sys( *args )
@@ -25,7 +29,7 @@ module TOGoS ; class VidiProcessor
 
   def process_video( file, dest_dir )
     bn = File.basename( file )
-    if bn =~ /\.(?:wmv|avi|mov|mpe?g|asf)$/i
+    if bn =~ /\.(?:wmv|avi|mov|mpe?g|asf|mp4)$/i
       bn = $`
     end
     dest_file = dest_dir + '/' + File.mtime(file).strftime('%Y/%m/%Y_%m_%d') + '/' + bn + '.avi'
@@ -42,7 +46,7 @@ module TOGoS ; class VidiProcessor
 
     mencoderargs = []
     mencoderargs.concat( @ao_opts )
-    mencoderargs.concat( @vo_opts )
+    mencoderargs.concat( vo_opts )
     mencoderargs.concat( fps_opts )
     if @rotate
       mencoderargs << '-vf' << "rotate=#{@rotate}"
@@ -93,7 +97,7 @@ raise "No -dest specified" unless dest_dir
 
 for dir in dirs
   walk( dir ) do |file|
-    if file =~ /\.(?:wmv|avi|mov|mpe?g|asf)$/i
+    if file =~ /\.(?:wmv|avi|mov|mpe?g|asf|mp4)$/i
       proc.process_video( file, dest_dir )
     end
   end
