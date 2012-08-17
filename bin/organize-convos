@@ -32,6 +32,7 @@ EOS
 # $dest_convos_dir = "/home/tog/archives/docs/convos/TOGoS"
 $dest_convos_dir = nil
 $incoming_convos_dirs = []
+$verbose = false
 
 args = $*.clone
 while arg = args.shift
@@ -39,6 +40,8 @@ while arg = args.shift
   when '-?','-h','--help'
     STDOUT.puts USAGE
     exit 0
+  when '-v'
+    $verbose = true
   when '-dest'
     $dest_convos_dir = args.shift
   when /^[^-]/
@@ -83,6 +86,8 @@ for indir in $incoming_convos_dirs
   end
 end
 
-STDERR.puts "%4d files copied" % $files_copied.length
-STDERR.puts "%4d files preexisting" % $files_preexisting.length
-STDERR.puts "%4d files unmatched" % $files_unmatched.length
+if $verbose
+  STDERR.puts "%4d files copied" % $files_copied.length
+  STDERR.puts "%4d files preexisting" % $files_preexisting.length
+  STDERR.puts "%4d files unmatched" % $files_unmatched.length
+end
