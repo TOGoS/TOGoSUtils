@@ -23,10 +23,13 @@ $files_copied_count = 0
 $newer_than = nil
 $older_than = nil
 $mtime_offset = 0
+$show_progress = false
 
 args = $*.clone
 while arg = args.shift
   case arg
+  when '-show-progress'
+    $show_progress = true
   when '-mtime-offset'
     $mtime_offset = args.shift.to_i
   when '-image-dest'
@@ -121,12 +124,16 @@ end
 for indir in $input_dirs
   begin
     walk( indir ) do |file|
+      if $show_progress
+        STDERR.printf "% -79s\r", file
+      end
+      
       case file
       when /\.jpe?g$/i
         process_image( file )
       when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
         process_video( file )
-      end  
+      end
     end
   rescue Errno::ENOENT => e
     STDERR.puts e.message
