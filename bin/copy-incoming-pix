@@ -19,10 +19,10 @@ EOS
 $input_dirs = []
 $image_dest = nil
 $video_dest = nil
-$files_copied_count = 0
 $newer_than = nil
 $older_than = nil
 $mtime_offset = 0
+$verbose = false
 
 args = $*.clone
 while arg = args.shift
@@ -39,6 +39,8 @@ while arg = args.shift
     $older_than = Time.parse(args.shift)
   when '-newer-than-file'
     $newer_than = File.mtime(args.shift)
+  when '-v'
+    $verbose = true
   when '-h', '-?', '--help'
     STDOUT << USAGE
     exit 0
@@ -91,7 +93,14 @@ def figger_mtime( file )
   end
 end
 
+$files_found     = 0
+$files_ignored   = 0
+$files_processed = 0
+$files_existing  = 0 # i.e. not copied because the destination's already there
+$files_copied    = 0
+
 def process_image( infile )
+  $files_processed += 1
   return unless $image_dest
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
@@ -102,10 +111,11 @@ def process_image( infile )
   FileUtils.cp( infile, outfile )
   touch( outfile, mtime )
   system "jhead -autorot \"#{outfile}\""
-  $files_copied_count += 1
+  $files_copied += 1
 end
 
 def process_video( infile )
+  $files_processed += 1
   return unless $video_dest
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
@@ -115,7 +125,19 @@ def process_video( infile )
   FileUtils.mkdir_p( File.dirname(outfile) )
   FileUtils.cp( infile, outfile )
   touch( outfile, mtime )
-  $files_copied_count += 1
+  $files_copied += 1
+end
+
+def cropend( str, size )
+  if str.length > size
+    return str[str.length-size..-1]
+  else
+    return str
+  end
+end
+
+if $verbose
+  STDERR.printf "%6.6s / %6.6s / %6.6s ; %s\n", 'found', 'processed', 'copied', 'latest'
 end
 
 for indir in $input_dirs
@@ -126,11 +148,18 @@ for indir in $input_dirs
         process_image( file )
       when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
         process_video( file )
-      end  
+      else
+        $files_ignored += 1
+      end
+      if $verbose
+        STDERR.printf "% 6d / % 6d / % 6d ; %40.40s\r", $files_found, $files_processed, $files_copied, cropend(file,40)
+      end
     end
   rescue Errno::ENOENT => e
     STDERR.puts e.message
   end
 end
 
-puts "#{$files_copied_count} files copied"
+if $verbose
+  STDERR.puts
+end
