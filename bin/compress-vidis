@@ -51,7 +51,7 @@ module TOGoS ; class VidiProcessor
     if @rotate
       mencoderargs << '-vf' << "rotate=#{@rotate}"
     end
-    mencoderargs.concat( ['-mc',0,file,'-o',dest_file] )
+    mencoderargs.concat( ['-idx','-mc',0,file,'-o',dest_file] )
     sys 'mencoder', *mencoderargs
     #puts "#{file} -> #{dest_file}"
   end

@@ -39,7 +39,7 @@ while arg = args.shift
     $older_than = Time.parse(args.shift)
   when '-newer-than-file'
     $newer_than = File.mtime(args.shift)
-  when '-v'
+  when '-v', '-show-progress'
     $verbose = true
   when '-h', '-?', '--help'
     STDOUT << USAGE
