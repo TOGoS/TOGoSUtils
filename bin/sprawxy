@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+require 'zlib'
+
 require 'stringio'
 require 'socket'
 require 'fileutils'
@@ -574,6 +576,19 @@ module TOGoS
 
     class Server
       def initialize
+        @filters = [
+          proc { |req,res|
+            if req.uri =~ /kaplan|schweser|kfeducation/ and res.headers['content-type'] =~ %r<^text/>
+              res = res.clone
+              if res.headers['content-encoding'] == 'gzip'
+                res.content = Zlib::GzipReader.new(StringIO.new(res.content.to_s)).read
+                res.headers.delete('content-encoding')
+              end
+              res.content = res.content.to_s.gsub('innovators','assholes').gsub('INSURANCE','FUCKED UP').gsub('EDUCATION','ASS-WIPING').gsub('SECURITIES','BOOGERS').gsub('Memcache:','Stephen Being a Dick:')
+            end
+            res
+          }
+        ]
         @alias_file = MappingFile.new( 'aliases' ) do |line|
           if line =~ /\s+/
             key = ConfigFile.parse_matcher($`)
@@ -717,6 +732,10 @@ module TOGoS
             res.headers = {'Content-Type'=>'text/plain'}
             res.content = "Proxy error: " << e.message << "\n\t" << e.backtrace.join("\n\t") <<
               "\n\n----------------\n\n" << server_signature
+          end
+          
+          for f in @filters
+            res = f.call( req, res )
           end
           
           if res.content.is_a? String or res.content.is_a? ContentStream
