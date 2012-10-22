@@ -143,6 +143,7 @@ end
 for indir in $input_dirs
   begin
     walk( indir ) do |file|
+      $files_found += 1
       case file
       when /\.jpe?g$/i
         process_image( file )
