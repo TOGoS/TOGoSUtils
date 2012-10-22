@@ -65,6 +65,31 @@ if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
+def copy_file( source, dest )
+  buf = ""
+  expected_size = File.size(source)
+  amount_copied = 0
+  begin
+    open( source, 'rb' ) do |instream|
+      open( dest, 'wb' ) do |outstream|
+        while buf = instream.readpartial( 65536, buf )
+          amount_copied += buf.length
+          outstream.write( buf )
+        end
+      end
+    end
+  rescue EOFError
+  ensure
+    if amount_copied < expected_size
+      STDERR.puts "Failed to copy all data to #{dest} (#{amount_copied} / #{expected_size} bytes); deleting"
+      FileUtils.rm( dest )
+      return false
+    else
+      return true
+    end
+  end
+end
+
 def walk( dir, &prok )
   if File.directory? dir
     Dir.foreach( dir ) do |fn|
@@ -108,7 +133,7 @@ def process_image( infile )
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
-  FileUtils.cp( infile, outfile )
+  return unless copy_file( infile, outfile )
   touch( outfile, mtime )
   system "jhead -autorot \"#{outfile}\""
   $files_copied += 1
@@ -123,7 +148,7 @@ def process_video( infile )
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
-  FileUtils.cp( infile, outfile )
+  return unless copy_file( infile, outfile )
   touch( outfile, mtime )
   $files_copied += 1
 end
