@@ -1,0 +1,54 @@
+#!/usr/bin/ruby
+
+# Finds 'castleable' images
+#
+
+def walk( dir, &prok )
+  if dir.is_a? Array
+    for d in dir
+      walk(d, &prok)
+    end
+  elsif File.directory? dir
+    # Assuming for now that Dir.foreach returns files in ascending
+    # order by name (which is what I want).
+    Dir.foreach(dir) do |fn|
+      next if fn[0] == ?.
+      walk("#{dir}/#{fn}", &prok)
+    end
+  else
+    prok.call(dir)
+  end
+end
+
+def is_image_file( f )
+  return f =~ /\.(jpe?g|png|tiff?|bmp|gif|some-other-extension-I-forgot-to-mention)$/i
+end
+
+list = []
+on_a_roll = false
+filesize_threshold = 100_000
+consecution_threshold = 5
+
+dirs = $*
+
+walk(dirs) do |f|
+  next unless is_image_file(f)
+  
+  if File.size(f) < filesize_threshold
+    if on_a_roll
+      puts f
+    else
+      list << f
+      if list.length >= consecution_threshold
+        on_a_roll = true
+        for f in list
+          puts f
+        end
+          list.clear
+      end
+    end
+  else
+    on_a_roll = false
+    list.clear
+  end
+end
