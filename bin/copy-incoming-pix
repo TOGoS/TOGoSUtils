@@ -16,6 +16,7 @@ Options:
   -mtime-offset [+-]<seconds> ; add this many seconds when determining file modification times
 EOS
 
+$dryrun = false
 $input_dirs = []
 $image_dest = nil
 $video_dest = nil
@@ -23,10 +24,15 @@ $newer_than = nil
 $older_than = nil
 $mtime_offset = 0
 $verbose = false
+$transfer_mode = :copy
 
 args = $*.clone
 while arg = args.shift
   case arg
+  when '-dryrun'
+    $dryrun = true
+  when '-link'
+    $transfer_mode = :hardlink
   when '-mtime-offset'
     $mtime_offset = args.shift.to_i
   when '-image-dest'
@@ -66,6 +72,11 @@ if $video_dest == nil
 end
 
 def copy_file( source, dest )
+  if $dryrun
+    puts "cp '#{source}' '#{dest}'"
+    return
+  end
+  
   buf = ""
   expected_size = File.size(source)
   amount_copied = 0
@@ -87,6 +98,35 @@ def copy_file( source, dest )
     else
       return true
     end
+  end
+end
+
+def link_file( source, dest )
+  if $dryrun
+    puts "ln '#{source}' '#{dest}'"
+    return
+  end
+  
+  FileUtils.ln( source, dest )
+end
+
+def transfer_file( source, dest )
+  dest_dir = File.dirname(dest)
+  unless File.directory? dest_dir
+    if $dryrun
+      puts "mkdir '#{dest_dir}'"
+    else
+      FileUtils.mkdir_p(dest_dir)
+    end
+  end
+  
+  case $transfer_mode
+  when :copy
+    copy_file( source, dest )
+  when :hardlink
+    link_file( source, dest )
+  else
+    raise "Unrecognized transfer mode (indicates bug in #{File.basename($0)}): '#{$transfer_mode}'"
   end
 end
 
@@ -132,8 +172,7 @@ def process_image( infile )
   return if $older_than and mtime >= $older_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
-  FileUtils.mkdir_p( File.dirname(outfile) )
-  return unless copy_file( infile, outfile )
+  return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
   system "jhead -autorot \"#{outfile}\""
   $files_copied += 1
@@ -148,7 +187,7 @@ def process_video( infile )
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
   FileUtils.mkdir_p( File.dirname(outfile) )
-  return unless copy_file( infile, outfile )
+  return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
   $files_copied += 1
 end
