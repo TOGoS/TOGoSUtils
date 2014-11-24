@@ -146,7 +146,8 @@ end
 # with that of touch found on my Linux machines.  Get the coreutils version from
 # http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 def touch( file, mtime )
-  system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
+  FileUtils.touch file, :mtime => mtime
+  #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
 
 def figger_mtime( file )
