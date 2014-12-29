@@ -1,0 +1,70 @@
+#!/usr/bin/ruby
+
+require 'digest/md5'
+require 'shellwords'
+
+dirs = $*.clone
+
+$hash_files = {}
+
+def walk(dir, &prok)
+  if File.directory? dir
+    Dir.foreach(dir) do |fn|
+      next if fn[0] == ?.
+      walk("#{dir}/#{fn}", &prok)
+    end
+  else
+    prok.call(dir)
+  end
+end
+
+def fh( file )
+  return Digest::MD5.file(file).hexdigest
+end
+
+FileInfo = Struct.new( :path, :mtime, :nlink )
+
+STDERR.puts "Walking directories..."
+
+$total_file_count = 0
+for dir in dirs
+  walk(dir) do |f|
+    stat = File.stat(f);
+    info = FileInfo.new( f, stat.mtime, stat.nlink )
+    ($hash_files[fh(f)] ||= []) << info
+    $total_file_count += 1
+    STDERR.print "#{$total_file_count} files, #{$hash_files.length} distinct...          \r"
+  end
+end
+
+STDERR.puts
+
+require 'pp'
+
+for (hash,infos) in $hash_files
+  if infos.length > 1
+    copies_with_multiple_links = []
+    copies_with_single_link = []
+    for info in infos
+      if info.nlink > 1
+        copies_with_multiple_links << info
+      else
+        copies_with_single_link << info
+      end
+    end
+    if copies_with_multiple_links.length == 1
+      copies_to_remove = copies_with_single_link
+    elsif copies_with_multiple_links.length == 0
+      copies_to_remove = (copies_with_single_link.sort { |a,b| a.mtime <=> b.mtime })[1..-1]
+    else
+      STDERR.puts "Ambiguous case: " + copies_with_multiple_links.collect{|i| i.path}.join(", ")
+      copies_to_remove = []
+    end
+    
+    for c in copies_to_remove
+      puts "rm "+Shellwords.escape(c.path)
+    end
+  end
+end
+
+
