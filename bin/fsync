@@ -1,0 +1,139 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+
+USAGE = <<EOS
+Usage: fsync [options] <source> <destination>
+
+Fills <destination> with files from <source>,
+ignoring files that already exist.
+
+Options:
+  -dry-run   ; don't actually copy anything
+  -v         ; be verbose
+  -summarize ; summarize what was (or would have been) dome
+EOS
+
+f1 = f2 = nil
+mode = :foreal
+summarize = false
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-v'
+    mode = :verbose if mode != :dryrun
+  when '-summarize'
+    summarize = true
+  when '-dry-run'
+    mode = :dryrun
+  when /^[^-]/
+    if f1.nil?
+      f1 = arg
+    elsif f2.nil?
+      f2 = arg
+    else
+      STDERR.puts "Too many non-option arguments: #{arg}"
+      exit 1
+    end
+  else
+    STDERR.puts "Unrecognized option: #{arg}"
+    STDERR.puts USAGE
+    exit 1
+  end
+end
+
+if f1.nil? or f2.nil?
+  STDERR.puts USAGE
+  exit 1
+end
+
+$failures = 0
+$fu =
+  case mode
+  when :dryrun  ; FileUtils::DryRun
+  when :foreal  ; FileUtils
+  when :verbose ; FileUtils::Verbose
+  else raise "Bad Mode: #{mode}"
+  end
+
+def cp_atomic( f1, f2, mode )
+  case mode
+  when :foreal
+  when :verbose
+    STDOUT.puts "cp #{f1} #{f2}"
+  when :dryrun
+    STDOUT.puts "cp #{f1} #{f2}"
+    return
+  else
+    raise "Invalid mode: #{mode}"
+  end
+
+
+  tempfile = "#{File.dirname(f2)}/.temp-#{File.basename(f2)}.#{rand(99999)}.tmp"
+  success = false
+  begin
+    f1size = File.size(f1)
+    written = 0
+    open( tempfile, 'wb' ) do |w|
+      open( f1, 'rb' ) do |r|
+        while buf = r.read(65536)
+          written += buf.length
+          w.write(buf)
+        end
+      end
+    end
+    $fu.touch tempfile, :mtime => File.mtime(f1)
+    tempsize = File.size(tempfile)
+    if tempsize == f1size
+      success = true
+    else
+      STDERR.puts "Failed to copy #{f1} - #{f1} / #{written} / #{tempsize}"
+      $failures += 1
+    end
+  ensure
+    if success
+      $fu.mv( tempfile, f2 )
+    else
+      File.unlink( tempfile )
+    end
+  end
+end
+
+$copied_file_count = 0
+$skipped_file_count = 0
+
+def fsync( f1, f2, mode )
+  if File.directory?( f1 )
+    if !File.exist?( f2 )
+      $fu.mkdir_p( f2 )
+    elsif !File.directory?( f2 )
+      STDERR.puts "Skipping #{f1}; #{f2} is not a directory."
+    end
+    Dir.foreach( f1 ) do |fn|
+      next if fn[0] == ?.
+	  lower_fn = fn.downcase
+	  case lower_fn
+	  when 'desktop.ini', 'thumbs.db'
+	    next
+	  end
+      fsync( "#{f1}/#{fn}", "#{f2}/#{fn}", mode )
+    end
+  else
+    #puts "exist? #{f2} ? #{File.exist? f2}"
+    unless File.exist? f2
+      cp_atomic( f1, f2, mode )
+	  $copied_file_count += 1
+	else
+	  $skipped_file_count += 1
+    end
+  end
+end
+
+fsync( f1, f2, mode )
+
+if summarize
+  puts "#{$copied_file_count} files copied, #{$skipped_file_count} files skipped"
+end
+
+exit( $failures > 0 ? 1 : 0 )
+
