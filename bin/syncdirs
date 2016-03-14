@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -euo pipefail
+
+dir0=$1
+dir1=$2
+
+mkdir -p $dir0
+mkdir -p $dir1
+# The trailing slashes here are VEWY IMPOTANT
+rsync -tEr --ignore-existing $dir0/ $dir1/
+rsync -tEr --ignore-existing $dir1/ $dir0/
