@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# To work with OS X find, which requires some path be specified:
+if [ "$#" -gt 0 ]; then
+    dirs=("$@")
+else
+    dirs=(".")
+fi
+
+# This method is suggested by someone on stackoverflow but gives an error about ftsopen or something
+# [ "$#" == "0" ] && set -- .
+
+exec find "${dirs[@]}" '(' \
+    -name '#*#' -or \
+    -name '.#*' -or \
+    -name '*~' -or \
+    -name 'Thumbs.db' -or \
+    -name 'desktop.ini' -or \
+    -name '*.tfsync-temp' -or \
+    -name '.tfsyncindex.txt' \
+')' \
+-exec rm -f '{}' ';'
