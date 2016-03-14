@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Deletes branches locally and on all remotes.
+# If the local branch is not fully merged or doesn't exist
+# this will error and stop.
+# (it probably should just continue if the branch doesn't exist, but I don't know an easy way to do that)
+
+set -euo pipefail
+set -x
+
+for branchname in "$@"
+do
+    git branch -d "$branchname"
+    git remote | xargs -r -n1 -i'{}' echo '$' git push '{}' :"$branchname"
+done
