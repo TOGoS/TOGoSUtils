@@ -63,8 +63,14 @@ while arg = args.shift
     min_date = Time.parse( args.shift )
   when '-amount'
     amount = parse_size( args.shift.to_s )
+  when '-over'
+    min_size = parse_size( args.shift.to_s )
   when /^[^-]/
     dirs << arg
+  else
+    STDERR.puts "Unrecognized argument: #{arg}"
+    STDERR.puts USAGE
+    exit 1
   end
 end
 
