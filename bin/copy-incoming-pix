@@ -190,7 +190,8 @@ def process_video( infile )
   return if $older_than and mtime >= $older_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
   return if File.exist? outfile
-  FileUtils.mkdir_p( File.dirname(outfile) )
+  outdir = File.dirname(outfile)
+  FileUtils.mkdir_p( outdir ) unless File.exist?( outdir )
   return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
   $files_copied += 1
