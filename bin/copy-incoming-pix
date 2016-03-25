@@ -77,12 +77,14 @@ def copy_file( source, dest )
     return
   end
   
+  temp = File.dirname(dest)+"/."+File.basename(dest)+".temp"
+  
   buf = ""
   expected_size = File.size(source)
   amount_copied = 0
   begin
     open( source, 'rb' ) do |instream|
-      open( dest, 'wb' ) do |outstream|
+      open( temp, 'wb' ) do |outstream|
         while buf = instream.readpartial( 65536, buf )
           amount_copied += buf.length
           outstream.write( buf )
@@ -92,10 +94,11 @@ def copy_file( source, dest )
   rescue EOFError
   ensure
     if amount_copied < expected_size
-      STDERR.puts "Failed to copy all data to #{dest} (#{amount_copied} / #{expected_size} bytes); deleting"
-      FileUtils.rm( dest )
+      STDERR.puts "Failed to copy all data to #{temp} (#{amount_copied} / #{expected_size} bytes); deleting"
+      FileUtils.rm( temp )
       return false
     else
+      FileUtils.mv( temp, dest )
       return true
     end
   end
