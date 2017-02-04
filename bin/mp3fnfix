@@ -1,0 +1,82 @@
+#!/usr/bin/node
+"use strict";
+
+const fs = require('fs');
+
+function readDir(dir) {
+	return new Promise( (resolve,reject) => {
+		fs.readdir(dir, (err,files) => {
+			if( err ) reject(err);
+			else resolve(files);
+		});
+	});
+}
+
+const argv = process.argv.slice(2);
+const argv0 = process.argv[1];
+
+let dirs = [];
+let replacements = [];
+let actuallyDoIt = true;
+let verbosity = 100;
+for( let i=0; i<argv.length; ++i ) {
+	let arg = argv[i];
+	if( arg == '-r' ) {
+		let replaced = argv[++i];
+		let replacer = argv[++i];
+		replacements.push( [replaced,replacer] );
+	} else if( arg == '--dry-run' ) {
+		verbosity = 200;
+		actuallyDoIt = false;
+	} else if( arg == '-v' || arg == '--verbose' ) {
+		verbosity = 200;
+	} else if( arg[0] == '-' ) {
+		console.error(argv0+": Error: Unrecognized argument: '"+arg+"''");
+		process.exit(1);
+	} else {
+		dirs.push(dir);
+	}
+}
+
+if( dirs.length == 0 ) dirs.push('.');
+
+function fixFilename( fn ) {
+	for( let r in replacements ) {
+		fn = fn.split(replacements[r][0]).join(replacements[r][1]);
+	}
+	fn = fn.replace(/ /g,'_');
+	fn = fn.replace(/[\(\[\{\)\]\}]/g,'-');
+	fn = fn.replace(/_*-+_*/g,'-');
+	fn = fn.replace(/-$|^-/g,'');
+	fn = fn.replace(/-*\.-*/g,'.');
+	return fn;
+}
+
+let pp = [];
+for( let d in dirs ) {
+	let dir = dirs[d];
+	pp.push(readDir(dir).then( (filenames) => {
+		let renamePs = [];
+		for( let i in filenames ) {
+			let filename = filenames[i];
+			let fixed = fixFilename(filename);
+			if( verbosity >= 200 ) {
+				console.log(dir+'/'+filename+" -> "+dir+'/'+fixed);
+			}
+			if( actuallyDoIt && filename != fixed ) {
+				renamePs.push(new Promise( (resolve,reject) => {
+					fs.rename( dir+'/'+filename, dir+'/'+fixed, (err) => {
+						if( err ) reject(err);
+						else resolve();
+					});
+				}));
+			}
+		}
+		return Promise.all(renamePs);
+	}));
+}
+
+Promise.all(pp).catch( (err) => {
+	console.error(err.stack || err);
+	process.exitCode = 1;
+});
