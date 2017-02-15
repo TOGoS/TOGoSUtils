@@ -1,0 +1,12 @@
+escape ^Tt
+startup_message off
+vbell off
+
+setenv SSH_AUTH_SOCK "/home/stevens/.ssh/authsock"
+
+# Define a bigger scrollback, default is 100 lines
+defscrollback 10000
+
+# create a status line at the bottom of the screen.  this will show the titles and locations of
+# all screen windows you have open at any given time
+hardstatus alwayslastline "%{= dc}%H %{= dR} %-Lw%50>%{= dG}%n%f* %{= dW}%t%{= dR}%+Lw%<"s
