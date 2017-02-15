@@ -11,5 +11,5 @@ set -x
 for branchname in "$@"
 do
     git branch -d "$branchname"
-    git remote | xargs -r -n1 -i'{}' echo '$' git push '{}' :"$branchname"
+    git remote | xargs -r -n1 -i'{}' git push '{}' :"$branchname"
 done
