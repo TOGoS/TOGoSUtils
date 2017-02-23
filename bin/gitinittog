@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+"use strict";
+
+const currentDir = process.cwd();
+const childProcess = require('child_process');
+const Builder = require('../lib/node/Builder');
+const readline = require('readline');
+
+const builder = new Builder();
+builder.logger = console;
+
+const rl = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout
+});
+
+function parseDirectoryToProjectNameStructure(dir) {
+	let m;
+	if( (m = /(?:^|\/)(docs|games|proj)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
+		return {
+			projectSectorName: m[1],
+			projectName: m[2]
+		}
+	} else {
+		return undefined;
+	}
+}
+
+function _promptFor( thing, defaultValue ) {
+	return new Promise( (resolve,reject) => {
+		rl.question(thing+" ["+defaultValue+"]> ", (line) => {
+			let given = line.trim();
+			if( given.length == 0 ) given = defaultValue;
+			else if( given == '\\' ) given = '';
+			resolve(given);
+		});
+		rl.once('close', () => reject(new Error("Stream closed before question answered")));
+	});
+}
+
+function promptFor( thing, defaultValue ) {
+	let p = () => {
+		return _promptFor(thing, defaultValue).then(cb);
+	}
+	let cb = (value) => {
+		if( value == '' ) {
+			console.error(thing+" cannot be empty!")
+			return p();
+		}
+		return value;
+	}
+	return p();
+}
+
+function doCommands( commands ) {
+	let prom = Promise.resolve();
+	for( let c in commands ) {
+		prom = prom.then( () => {
+			let cmd = commands[c];
+			let opts = {
+				onNz: 'error'
+			}
+			if( cmd[0] == 'ignore-error' ) {
+				cmd = cmd.slice(1);
+				opts.onNz = 'return';
+			}
+			//console.log(commands[c]);
+			return builder.doCmd( cmd, opts );
+		});
+	}
+	return prom;
+}
+
+let cwd = process.cwd();
+let projectNs = parseDirectoryToProjectNameStructure(cwd);
+let projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
+let gitUserName = 'TOGoS';
+let gitUserEmail = 'togos00@gmail.com';
+let props = {};
+let sshServers = {
+	"fs.marvin": {
+		sshUser: "tog",
+		sshHost: "fs.marvin.nuke24.net",
+		remoteGitRootDir: "/home/tog/git",
+	},
+	"harold": {
+		sshUser: "stevens",
+		sshHost: "harold.nuke24.net",
+		remoteGitRootDir: "/home/stevens/git",
+	},
+	"toggh1": {
+		sshUser: "tog",
+		sshHost: "fs.marvin.nuke24.net",
+		remoteGitRootDir: "/home/tog/git",
+	}
+};
+
+// TODO: Add gitlab servers, etc.
+
+let projectGitRemotes = {};
+promptFor("project sector/name", projectFullName).then( (projectName) => {
+	let makePublic = true;
+	let remoteCommandSets = [];
+	for( let r in sshServers ) {
+		let sshRemote = sshServers[r];
+		let projectGitRepoDir = sshRemote.remoteGitRootDir+"/TOGoS/"+projectName+'.git'
+		projectGitRemotes[r] = {
+			url: "ssh://"+sshRemote.sshUser+"@"+sshRemote.sshHost+projectGitRepoDir
+		};
+		let remoteCommands = [
+			'mkdir -p '+projectGitRepoDir,
+			'cd '+projectGitRepoDir,
+			'git --bare init'
+		];
+		if( makePublic ) {
+			remoteCommands.push('mv hooks/post-update.sample hooks/post-update');
+			remoteCommands.push('chmod +x hooks/post-update');
+		}
+		remoteCommandSets.push([
+			['ssh', sshRemote.sshUser+'@'+sshRemote.sshHost,
+				"sh -c '"+remoteCommands.join(' && ')+"'"]
+		]);
+	}
+
+	let remoteCommandPromise = Promise.resolve();
+	for( let s in remoteCommandSets ) {
+		remoteCommandPromise = remoteCommandPromise.then( () => doCommands(remoteCommandSets[s]) );
+	}
+	return remoteCommandPromise;
+}).then( () => {
+	let localCommands = [
+		['git','init'],
+		['git','config','user.name',gitUserName],
+		['git','config','user.email',gitUserEmail],
+	];
+	for( let r in projectGitRemotes ) {
+		localCommands.push(['ignore-error','git','remote','add',r,projectGitRemotes[r].url]);
+	}
+	return doCommands(localCommands);
+}).then( () => {
+	console.log("Okay, you're all set up!");
+}).catch( (err) => {
+	console.error(err.stack);
+	process.exitCode = 1;
+}).then( () => {
+	rl.close();
+});
