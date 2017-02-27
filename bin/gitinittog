@@ -90,7 +90,7 @@ let sshServers = {
 	},
 	"toggh1": {
 		sshUser: "tog",
-		sshHost: "fs.marvin.nuke24.net",
+		sshHost: "toggh1.nuke24.net",
 		remoteGitRootDir: "/home/tog/git",
 	}
 };
