@@ -9,11 +9,6 @@ const readline = require('readline');
 const builder = new Builder();
 builder.logger = console;
 
-const rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
-
 function parseDirectoryToProjectNameStructure(dir) {
 	let m;
 	if( (m = /(?:^|\/)(docs|games|proj)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
@@ -26,7 +21,7 @@ function parseDirectoryToProjectNameStructure(dir) {
 	}
 }
 
-function _promptFor( thing, defaultValue ) {
+function _promptFor( rl, thing, defaultValue ) {
 	return new Promise( (resolve,reject) => {
 		rl.question(thing+" ["+defaultValue+"]> ", (line) => {
 			let given = line.trim();
@@ -38,9 +33,9 @@ function _promptFor( thing, defaultValue ) {
 	});
 }
 
-function promptFor( thing, defaultValue ) {
+function promptFor( rl, thing, defaultValue ) {
 	let p = () => {
-		return _promptFor(thing, defaultValue).then(cb);
+		return _promptFor(rl, thing, defaultValue).then(cb);
 	}
 	let cb = (value) => {
 		if( value == '' ) {
@@ -76,6 +71,8 @@ let projectNs = parseDirectoryToProjectNameStructure(cwd);
 let projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
 let gitUserName = 'TOGoS';
 let gitUserEmail = 'togos00@gmail.com';
+let shouldInitRemotes = true;
+let shouldInitLocal = true;
 let props = {};
 let sshServers = {
 	"fs.marvin": {
@@ -95,13 +92,31 @@ let sshServers = {
 	}
 };
 
+const args = process.argv.slice(2);
+for( let i=0; i<args.length; ++i ) {
+	let arg = args[i];
+	if( arg == '--local-only' ) {
+		shouldInitRemotes = false;
+	} else {
+		console.error("Unrecognized argument: '"+arg+"'");
+		process.exitCode = 1;
+		return;
+	}
+}
+
+
 // TODO: Add gitlab servers, etc.
 
+const rl = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout
+});
+
 let projectGitRemotes = {};
-promptFor("project sector/name", projectFullName).then( (projectName) => {
+promptFor(rl, "project sector/name", projectFullName).then( (projectName) => {
 	let makePublic = true;
 	let remoteCommandSets = [];
-	for( let r in sshServers ) {
+	if( shouldInitRemotes ) for( let r in sshServers ) {
 		let sshRemote = sshServers[r];
 		let projectGitRepoDir = sshRemote.remoteGitRootDir+"/TOGoS/"+projectName+'.git'
 		projectGitRemotes[r] = {
@@ -123,7 +138,7 @@ promptFor("project sector/name", projectFullName).then( (projectName) => {
 	}
 
 	let remoteCommandPromise = Promise.resolve();
-	for( let s in remoteCommandSets ) {
+	if( shouldInitLocal ) for( let s in remoteCommandSets ) {
 		remoteCommandPromise = remoteCommandPromise.then( () => doCommands(remoteCommandSets[s]) );
 	}
 	return remoteCommandPromise;
