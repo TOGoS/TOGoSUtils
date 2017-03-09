@@ -71,7 +71,7 @@ let projectNs = parseDirectoryToProjectNameStructure(cwd);
 let projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
 let gitUserName = 'TOGoS';
 let gitUserEmail = 'togos00@gmail.com';
-let shouldInitRemotes = true;
+let shouldInitRemotes = false;
 let shouldInitLocal = true;
 let props = {};
 let sshServers = {
@@ -96,7 +96,10 @@ const args = process.argv.slice(2);
 for( let i=0; i<args.length; ++i ) {
 	let arg = args[i];
 	if( arg == '--local-only' ) {
+		// Well this is the default, now, so whatever.
 		shouldInitRemotes = false;
+	} else if( arg == '--init-remotes' ) {
+		shouldInitRemotes = true;
 	} else {
 		console.error("Unrecognized argument: '"+arg+"'");
 		process.exitCode = 1;
