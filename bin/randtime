@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+
+function leftPad( str, padChar, len ) {
+	str = ""+str;
+	while( str.length < len ) str = padChar + str;
+	return str;
+}
+
+function randInt( max ) {
+	return Math.floor( Math.random() * max );
+}
+
+console.log( leftPad(randInt(24),"0",2)+":"+leftPad(randInt(60),"0",2)+":"+leftPad(randInt(60),"0",2) );
