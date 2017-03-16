@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 "use strict";
 
-const currentDir = process.cwd();
-const childProcess = require('child_process');
-const Builder = require('../lib/node/Builder');
-const readline = require('readline');
+var currentDir = process.cwd();
+var childProcess = require('child_process');
+//var Builder = require('../lib/node/Builder');
+var readline = require('readline');
+var _epr = require('../lib/node/ExternalProcessRunner');
+var epr = new _epr.default();
 
-const builder = new Builder();
-builder.logger = console;
+//var builder = new Builder();
+//builder.logger = console;
 
 function parseDirectoryToProjectNameStructure(dir) {
-	let m;
+	var m;
 	if( (m = /(?:^|\/)(docs|games|proj)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
 		return {
 			projectSectorName: m[1],
@@ -22,22 +24,22 @@ function parseDirectoryToProjectNameStructure(dir) {
 }
 
 function _promptFor( rl, thing, defaultValue ) {
-	return new Promise( (resolve,reject) => {
-		rl.question(thing+" ["+defaultValue+"]> ", (line) => {
-			let given = line.trim();
+	return new Promise( function(resolve,reject) {
+		rl.question(thing+" ["+defaultValue+"]> ", function(line) {
+			var given = line.trim();
 			if( given.length == 0 ) given = defaultValue;
 			else if( given == '\\' ) given = '';
 			resolve(given);
 		});
-		rl.once('close', () => reject(new Error("Stream closed before question answered")));
+		rl.once('close', function() { reject(new Error("Stream closed before question answered")) });
 	});
 }
 
 function promptFor( rl, thing, defaultValue ) {
-	let p = () => {
+	var p = function() {
 		return _promptFor(rl, thing, defaultValue).then(cb);
 	}
-	let cb = (value) => {
+	var cb = function(value) {
 		if( value == '' ) {
 			console.error(thing+" cannot be empty!")
 			return p();
@@ -48,11 +50,11 @@ function promptFor( rl, thing, defaultValue ) {
 }
 
 function doCommands( commands ) {
-	let prom = Promise.resolve();
-	for( let c in commands ) {
-		prom = prom.then( () => {
-			let cmd = commands[c];
-			let opts = {
+	var prom = Promise.resolve();
+	for( var c in commands ) {
+		prom = prom.then( function() {
+			var cmd = commands[c];
+			var opts = {
 				onNz: 'error'
 			}
 			if( cmd[0] == 'ignore-error' ) {
@@ -60,21 +62,22 @@ function doCommands( commands ) {
 				opts.onNz = 'return';
 			}
 			//console.log(commands[c]);
-			return builder.doCmd( cmd, opts );
+			epr.doCmd( cmd, opts );
+			//return builder.doCmd( cmd, opts );
 		});
 	}
 	return prom;
 }
 
-let cwd = process.cwd();
-let projectNs = parseDirectoryToProjectNameStructure(cwd);
-let projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
-let gitUserName = 'TOGoS';
-let gitUserEmail = 'togos00@gmail.com';
-let shouldInitRemotes = false;
-let shouldInitLocal = true;
-let props = {};
-let sshServers = {
+var cwd = process.cwd();
+var projectNs = parseDirectoryToProjectNameStructure(cwd);
+var projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
+var gitUserName = 'TOGoS';
+var gitUserEmail = 'togos00@gmail.com';
+var shouldInitRemotes = false;
+var shouldInitLocal = true;
+var props = {};
+var sshServers = {
 	"fs.marvin": {
 		sshUser: "tog",
 		sshHost: "fs.marvin.nuke24.net",
@@ -92,9 +95,9 @@ let sshServers = {
 	}
 };
 
-const args = process.argv.slice(2);
-for( let i=0; i<args.length; ++i ) {
-	let arg = args[i];
+var args = process.argv.slice(2);
+for( var i=0; i<args.length; ++i ) {
+	var arg = args[i];
 	if( arg == '--local-only' ) {
 		// Well this is the default, now, so whatever.
 		shouldInitRemotes = false;
@@ -110,22 +113,22 @@ for( let i=0; i<args.length; ++i ) {
 
 // TODO: Add gitlab servers, etc.
 
-const rl = readline.createInterface({
+var rl = readline.createInterface({
 	input: process.stdin,
 	output: process.stdout
 });
 
-let projectGitRemotes = {};
-promptFor(rl, "project sector/name", projectFullName).then( (projectName) => {
-	let makePublic = true;
-	let remoteCommandSets = [];
-	for( let r in sshServers ) {
-		let sshRemote = sshServers[r];
-		let projectGitRepoDir = sshRemote.remoteGitRootDir+"/TOGoS/"+projectName+'.git'
+var projectGitRemotes = {};
+promptFor(rl, "project sector/name", projectFullName).then( function(projectName) {
+	var makePublic = true;
+	var remoteCommandSets = [];
+	for( var r in sshServers ) {
+		var sshRemote = sshServers[r];
+		var projectGitRepoDir = sshRemote.remoteGitRootDir+"/TOGoS/"+projectName+'.git'
 		projectGitRemotes[r] = {
 			url: "ssh://"+sshRemote.sshUser+"@"+sshRemote.sshHost+projectGitRepoDir
 		};
-		let remoteCommands = [
+		var remoteCommands = [
 			'mkdir -p '+projectGitRepoDir,
 			'cd '+projectGitRepoDir,
 			'git --bare init'
@@ -140,26 +143,26 @@ promptFor(rl, "project sector/name", projectFullName).then( (projectName) => {
 		]);
 	}
 
-	let remoteCommandPromise = Promise.resolve();
-	if( shouldInitRemotes ) for( let s in remoteCommandSets ) {
-		remoteCommandPromise = remoteCommandPromise.then( () => doCommands(remoteCommandSets[s]) );
+	var remoteCommandPromise = Promise.resolve();
+	if( shouldInitRemotes ) for( var s in remoteCommandSets ) {
+		remoteCommandPromise = remoteCommandPromise.then( function() { doCommands(remoteCommandSets[s]) } );
 	}
 	return remoteCommandPromise;
-}).then( () => {
-	let localCommands = [
+}).then( function() {
+	var localCommands = [
 		['git','init'],
 		['git','config','user.name',gitUserName],
 		['git','config','user.email',gitUserEmail],
 	];
-	for( let r in projectGitRemotes ) {
+	for( var r in projectGitRemotes ) {
 		localCommands.push(['ignore-error','git','remote','add',r,projectGitRemotes[r].url]);
 	}
 	return shouldInitLocal ? doCommands(localCommands) : Promise.resolve();
-}).then( () => {
+}).then( function() {
 	console.log("Okay, you're all set up!");
-}).catch( (err) => {
+}).catch( function (err) {
 	console.error(err.stack);
 	process.exitCode = 1;
-}).then( () => {
+}).then( function() {
 	rl.close();
 });
