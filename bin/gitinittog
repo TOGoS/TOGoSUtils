@@ -51,7 +51,7 @@ function promptFor( rl, thing, defaultValue ) {
 
 function doCommands( commands ) {
 	var prom = Promise.resolve();
-	for( var c in commands ) {
+	for( var c in commands ) (function(c) {
 		prom = prom.then( function() {
 			var cmd = commands[c];
 			var opts = {
@@ -65,7 +65,7 @@ function doCommands( commands ) {
 			epr.doCmd( cmd, opts );
 			//return builder.doCmd( cmd, opts );
 		});
-	}
+	})(c);
 	return prom;
 }
 
