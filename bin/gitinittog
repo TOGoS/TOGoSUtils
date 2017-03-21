@@ -62,7 +62,7 @@ function doCommands( commands ) {
 				opts.onNz = 'return';
 			}
 			//console.log(commands[c]);
-			epr.doCmd( cmd, opts );
+			return epr.doCmd( cmd, opts );
 			//return builder.doCmd( cmd, opts );
 		});
 	})(c);
