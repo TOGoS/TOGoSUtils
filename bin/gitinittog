@@ -51,9 +51,8 @@ function promptFor( rl, thing, defaultValue ) {
 
 function doCommands( commands ) {
 	var prom = Promise.resolve();
-	for( var c in commands ) (function(c) {
+	for( var _c in commands ) (function(cmd) {
 		prom = prom.then( function() {
-			var cmd = commands[c];
 			var opts = {
 				onNz: 'error'
 			}
@@ -61,11 +60,10 @@ function doCommands( commands ) {
 				cmd = cmd.slice(1);
 				opts.onNz = 'return';
 			}
-			//console.log(commands[c]);
+			//console.log('$ '+cmd.join(' '));
 			return epr.doCmd( cmd, opts );
-			//return builder.doCmd( cmd, opts );
 		});
-	})(c);
+	})(commands[_c]);
 	return prom;
 }
 
