@@ -136,15 +136,15 @@ promptFor(rl, "project sector/name", projectFullName).then( function(projectName
 			remoteCommands.push('chmod +x hooks/post-update');
 		}
 		remoteCommandSets.push([
-			['ssh', sshRemote.sshUser+'@'+sshRemote.sshHost,
+			['ssh', '-o', 'ConnectTimeout=10', sshRemote.sshUser+'@'+sshRemote.sshHost,
 				"sh -c '"+remoteCommands.join(' && ')+"'"]
 		]);
 	}
-
+	
 	var remoteCommandPromise = Promise.resolve();
-	if( shouldInitRemotes ) for( var s in remoteCommandSets ) {
-		remoteCommandPromise = remoteCommandPromise.then( function() { doCommands(remoteCommandSets[s]) } );
-	}
+	if( shouldInitRemotes ) for( var s in remoteCommandSets ) (function(commandSet) {
+		remoteCommandPromise = remoteCommandPromise.then( function() { return doCommands(commandSet) } );
+	})(remoteCommandSets[s]);
 	return remoteCommandPromise;
 }).then( function() {
 	var localCommands = [
