@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$SSH_AGENT_PID" ]
+then
+    echo "SSH_AGENT_PID not set.  I will start it for you!"
+    exec ssh-agent ssscreen "$@"
+fi
+
+env | grep SSH | grep -v ' ' > ~/.ssh-agent.txt
+exec screen "$@"
