@@ -1,0 +1,31 @@
+#!/bin/bash
+
+sector=user
+things=()
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-sector)
+	    sector="$2"
+	    shift
+	    ;;
+	*)
+	    things+=("$key")
+	    ;;
+    esac
+    shift
+done
+
+echo "Publishing..."
+echo "${things[@]}"
+
+#ccouch3 id "${things[@]}"
+#ccouch3 store-stream "${things[@]}"
+
+exec ccouch3 upload \
+     -http-server:piccouch piccouch.appspot.com \
+     -command-server:zappie1 ssh tog@zappie1.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
+     -command-server:fs.marvin ssh tog@fs.marvin.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
+     "${things[@]}"
