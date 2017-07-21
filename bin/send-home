@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# It's just like upload, but lists fewer servers!
+
+sector=user
+things=()
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-sector)
+	    sector="$2"
+	    shift
+	    ;;
+	*)
+	    things+=("$key")
+	    ;;
+    esac
+    shift
+done
+
+echo "Publishing..."
+echo "${things[@]}"
+
+#ccouch3 id "${things[@]}"
+#ccouch3 store-stream "${things[@]}"
+
+exec ccouch3 upload \
+     -command-server:fs.marvin ssh tog@fs.marvin.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
+     "${things[@]}"
