@@ -86,7 +86,11 @@ def copy_file( source, dest )
     open( source, 'rb' ) do |instream|
       open( temp, 'wb' ) do |outstream|
         while buf = instream.readpartial( 65536, buf )
-          amount_copied += buf.length
+          # .bytesize used to be .length, but this stopped working
+          # with some Ruby v2.3.1, or maybe because my locale is Czech.
+          # I think it was counting UTF-8-encoded characters in my JPEGs.
+          # Fortunately it looks like .bytesize works with any Ruby version I care to run.
+          amount_copied += buf.bytesize
           outstream.write( buf )
         end
       end
