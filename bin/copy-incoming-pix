@@ -182,7 +182,9 @@ def process_image( infile )
   return if File.exist? outfile
   return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
-  system "jhead -autorot \"#{outfile}\""
+  if outfile =~ /\.jpe?g/
+    system "jhead -autorot \"#{outfile}\""
+  end
   $files_copied += 1
 end
 
@@ -218,7 +220,7 @@ for indir in $input_dirs
     walk( indir ) do |file|
       $files_found += 1
       case file
-      when /\.jpe?g$/i
+      when /\.(jpe?g|png|gif|bmp|tiff)$/i
         process_image( file )
       when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
         process_video( file )
