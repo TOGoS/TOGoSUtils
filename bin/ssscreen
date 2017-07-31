@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ -z "$SSH_AGENT_PID" ]
+if [ -z "$SSH_AUTH_SOCK" ]
 then
-    echo "SSH_AGENT_PID not set.  I will start it for you!"
+    echo "SSH_AUTH_SOCK not set.  I will start it for you!"
     exec ssh-agent ssscreen "$@"
 fi
 
