@@ -6,5 +6,7 @@ then
     exec ssh-agent ssscreen "$@"
 fi
 
-env | grep SSH | grep -v ' ' > ~/.ssh-agent.txt
+mkdir -p ~/.ssvars
+env | grep SSH | grep -v ' ' > ~/.ssvars/ssh-agent.sh
+env | grep DISPLAY | grep -v ' ' > ~/.ssvars/display.sh
 exec screen "$@"
