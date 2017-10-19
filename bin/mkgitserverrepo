@@ -1,0 +1,29 @@
+#!/bin/bash
+
+public=
+repos=()
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	--public)
+	    public="ja"
+	    ;;
+	*)
+	    repos+=("$key")
+	    ;;
+    esac
+    shift
+done
+
+for repo in "${repos[@]}"
+do
+    
+    mkdir -p "$repo"
+    cd "$repo" && git --bare init
+    if [ -n "$public" ] ; then
+	mv hooks/post-update.sample hooks/post-update
+	chmod +x hooks/post-update
+    fi
+done
