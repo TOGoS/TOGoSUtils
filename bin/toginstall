@@ -1,0 +1,14 @@
+#!/bin/bash
+
+projdir="$1"
+
+if [ -z "$projdir" ]
+then
+    echo "Usage: toginstall {proj/Foo}"
+    exit 1
+fi
+
+mkdir -p "$HOME/$projdir" && cd "$HOME/$projdir"
+gitinittog --name "TOGoS/$projdir"
+gitpull
+make && make install
