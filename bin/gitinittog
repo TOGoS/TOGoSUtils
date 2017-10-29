@@ -13,8 +13,9 @@ var epr = new _epr.default();
 
 function parseDirectoryToProjectNameStructure(dir) {
 	var m;
-	if( (m = /(?:^|\/)(docs|games|proj)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
+	if( (m = /(?:^|\/)(docs|games|proj|music)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
 		return {
+			organizationName: 'TOGoS',
 			projectSectorName: m[1],
 			projectName: m[2]
 		}
@@ -69,7 +70,8 @@ function doCommands( commands ) {
 
 var cwd = process.cwd();
 var projectNs = parseDirectoryToProjectNameStructure(cwd);
-var projectFullName = projectNs == undefined ? "" : projectNs.projectSectorName+"/"+projectNs.projectName;
+var projectName = null;
+var guessedProjectName = projectNs == undefined ? "" : 'TOGoS/'+projectNs.projectSectorName+"/"+projectNs.projectName;
 var gitUserName = 'TOGoS';
 var gitUserEmail = 'togos00@gmail.com';
 var shouldInitRemotes = false;
@@ -96,11 +98,16 @@ var sshServers = {
 var args = process.argv.slice(2);
 for( var i=0; i<args.length; ++i ) {
 	var arg = args[i];
-	if( arg == '--local-only' ) {
+	if( arg == '--name' ) {
+		projectName = args[++i];
+	} else if( arg == '--local-only' ) {
 		// Well this is the default, now, so whatever.
 		shouldInitRemotes = false;
 	} else if( arg == '--init-remotes' ) {
 		shouldInitRemotes = true;
+	} else if( arg == '--help' ) {
+		console.log("Usage: gitinittog [--name {TOGoS/proj/blah/whatever}] [--init-remotes]");
+		return;
 	} else {
 		console.error("Unrecognized argument: '"+arg+"'");
 		process.exitCode = 1;
@@ -117,12 +124,17 @@ var rl = readline.createInterface({
 });
 
 var projectGitRemotes = {};
-promptFor(rl, "project sector/name", projectFullName).then( function(projectName) {
+
+var getProjectName = projectName ?
+    (() => Promise.resolve(projectName)) :
+    (() => promptFor(rl, "project sector/name", guessedProjectName));
+
+getProjectName().then( function(projectName) {
 	var makePublic = true;
 	var remoteCommandSets = [];
 	for( var r in sshServers ) {
 		var sshRemote = sshServers[r];
-		var projectGitRepoDir = sshRemote.remoteGitRootDir+"/TOGoS/"+projectName+'.git'
+		var projectGitRepoDir = sshRemote.remoteGitRootDir+"/"+projectName+'.git'
 		projectGitRemotes[r] = {
 			url: "ssh://"+sshRemote.sshUser+"@"+sshRemote.sshHost+projectGitRepoDir
 		};
