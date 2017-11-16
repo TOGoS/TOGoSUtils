@@ -2,6 +2,12 @@
 
 projdir="$1"
 
+if [ "$projdir" == "--help" ]
+then
+    echo "Usage: toginstall {proj/Foo}"
+    exit 0
+fi
+
 if [ -z "$projdir" ]
 then
     echo "Usage: toginstall {proj/Foo}"
