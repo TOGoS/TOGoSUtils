@@ -5,13 +5,42 @@
 
 set -e
 
-# Pass the device name (e.g. "sdd1") as the first and only argument
+myname=$(basename "$0")
+printusage() {
+    echo "Usage: $myname <device> <copy-incoming-pix options>"
+    echo "Where <device> is something like 'sdd1'"
+}
 
-dev="$1"
-shift
+dev=""
+extra_args=()
 
-if [ -z "$dev" ] ; then
-    echo "Error: You gotta pass the device name (e.g. \"sdd1\") as argument."
+while [[ $# > 0 ]]
+do
+    arg="$1"
+    if [ -z "${dev}" ] ; then
+	if [ $arg == '--help' ] || [ $arg == '-?' ] ; then
+	    printusage
+	    exit
+	elif [[ $arg =~ -(.*) ]] ; then
+	    echo "$myname: Error: first argument must be the device name" >&2
+	    printusage >&2
+	    exit 1
+	elif [ -z "$arg" ] ; then
+	    echo "$myname: Error: Zero-length device name argument" >&2
+	    printusage >&2
+	    exit 1
+	else
+	    dev="$arg"
+	fi
+    else
+	extra_args+=("$arg")
+    fi
+    shift
+done
+
+if [ -z "${dev}" ] ; then
+    echo "$myname: Error: No device specified" >&2
+    printusage >&2
     exit 1
 fi
 
@@ -36,7 +65,7 @@ export TZ=America/Chicago
 $HOME/proj/TOGoSUtils/bin/copy-incoming-pix \
     -image-dest $HOME/incoming/images/TOGoS/photos \
     -video-dest $HOME/incoming/video/TOGoS/vhotos \
-    /mnt/${dev} "$@" &
+    /mnt/${dev} "{$extra_args[@]}" &
 copy_pid="$!"
 trap "kill_copy_process $copy_pid" INT
 
