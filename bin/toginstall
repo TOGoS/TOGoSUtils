@@ -14,7 +14,15 @@ then
     exit 1
 fi
 
-mkdir -p "$HOME/$projdir" && cd "$HOME/$projdir"
-gitinittog --name "TOGoS/$projdir"
+if [[ "$projdir" =~ ^(TOGoS|EarthIT)/(.*)$ ]]
+then
+    projname="$projdir"
+    projdir="${BASH_REMATCH[2]}"
+else
+    projname="TOGoS/${projdir}"
+fi
+
+mkdir -p "$HOME/$projdir" && cd "$HOME/${projdir}"
+gitinittog --name "${projname}"
 gitpull
 make && make install

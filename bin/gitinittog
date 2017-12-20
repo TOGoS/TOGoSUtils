@@ -174,7 +174,7 @@ getProjectName().then( function(projectName) {
 	}
 	return shouldInitLocal ? doCommands(localCommands) : Promise.resolve();
 }).then( function() {
-	console.log("Okay, you're all set up!");
+	console.log("gitinittog: Okay, initialized repo");
 }).catch( function (err) {
 	console.error(err.stack);
 	process.exitCode = 1;
