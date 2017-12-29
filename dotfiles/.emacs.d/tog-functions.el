@@ -26,6 +26,10 @@
   (interactive)
   (insert (shell-command-to-string "echo -n $(date +'%Y-%m-%dT%H:%M:%S%:z')")))
 
+(defun insert-date ()
+  (interactive)
+  (insert (shell-command-to-string "echo -n $(date +'%Y-%m-%d')")))
+
 (defun tog-tabs ()
   (interactive)
   (setq tab-width 3)
