@@ -1,4 +1,4 @@
 #!/bin/bash
 
-gitpull
-gitpush
+set -euo pipefail
+gitpull --ff-only && gitpush
