@@ -36,6 +36,8 @@
   (setq c-basic-offset 3)
   (setq indent-tabs-mode t))
 
+(defun real-tabs () (interactive) (local-set-key "\t" 'self-insert-command))
+
 (defun tog-tabs-harder ()
   (interactive)
   (tog-tabs)
