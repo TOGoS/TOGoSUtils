@@ -134,6 +134,8 @@ var getProjectName = projectName ?
     (() => Promise.resolve(projectName)) :
     (() => promptFor(rl, "project sector/name", guessedProjectName));
 
+var remoteInitErrorCount = 0;
+
 getProjectName().then( function(projectName) {
 	var makePublic = true;
 	var remoteCommandSets = [];
@@ -160,7 +162,9 @@ getProjectName().then( function(projectName) {
 	
 	var remoteCommandPromise = Promise.resolve();
 	if( shouldInitRemotes ) for( var s in remoteCommandSets ) (function(commandSet) {
-		remoteCommandPromise = remoteCommandPromise.then( function() { return doCommands(commandSet) } );
+		remoteCommandPromise = remoteCommandPromise.then( function() { return doCommands(commandSet) } ).catch( (err) => {
+			++remoteInitErrorCount;
+		} );
 	})(remoteCommandSets[s]);
 	return remoteCommandPromise;
 }).then( function() {
@@ -174,7 +178,11 @@ getProjectName().then( function(projectName) {
 	}
 	return shouldInitLocal ? doCommands(localCommands) : Promise.resolve();
 }).then( function() {
-	console.log("gitinittog: Okay, initialized repo");
+	console.log("gitinittog: Initialized repo");
+	if( remoteInitErrorCount ) {
+		console.error("gitinittog: Failed to create "+remoteInitErrorCount+" remote repo(s)");
+		process.exitCode = 1;
+	}
 }).catch( function (err) {
 	console.error(err.stack);
 	process.exitCode = 1;
