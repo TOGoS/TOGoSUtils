@@ -1,0 +1,237 @@
+#!/usr/bin/env node
+"use strict";
+
+const fs = require('fs');
+const readline = require('readline');
+const promises = require('../lib/node/promises');
+const fsu = require('../lib/node/FSUtil');
+
+// Reads lines from standard input
+// and writes to log files!
+// Optionally prefixes with dates.
+// A simpler alternative to MQTTLogger!
+
+function writeToStreamPromisely(stream, data) {
+	if( stream.write(data) ) {
+		return promises.RESOLVED_VOID_PROMISE;
+	} else {
+		return new Promise( (resolve,reject) => {
+			stream.once('drain', resolve);
+			stream.once('error', reject);
+		});
+	}
+}
+
+function padLeft(what, desiredLength, padding) {
+	what = ""+what;
+	if( padding == undefined ) padding = " ";
+	while( what.length < desiredLength ) what = padding + what;
+	return what;
+}
+
+// Does this work lol
+function iso8601TzPostfix(date) {
+	let offsetMinutes = date.getTimezoneOffset();
+	let tzMinutes = Math.abs(offsetMinutes) % 60;
+	let tzHours   = Math.floor(Math.abs(offsetMinutes) / 60);
+	return (offsetMinutes > 0 ? '-' : '+') +
+		padLeft(tzHours, 2, '0') +
+		padLeft(tzMinutes, 2, '0');
+}
+
+function logFilename(date) {
+	let yearStr  = padLeft(date.getFullYear(), 4, "0");
+	let monthStr = padLeft(date.getMonth()+1 , 2, "0");
+	let domStr   = padLeft(date.getDate()    , 2, "0");
+	return yearStr + "/" + monthStr + "/" + yearStr + "_" + monthStr + "_" + domStr;
+}
+
+function iso8601Seconds(date) {
+	let yearStr  = padLeft(date.getFullYear(), 4, "0");
+	let monthStr = padLeft(date.getMonth()+1 , 2, "0");
+	let domStr   = padLeft(date.getDate()    , 2, "0");
+	let hoursStr   = padLeft(date.getHours()  , 2, "0");
+	let minutesStr = padLeft(date.getMinutes(), 2, "0");
+	let secondsStr = padLeft(date.getSeconds(), 2, "0");
+	let tzStr = iso8601TzPostfix(date);
+	return yearStr+"-"+monthStr+"-"+domStr+"T"+hoursStr+":"+minutesStr+":"+secondsStr+tzStr;
+}
+
+
+function makeDateFilenamer(prefix, postfix) {
+	return function(ctx) {
+		return (prefix||'') + logFilename(ctx.date) + (postfix||'');
+	};
+}
+
+function makeDatePrefixTransform(dateFormatter) {
+	return function(line, metadata) {
+		let dateStr = dateFormatter(metadata.date);
+		return dateStr+" "+line;
+	}
+}
+
+
+function StreamLineWriter(stream) {
+	this.stream = stream;
+}
+StreamLineWriter.prototype.item = function(line) {
+	return writeToStreamPromisely(this.stream, line+"\n");
+}
+StreamLineWriter.prototype.close = function(line) {
+	return new Promise( (resolve,reject) => {
+		this.stream.end();
+		this.stream.once('finish', resolve);
+		this.stream.once('error', reject);
+	});
+	return writeToStreamPromisely(this.stream, line+"\n");
+}
+
+function FileLineWriter(filenamer) {
+	this.filenamer = filenamer;
+	this.openFilename = undefined;
+	this.openStreamPromise = undefined;
+	this.openStream = undefined;
+}
+FileLineWriter.prototype.item = function(line, metadata) {
+	let filename = this.filenamer({
+		date: metadata.date
+	});
+	let p;
+	if( filename != this.openFilename ) {
+		if( this.openStream ) this.openStream.end();
+		this.openStream = undefined;
+		
+		this.openFilename = filename;
+		this.openStreamPromise = fsu.mkParentDirs(filename).then( () => {
+			return this.openStream = fs.createWriteStream(filename, {
+				flags: "a",
+				autoClose: true,
+			});
+		});
+	}
+	return this.openStreamPromise.then( (stream) => {
+		writeToStreamPromisely(stream, line+"\n");
+	});
+}
+FileLineWriter.prototype.close = function() {
+	if( this.openStream ) this.openStream.end();
+	this.openStream = undefined;
+	this.openFilename = undefined;
+}
+
+
+function Transformer(itemTransform, destination) {
+	this.itemTransform = itemTransform;
+	this.destination = destination;
+}
+Transformer.prototype.item = function(item, metadata) {
+	let xFormed = this.itemTransform(item, metadata);
+	return (xFormed == undefined) ? Promise.resolve() : this.destination.item(xFormed, metadata);
+}
+Transformer.prototype.close = function(metadata) {
+	return this.destination.close(metadata);
+}
+
+
+function Tee(destinations) {
+	this.destinations = destinations||[];
+}
+Tee.prototype.item = function(item, metadata) {
+	let promz = [];
+	for( let d in this.destinations ) {
+		promz.push(this.destinations[d].item(item, metadata));
+	}
+	return Promise.all(promz);
+}
+Tee.prototype.close = function(metadata) {
+	let promz = [];
+	for( let d in this.destinations ) {
+		promz.push(this.destinations[d].close(metadata));
+	}
+	return Promise.all(promz);
+}
+
+
+function processArgs(argv) {
+	let destDirs = [];
+	let teeToStdout = true;
+	let tsPrefixEnabled = false;
+	for( let i=2; i<argv.length; ++i ) {
+		let arg = argv[i];
+		if( arg == '-q' ) {
+			teeToStdout = false;
+		} else if( arg == '--ts' ) {
+			tsPrefixEnabled = true;
+		} else if( arg == '--help' || arg == '-?' ) {
+			return Promise.resolve({
+				mode: "print-help"
+			});
+		} else if( arg.length > 0 && arg[0] != '-' ) {
+			destDirs.push(arg);
+		} else {
+			return Promise.reject(new Error("Unrecognized argument: "+arg));
+		}
+	}
+	return Promise.resolve({
+		mode: "run",
+		destDirs,
+		teeToStdout,
+		tsPrefixEnabled
+	})
+}
+
+processArgs(process.argv).then( (options) => {
+	if( options.mode == 'print-help' ) {
+		console.log("Usage: splitee [--ts] [-q] <dir1> <dir2> ...");
+		console.log();
+		console.log("Description: Kinda like 'tee', but writes to files named by current date.");
+		console.log();
+		console.log("Options:");
+		console.log("  -q   ; don't write to stdout");
+		console.log("  --ts ; prefix lines with ISO8601-formatted date");
+		console.log();
+		console.log("Example:");
+		console.log("  $ mosquitto_sub -v -h mqttserver.example.com -t '#' | splitee -q --ts logs");
+		console.log("  Will write logs of every message published to some MQTT server");
+		console.log("  into files named like 'logs/2018/04/2018_04_09.log',");
+		console.log("  prefixing each line with a timestamp like '2018-04-09T17:17:13-05:00'.");
+		return;
+	}
+
+	const rl = readline.createInterface({
+		input: process.stdin,
+	});
+
+	let tee = new Tee();
+	if( options.teeToStdout ) {
+		tee.destinations.push(new StreamLineWriter(process.stdout));
+	}
+	for( let d in options.destDirs ) {
+		tee.destinations.push(new FileLineWriter(makeDateFilenamer(options.destDirs[d]+"/", ".log")));
+	}
+	let lineSink = options.tsPrefixEnabled ? new Transformer(makeDatePrefixTransform(iso8601Seconds), tee) : tee;
+	
+	return new Promise( (resolve,reject) => {
+		let processPromise = Promise.resolve();
+		rl.on('line', (line) => {
+			let date = new Date;
+			processPromise = processPromise.then(() => {
+				try {
+					let processLine = lineSink.item(line, {
+						date
+					});
+					processLine.catch( reject );
+					return processLine;
+				} catch( err ) {
+					reject(err);
+				}
+			});
+		});
+		
+		rl.on('close', resolve);
+	});
+}).catch( (err) => {
+	console.error(err.stack);
+	process.exit(1);
+});
