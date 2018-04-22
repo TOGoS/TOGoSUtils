@@ -183,7 +183,7 @@ function processArgs(argv) {
 
 processArgs(process.argv).then( (options) => {
 	if( options.mode == 'print-help' ) {
-		console.log("Usage: splitee [--ts] [-q] <dir1> <dir2> ...");
+		console.log("Usage: splitdatee [--ts] [-q] <dir1> <dir2> ...");
 		console.log();
 		console.log("Description: Kinda like 'tee', but writes to files named by current date.");
 		console.log();
@@ -192,7 +192,7 @@ processArgs(process.argv).then( (options) => {
 		console.log("  --ts ; prefix lines with ISO8601-formatted date");
 		console.log();
 		console.log("Example:");
-		console.log("  $ mosquitto_sub -v -h mqttserver.example.com -t '#' | splitee -q --ts logs");
+		console.log("  $ mosquitto_sub -v -h mqttserver.example.com -t '#' | splitdatee -q --ts logs");
 		console.log("  Will write logs of every message published to some MQTT server");
 		console.log("  into files named like 'logs/2018/04/2018_04_09.log',");
 		console.log("  prefixing each line with a timestamp like '2018-04-09T17:17:13-05:00'.");
