@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Commit, setting both the author and committer date
+# to $1
+
+date="$1"
+shift
+
+export GIT_COMMITTER_DATE="$date"
+git commit --date="$date" "$@"

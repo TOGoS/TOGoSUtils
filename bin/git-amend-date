@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Change both the committer and author date of the latest commit
+
+date="$1"
+export GIT_COMMITTER_DATE="$date"
+git commit --amend --no-edit --date="$date"
