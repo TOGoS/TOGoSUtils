@@ -2,7 +2,7 @@
   (interactive)
   (insert "name in database @ \"\"")
   (backward-char))
-(global-set-key (kbd "C-x a d") 'insert-name-in-database-template)
+(global-set-key (kbd "C-x a n") 'insert-name-in-database-template)
 
 (defun insert-open-angle-quote () (interactive) (insert "‹"))
 (global-set-key (kbd "C-x a ,") 'insert-open-angle-quote)
@@ -26,9 +26,13 @@
   (interactive)
   (insert (shell-command-to-string "echo -n $(date +'%Y-%m-%dT%H:%M:%S%:z')")))
 
+(global-set-key (kbd "C-x a t") 'insert-timestamp)
+
 (defun insert-date ()
   (interactive)
   (insert (shell-command-to-string "echo -n $(date +'%Y-%m-%d')")))
+
+(global-set-key (kbd "C-x a d") 'insert-date)
 
 (defun tog-tabs ()
   (interactive)
