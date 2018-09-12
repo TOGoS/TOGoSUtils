@@ -26,6 +26,25 @@ $mtime_offset = 0
 $verbose = false
 $transfer_mode = :copy
 
+def parse_time_offset(str)
+  if str =~ /^([+-]?\d+)([dHhms]?)$/
+    multiplier = 1
+    case $2
+    when 'd':
+      multiplier = 3600 * 24
+    when 'h','H':
+      multiplier = 3600;
+    when 'm':
+      multiplier = 60
+    when 's':
+      multiplier = 1
+    end
+    return $1.to_i * multiplier
+  else
+    raise "Bad time offset: '#{str}'; should be of form [+|-]<number>[h|m|s] e.g. -2h"
+  end
+end
+
 args = $*.clone
 while arg = args.shift
   case arg
@@ -34,7 +53,7 @@ while arg = args.shift
   when '-link'
     $transfer_mode = :hardlink
   when '-mtime-offset'
-    $mtime_offset = args.shift.to_i
+    $mtime_offset = parse_time_offset(args.shift)
   when '-image-dest'
     $image_dest = args.shift
   when '-video-dest'
