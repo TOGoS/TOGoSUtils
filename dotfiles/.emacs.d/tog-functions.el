@@ -21,6 +21,7 @@
   (let ((value (eval (preceding-sexp))))
     (kill-sexp -1)
     (insert (format "%S" value))))
+(global-set-key (kbd "C-x r e") 'replace-last-sexp)
 
 (defun insert-timestamp ()
   (interactive)
@@ -40,12 +41,17 @@
   (setq c-basic-offset 3)
   (setq indent-tabs-mode t))
 
+(global-set-key (kbd "C-x t t t") 'tog-tabs)
+
 (defun real-tabs () (interactive) (local-set-key "\t" 'self-insert-command))
 
 (defun tog-tabs-harder ()
   (interactive)
   (tog-tabs)
   (local-set-key "\t" 'self-insert-command))
+
+(global-set-key (kbd "C-x t t h") 'tog-tabs-harder)
+
 
 (defun infer-indentation-style ()
   ;; if our source file uses tabs, we use tabs, if spaces spaces, and if
