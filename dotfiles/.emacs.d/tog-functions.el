@@ -71,7 +71,7 @@
 ;; Minor mode to help track time while staining
 ;; pieces of wood so I don't get as many keys stained
 (define-minor-mode
-  stain-log
+  stain-log-mode
   "Stain logging mode
 
 Hit 's' to indicate that you started staining a board.
@@ -82,7 +82,16 @@ which will remind you to sort things out later after you clean off your hands.
 "
   :init-value nil
   :lighter " Stain Log [s,f,c]"
-  :keymap '(("s" . (lambda () (interactive) (insert (format-time-string "%Y-%m-%dT%H:%M"))))
-	    ("f" . (lambda () (interactive) (insert "-" (format-time-string "%H:%M\n"))))
-	    ("c" . (lambda () (interactive) (insert "oops!\n")))
-	    ("w" . (lambda () (interactive) (insert (format-time-string "%Y-%m-%dT%H:%M - wiped\n"))))))
+  :keymap '(
+	    ("s" . (lambda () (interactive)
+		     (insert (format-time-string "%Y-%m-%dT%H:%M"))))
+	    ("f" . (lambda () (interactive)
+		     (insert "-" (format-time-string "%H:%M\n"))))
+	    ("c" . (lambda () (interactive)
+		     (insert "Oops!\n")))
+	    ("w" . (lambda () (interactive)
+		     (insert (format-time-string "%Y-%m-%dT%H:%M") " - wiped\n")))
+	    ("q" . (lambda () (interactive)
+		     (insert (format-time-string "%Y-%m-%dT%H:%M") " - end stain log\n")
+		     (stain-log-mode 'toggle)))
+	    ))
