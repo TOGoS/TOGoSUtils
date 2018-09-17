@@ -156,11 +156,17 @@ def transfer_file( source, dest )
   end
 end
 
+def joinpath( dir, sub )
+  dir = dir[0..-2] if dir[-1] == '/'
+  sub = sub[1..-1] if sub[0] == '/'
+  return dir + "/" + sub
+end
+
 def walk( dir, &prok )
   if File.directory? dir
     Dir.foreach( dir ) do |fn|
       next if fn[0] == ?.
-      walk( "#{dir}/#{fn}", &prok )
+      walk( joinpath(dir, fn), &prok )
     end
   else
     prok.call( dir )
@@ -224,21 +230,35 @@ end
 
 def cropend( str, size )
   if str.length > size
-    return str[str.length-size..-1]
+    return "..." + str[str.length-(size-3)..-1]
   else
     return str
   end
 end
 
+PROGRESS_FORMAT = "% 6d / % 6d / % 6d ; %50.50s\r"
+def emit_progress(latest_file="")
+  STDERR.printf PROGRESS_FORMAT, $files_found, $files_processed, $files_copied, cropend(latest_file, 50)
+end
+
 if $verbose
   STDERR.printf "%6.6s / %6.6s / %6.6s ; %s\n", 'found', 'processed', 'copied', 'latest'
+  emit_progress
 end
 
 for indir in $input_dirs
   begin
     walk( indir ) do |file|
+      basename = File.basename(file)
+      if basename == "." or basename == ".." or !File.exist?(file)
+        next
+      end
+      
       $files_found += 1
-      case file
+      case basename
+      when /^\./
+        # Explicitly ignore dot-files
+        $files_ignored += 1
       when /\.(jpe?g|png|gif|bmp|tiff)$/i
         process_image( file )
       when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
@@ -247,7 +267,7 @@ for indir in $input_dirs
         $files_ignored += 1
       end
       if $verbose
-        STDERR.printf "% 6d / % 6d / % 6d ; %40.40s\r", $files_found, $files_processed, $files_copied, cropend(file,40)
+        emit_progress(file)
       end
     end
   rescue Errno::ENOENT => e
