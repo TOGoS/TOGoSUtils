@@ -30,13 +30,13 @@ def parse_time_offset(str)
   if str =~ /^([+-]?\d+)([dHhms]?)$/
     multiplier = 1
     case $2
-    when 'd':
+    when 'd'
       multiplier = 3600 * 24
-    when 'h','H':
+    when 'h','H'
       multiplier = 3600;
-    when 'm':
+    when 'm'
       multiplier = 60
-    when 's':
+    when 's'
       multiplier = 1
     end
     return $1.to_i * multiplier
