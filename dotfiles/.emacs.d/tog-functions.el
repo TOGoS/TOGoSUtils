@@ -54,3 +54,8 @@
         (tab-count (how-many "^\t" (point-min) (point-max))))
     (if (> space-count tab-count) (setq indent-tabs-mode nil))
     (if (> tab-count space-count) (setq indent-tabs-mode t))))
+
+(org-add-link-type "factorio-git-commit" 'org-factorio-git-commit-open)
+(defun org-factorio-git-commit-open (commit-hash)
+  "Visit the commit on GitHub"
+  (org-open-link-from-string (concat "https://github.com/Wube/Factorio/commit/" commit-hash)))
