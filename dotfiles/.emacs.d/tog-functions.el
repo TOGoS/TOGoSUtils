@@ -22,6 +22,11 @@
     (kill-sexp -1)
     (insert (format "%S" value))))
 
+; TODO: Don't shell out to date.
+; You can use format-time-string:
+; (format-time-string "%Y-%m-%dT%T")
+
+
 (defun insert-timestamp ()
   (interactive)
   (insert (shell-command-to-string "echo -n $(date +'%Y-%m-%dT%H:%M:%S%:z')")))
