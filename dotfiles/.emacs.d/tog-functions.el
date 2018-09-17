@@ -64,3 +64,23 @@
 (defun org-factorio-git-commit-open (commit-hash)
   "Visit the commit on GitHub"
   (org-open-link-from-string (concat "https://github.com/Wube/Factorio/commit/" commit-hash)))
+
+
+;; Minor mode to help track time while staining
+;; pieces of wood so I don't get as many keys stained
+(define-minor-mode
+  stain-log
+  "Stain logging mode
+
+Hit 's' to indicate that you started staining a board.
+Hit 'f' to indicate that you finished staining a board (presumably the one you last started).
+Hit 'w' when you start wiping the stain off a board (presumably the first unsiped one).
+Hit 'c' to 'cancel' the last thing by inserting an \"oops!\",
+which will remind you to sort things out later after you clean off your hands.
+"
+  :init-value nil
+  :lighter " Stain Log [s,f,c]"
+  :keymap '(("s" . (lambda () (interactive) (insert (format-time-string "%Y-%m-%dT%H:%M"))))
+	    ("f" . (lambda () (interactive) (insert "-" (format-time-string "%H:%M\n"))))
+	    ("c" . (lambda () (interactive) (insert "oops!\n")))
+	    ("w" . (lambda () (interactive) (insert (format-time-string "%Y-%m-%dT%H:%M - wiped\n"))))))
