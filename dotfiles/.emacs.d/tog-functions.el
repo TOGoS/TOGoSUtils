@@ -4,6 +4,11 @@
   (backward-char))
 (global-set-key (kbd "C-x a n") 'insert-name-in-database-template)
 
+(defun insert-picture-files-url-prefix ()
+  (interactive)
+  (insert "http://picture-files.nuke24.net/uri-res/raw/"))
+(global-set-key (kbd "C-x p f") 'insert-picture-files-url-prefix)
+
 (defun insert-open-angle-quote () (interactive) (insert "‹"))
 (global-set-key (kbd "C-x a ,") 'insert-open-angle-quote)
 
