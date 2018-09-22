@@ -66,13 +66,57 @@
     (if (> space-count tab-count) (setq indent-tabs-mode nil))
     (if (> tab-count space-count) (setq indent-tabs-mode t))))
 
+;; Me learning elisp
+
+(defun tog-parse-query-string-parts-to-alist (qs-parts)
+  (if (eq 0 (length qs-parts)) '()
+    (let ((part (car qs-parts)) (remaining-parts (cdr qs-parts)))
+      (let ((asploded (split-string part "=")))
+	(cons (cons (intern (car asploded)) (cadr asploded))
+	      (tog-parse-query-string-parts-to-alist remaining-parts))))))
+
+(tog-parse-query-string-to-alist "foo=bar&baz=quux")
+
+(defun tog-parse-query-string-to-alist (qs)
+  (if (or (eq nil qs) (string= "" qs))
+      '()
+    (tog-parse-query-string-parts-to-alist (split-string qs "&"))))
+
+(defun tog-parse-x-git-commit-url-body (urlbody)
+  (let ((splitq (split-string urlbody "?")))
+    (cons (cons 'commit-id (car splitq)) (tog-parse-query-string-to-alist (cadr splitq)))))
+
+;; Generate a www link, like for a person to look at
+(defun tog-generate-git-commit-web-link (commit-id repository-url)
+  (let ((repository-url (if (eq repository-url nil) "" repository-url)))
+    (if (string-match "^\\(https?://github\\.com/.*?\\)\\(?:\\.git\\)?$" repository-url)
+	(concat (match-string 1 repository-url) "/commit/" commit-id)
+      (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
+
+;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
+;(tog-parse-x-git-commit-url-body "asdf?no-repo=Hello")
+;(tog-generate-git-commit-web-link
+; "90a3ecbecb2a6a403c2b2439ea31fe4657fd1ceb"
+; "https://github.com/Wube/Factorio.git")
+
 (if (fboundp 'org-add-link-type)
     (progn
       (org-add-link-type "factorio-git-commit" 'org-factorio-git-commit-open)
       (defun org-factorio-git-commit-open (commit-hash)
 	"Visit the commit on GitHub"
-	(org-open-link-from-string (concat "https://github.com/Wube/Factorio/commit/" commit-hash)))))
-
+	(org-open-link-from-string
+	 (tog-generate-git-commit-web-link
+	  commit-hash
+	  "https://github.com/Wube/Factorio")))
+      (org-add-link-type "x-git-commit" 'org-x-git-commit-open)
+      (defun org-x-git-commit-open (linkbody)
+	"Visit the commit in some web interface"
+	(org-open-link-from-string
+	 (let ((link-info (tog-parse-x-git-commit-url-body linkbody)))
+	   (tog-generate-git-commit-web-link
+	    (alist-get 'commit-id link-info)
+	    (alist-get 'repository link-info)))))
+      ))
 
 ;; Minor mode to help track time while staining
 ;; pieces of wood so I don't get as many keys stained
