@@ -75,12 +75,12 @@
 	(cons (cons (intern (car asploded)) (cadr asploded))
 	      (tog-parse-query-string-parts-to-alist remaining-parts))))))
 
-(tog-parse-query-string-to-alist "foo=bar&baz=quux")
-
 (defun tog-parse-query-string-to-alist (qs)
   (if (or (eq nil qs) (string= "" qs))
       '()
     (tog-parse-query-string-parts-to-alist (split-string qs "&"))))
+
+(tog-parse-query-string-to-alist "foo=bar&baz=quux")
 
 (defun tog-parse-x-git-commit-url-body (urlbody)
   (let ((splitq (split-string urlbody "?")))
