@@ -13,8 +13,10 @@
 (setq org-default-notes-file "~/job/EarthIT/timelog/notes.org")
 ; (setq org-default-notes-file (concat org-directory "/notes.org"))
 
+;; C-c {t|n} to add a todo or a note:
+
 (setq org-capture-templates
-      '(("t" "Todo" checkitem (file+headline "~/job/EarthIT/timelog/todo.org" "To be prioritized")
-	 "[ ] %? %U")
-	("j" "Journal" entry (file "~/job/EarthIT/timelog/notes.org")
+      '(("t" "Todo" entry (file+headline "~/job/EarthIT/timelog/tog.todo.org" "To be prioritized")
+	 "** %?\n\n%U")
+	("n" "Note" entry (file "~/job/EarthIT/timelog/notes.org")
 	 "* %?\nEntered on %U from file:%F")))
