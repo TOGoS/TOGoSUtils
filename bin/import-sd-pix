@@ -11,6 +11,7 @@ printusage() {
     echo "Where <device> is something like 'sdd1'"
 }
 
+tz_check_enabled=1
 dev=""
 extra_args=()
 
@@ -21,6 +22,8 @@ do
 	if [ $arg == '--help' ] || [ $arg == '-?' ] ; then
 	    printusage
 	    exit
+	elif [[ $arg == --no-tz-check ]] ; then
+	    tz_check_enabled=
 	elif [[ $arg =~ -(.*) ]] ; then
 	    echo "$myname: Error: first argument must be the device name" >&2
 	    printusage >&2
@@ -37,6 +40,12 @@ do
     fi
     shift
 done
+
+if [ "$TZ" != "STD+6" ] && [ -n "$tz_check_enabled" ]
+then
+    echo "Plz set TZ=STD+6, or say --no-tz-check" >&2
+    exit 1
+fi
 
 if [ -z "${dev}" ] ; then
     echo "$myname: Error: No device specified" >&2
