@@ -73,7 +73,7 @@ kill_copy_process() {
 $HOME/proj/TOGoSUtils/bin/copy-incoming-pix \
     -image-dest $HOME/incoming/images/TOGoS/photos \
     -video-dest $HOME/incoming/video/TOGoS/vhotos \
-    /mnt/${dev} "{$extra_args[@]}" &
+    /mnt/${dev} "${extra_args[@]}" &
 copy_pid="$!"
 trap "kill_copy_process $copy_pid" INT
 
