@@ -70,7 +70,6 @@ kill_copy_process() {
     kill $1
 }
 
-export TZ=America/Chicago
 $HOME/proj/TOGoSUtils/bin/copy-incoming-pix \
     -image-dest $HOME/incoming/images/TOGoS/photos \
     -video-dest $HOME/incoming/video/TOGoS/vhotos \
