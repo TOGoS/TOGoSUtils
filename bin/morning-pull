@@ -1,0 +1,116 @@
+#!/usr/bin/env node
+
+const repoNames = [
+   "TOGoS/docs/doke",
+	"TOGoS/docs/ArchiveInfo",
+   "TOGoS/docs/ProjectNotes2",
+   "TOGoS/job/EarthIT/timelog",
+   "TOGoS/job/Factorio/notes",
+   "TOGoS/proj/TOGoSUtils",
+];
+
+// Given a repo/project name like "TOGoS/docs/ProjectNotes2",
+// return only the project name, like "ProjectNotes2"
+function toGithubProjectName( repoName ) {
+	if( (m = /^TOGoS\/.*\/([^\/]+)$/.exec(repoName)) ) {
+		return "TOGoS/"+m[1];
+	}
+}
+
+const remoteGenerators = [
+	(repoName) => [{name: "fs.marvin", url: "ssh://tog@fs.marvin.nuke24.net/~tog/git/"+repoName+".git"}],
+	(repoName) => [{name: "toggh1", url: "ssh://tog@toggh1.nuke24.net/~tog/git/"+repoName+".git"}],
+	(repoName) => [{name: "github", url: "ssh://git@github.com/"+toGithubProjectName(repoName)+".git"}],
+	(repoName) => [{name: "gitlab", url: "ssh://git@gitlab.com/"+toGithubProjectName(repoName)+".git"}],
+];
+
+var fsu = require('../lib/node/FSUtil');
+var ExternalProcessRunner = require('../lib/node/ExternalProcessRunner').default;
+
+var homeDirCandidates = [
+	process.env.HOME,
+	process.env.USERPROFILE,
+   process.env.HOMEDRIVE + process.env.HOMEPATH,
+	'D:',
+];
+var stuffPostfixCandidates = ['', '/stuff']
+
+function findRepo(repoName) {
+	var m;
+	var promises = [];
+	if( (m = /TOGoS\/(.*)/.exec(repoName)) ) {
+		var mainName = m[1];
+		for( var hd in homeDirCandidates ) {
+			var homeDir = homeDirCandidates[hd];
+			if( homeDir == undefined ) continue;
+			for( var pc in stuffPostfixCandidates ) {
+				var stuffPostfix = stuffPostfixCandidates[pc];
+				(fullPath => promises.push( fsu.stat(fullPath).then( stat => stat.isDirectory() ? [fullPath] : [], error => {
+					//console.error(error);
+					return []
+				})))(homeDir + stuffPostfix + "/" + mainName);
+			}
+		}
+	}
+	return Promise.all(promises).then( allLists => [].concat.apply([], allLists) )
+}
+
+const xpr = new ExternalProcessRunner();
+//xpr.logger = console;
+
+function updateRepo(path, repoName) {
+	return fsu.readFileToString(path+"/.git/HEAD").then( headStr => {
+		return headStr.trim().split(/:\s+/)[1];
+	}).then( headName => {
+		if( headName != "refs/heads/master" ) return Promise.reject(new Error("Not on master; HEAD="+headName));
+	}).then( () => {
+		var remotes = [];
+		remoteGenerators.forEach( gen => {
+			remotes = remotes.concat( gen(repoName) );
+		});
+		var prom = Promise.resolve();
+		var successfulPullCount = 0;
+		var errorsByRemote = {};
+		remotes.forEach( remote => {
+			prom = prom.then( () => {
+				var cmdOpts = {
+					cwd: path,
+					silent: true,
+					onNz: 'error',
+				};
+				//console.log("cd "+path+" && git pull "+remote.url+" master");
+				return xpr.doCmd(["git","pull",remote.url,"master"], cmdOpts).then( () => {
+					++successfulPullCount;
+				});
+			}).catch( err => {
+				//console.error("Error pulling from "+remote.url);
+				errorsByRemote[remote.name] = [err];
+			});
+		});
+		return prom.then( () => ({
+			successfulPullCount,
+			errorsByRemote,
+		}));
+	});
+}
+
+repoNames.forEach( repoName => {
+	findRepo(repoName).then( paths => {
+		//console.log(repoName + " -> " + paths.join(", "))
+		paths.forEach( path => {
+			updateRepo(path, repoName).then( result => {
+				if( result.successfulPullCount > 0 ) {
+					console.log("Updated "+path);
+				} else {
+					var remotesList = [];
+					for( var remoteName in result.errorsByRemote ) {
+						remotesList.push("- "+remoteName+": "+result.errorsByRemote[remoteName][0].message);
+					}
+					console.error("Did not update "+path+": no pulls were successful; attempted remotes:\n"+remotesList.join("\n"));
+				}
+			}, error => {
+				console.error("Did not update "+path+": "+error.message);
+			});
+		});
+	})
+})
