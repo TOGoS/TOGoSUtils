@@ -1,0 +1,118 @@
+#!/usr/bin/bash
+
+set -euo pipefail
+
+recreate=""
+albumtitle=""
+mode=dryrun
+
+# I usually run this on a Windows box.
+process_m3u() {
+	process-m3u.bat "$@"
+}
+annotate_m3u() {
+	ccouch3.bat annotate-m3u "$@"
+}
+create_sfv() {
+	'C:\Program Files\QuickSFV\quicksfv.exe' -c "$@"
+}
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	--run)
+	    mode=run
+	    ;;
+	--recreate)
+		recreate=1
+		;;
+	-help|--help|-h|-?)
+		mode=help
+		;;
+	*)
+	    albumtitle="$key"
+	    ;;
+    esac
+    shift
+done
+
+if [ "$mode" == "help" ] ; then
+	echo 'Usage: finishalbum [--run] <Album_Title>'
+	echo
+	echo "Get you a music album folder ready for archiving"
+	echo "by generating M3U, SFV, cover art files, checking that files"
+	echo "are in order, etc"
+	echo
+	echo "Album_Title is used as part of the file names, as in 00-<album_title_goes_here>.m3u."
+	echo "Usually this includes artist name."
+	echo
+	echo "Will advise but not actually touch anything unless '--run' is specified"
+	exit
+fi
+
+
+if [ -z "$albumtitle" ]
+then
+	echo "No Album_Title specified (should be sole argument)" >&2
+	exit 1
+fi
+
+cover_art_file="00-${albumtitle}-cover-art.jpg"
+m3u_file="00-${albumtitle}.m3u"
+sfv_file="00-${albumtitle}.sfv"
+is_complete="1"
+
+echo -n "$cover_art_file..."
+if [ -f "$cover_art_file" ] ; then
+	echo 'exists'
+else
+	echo 'not found; go download something?'
+	is_complete=""
+fi
+
+echo -n "$m3u_file..."
+if [ -z "$recreate" ] && [ -f "$m3u_file" ] ; then
+	echo "exists"
+elif [ "$mode" == "run" ] ; then
+	echo "generating..."
+	echo '$ ls *.mp3 | process-m3u -add-extinf | ccouch3 annotate-m3u >"'$m3u_file'"'
+	ls *.mp3 | process_m3u -add-extinf | annotate_m3u >"$m3u_file" || true
+	
+	m3u_size="$(wc -c < "$m3u_file")"
+	if [ ! -f "$m3u_file" ] ; then
+		echo "Error: $m3u_file did not create." >$2
+		is_complete=""
+	elif [ $m3u_size == "0" ] ; then
+		echo "Error: $m3u_file ended up being zero-sized.  Deleting." >$2
+		rm -f "$m3u_file"
+		is_complete=""
+	fi
+else
+	echo "missing"
+	is_complete=""
+fi
+
+echo -n "$sfv_file..."
+if [ -z "$recreate" ] && [ -f "$sfv_file" ] ; then
+	echo "exists"
+elif [ "$mode" == "run" ] ; then
+	echo "generating..."
+	if (create_sfv "$sfv_file.0" *.mp3) && (grep -v ';' "$sfv_file.0" > "$sfv_file") && [ -f "$sfv_file" ]; then
+		rm "$sfv_file.0"
+		echo "created"
+	else
+		echo "failed to create"
+		is_complete=""
+	fi
+else
+	echo "missing"
+	is_complete=""
+fi
+
+if [ -n "$is_complete" ] ; then
+	echo 'Album directory complete!'
+else
+	echo "Album directory is not complete."
+	exit 1
+fi
