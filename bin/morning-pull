@@ -2,6 +2,8 @@
 
 const repoNames = [
 	"TOGoS/docs/doke",
+	"TOGoS/docs/imps",
+	"TOGoS/docs/financial/4909",
 	"TOGoS/docs/ArchiveInfo",
 	"TOGoS/docs/ProjectNotes2",
 	"TOGoS/job/EarthIT/timelog",
