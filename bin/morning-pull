@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 const repoNames = [
-   "TOGoS/docs/doke",
+	"TOGoS/docs/doke",
 	"TOGoS/docs/ArchiveInfo",
-   "TOGoS/docs/ProjectNotes2",
-   "TOGoS/job/EarthIT/timelog",
-   "TOGoS/job/Factorio/notes",
-   "TOGoS/proj/TOGoSUtils",
+	"TOGoS/docs/ProjectNotes2",
+	"TOGoS/job/EarthIT/timelog",
+	"TOGoS/job/Factorio/notes",
+	"TOGoS/proj/TOGoSUtils",
 ];
 
 // Given a repo/project name like "TOGoS/docs/ProjectNotes2",
@@ -30,7 +30,7 @@ var ExternalProcessRunner = require('../lib/node/ExternalProcessRunner').default
 var homeDirCandidates = [
 	process.env.HOME,
 	process.env.USERPROFILE,
-   process.env.HOMEDRIVE + process.env.HOMEPATH,
+	process.env.HOMEDRIVE + process.env.HOMEPATH,
 	'D:',
 ];
 var stuffPostfixCandidates = ['', '/stuff']
