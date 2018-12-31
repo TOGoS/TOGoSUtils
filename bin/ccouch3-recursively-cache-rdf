@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Cache only x-rdf-subjext:-prefixed URIs
+# Pass URIs on the command-line to cache
+
+sector=user
+things=()
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-sector)
+	    sector="$2"
+	    shift
+	    ;;
+	*)
+	    things+=("$key")
+	    ;;
+    esac
+    shift
+done
+
+extract_directory_urns() {
+    grep -o "x-rdf-subject:[^"'"'"]*"
+}
+
+strip_rdf_subject() {
+    sed -e 's/^x-rdf-subject://'
+}
+
+cache_recursively() {
+    if [ "$#" -gt 0 ] ; then
+	echo "Caching $@..."
+	ccouch3-cache -sector "$sector" "$@"
+	cache_recursively $(ccouch cat "$@" | extract_directory_urns | strip_rdf_subject)
+    fi
+}
+
+cache_recursively $(echo "${things[@]}" | strip_rdf_subject)
