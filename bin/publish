@@ -26,8 +26,21 @@ done
 # echo "publish: Upload options: $recurse_opt"
 # echo "publish: Publishing ${things[@]}..."
 
-ccouch3 id "${things[@]}"
 #ccouch3 store-stream "${things[@]}"
+
+domain=wherever-files
+if [[ $sector == pictures ]] ; then
+    domain="picture-files.nuke24.net"
+elif [[ $sector == music ]] ; then
+    domain="music-files.nuke24.net"
+fi
+
+for thing in $things
+do
+    urn=$(ccouch3 id "$thing")
+    fn=$(basename "$thing")
+    echo "http://$domain/uri-res/raw/$urn/$fn"
+done
 
 set -x
 exec ccouch3 upload \
