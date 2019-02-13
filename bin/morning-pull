@@ -3,11 +3,13 @@
 const repoNames = [
 	"TOGoS/docs/doke",
 	"TOGoS/docs/imps",
+	"TOGoS/docs/meeting-notes",
 	"TOGoS/docs/financial/4909",
 	"TOGoS/docs/ArchiveInfo",
 	"TOGoS/docs/ProjectNotes2",
 	"TOGoS/job/EarthIT/timelog",
 	"TOGoS/job/Factorio/notes",
+	"TOGoS/job/SA/notes",
 	"TOGoS/proj/TOGoSUtils",
 ];
 
