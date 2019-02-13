@@ -51,21 +51,27 @@ var stuffPostfixCandidates = ['', '/stuff']
 function findRepo(repoName) {
 	var m;
 	var promises = [];
+	var allPaths = [];	
 	if( (m = /TOGoS\/(.*)/.exec(repoName)) ) {
 		var mainName = m[1];
-		for( var hd in homeDirCandidates ) {
-			var homeDir = homeDirCandidates[hd];
+		var homeDir;
+		var stuffPostfix;
+		var hd;
+		var pc;
+		for( hd in homeDirCandidates ) {
+			homeDir = homeDirCandidates[hd];
 			if( homeDir == undefined ) continue;
-			for( var pc in stuffPostfixCandidates ) {
-				var stuffPostfix = stuffPostfixCandidates[pc];
-				(fullPath => promises.push( fsu.stat(fullPath).then( stat => stat.isDirectory() ? [fullPath] : [], error => {
-					//console.error(error);
-					return []
+			for( pc in stuffPostfixCandidates ) {
+				stuffPostfix = stuffPostfixCandidates[pc];
+				(fullPath => promises.push( fsu.stat(fullPath).then(stat => {
+					if( stat.isDirectory() ) allPaths.push(fullPath);
+				}, error => {
+					// Do nothing
 				})))(homeDir + stuffPostfix + "/" + mainName);
 			}
 		}
 	}
-	return Promise.all(promises).then( allLists => [].concat.apply([], allLists) )
+	return Promise.all(promises).then( () => allPaths );
 }
 
 const xpr = new ExternalProcessRunner();
