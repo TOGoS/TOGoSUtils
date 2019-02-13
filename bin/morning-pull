@@ -13,6 +13,15 @@ const repoNames = [
 	"TOGoS/proj/TOGoSUtils",
 ];
 
+function listToSet(list, filter) {
+	var set = {};
+	for( var i in list ) {
+		var v = filter(list[i]);
+		if( v != undefined ) set[v] = v;
+	}
+	return set;
+}
+
 // Given a repo/project name like "TOGoS/docs/ProjectNotes2",
 // return only the project name, like "ProjectNotes2"
 function toGithubProjectName( repoName ) {
@@ -31,12 +40,12 @@ const remoteGenerators = [
 var fsu = require('../lib/node/FSUtil');
 var ExternalProcessRunner = require('../lib/node/ExternalProcessRunner').default;
 
-var homeDirCandidates = [
+var homeDirCandidates = listToSet([
 	process.env.HOME,
 	process.env.USERPROFILE,
 	process.env.HOMEDRIVE + process.env.HOMEPATH,
 	'D:',
-];
+], (x) => (x != null && x != '') ? x : undefined);
 var stuffPostfixCandidates = ['', '/stuff']
 
 function findRepo(repoName) {
