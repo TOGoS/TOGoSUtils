@@ -8,6 +8,10 @@
   (interactive)
   (insert "http://picture-files.nuke24.net/uri-res/raw/"))
 (global-set-key (kbd "C-x p f") 'insert-picture-files-url-prefix)
+(defun insert-factorio-github-commit-prefix ()
+  (interactive)
+  (insert "https://github.com/wube/Factorio/commit/"))
+(global-set-key (kbd "C-x g f c") 'insert-factorio-github-commit-prefix)
 
 (defun insert-open-angle-quote () (interactive) (insert "‹"))
 (global-set-key (kbd "C-x a ,") 'insert-open-angle-quote)
