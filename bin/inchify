@@ -1,27 +1,5 @@
 #!/usr/bin/env node
 
-let denominator = 16;
-
-let mode = 'normal';
-let inputStrings = [];
-
-const numberArgRegex = /^--(\d+)$/;
-const regularArgRegex = /^[^-]/;
-    
-for( let i=2; i<process.argv.length; ++i ) {
-   let arg = process.argv[i];
-   let m;
-   if( (m = numberArgRegex.exec(arg)) ) {
-      denominator = +m[1];
-   } else if( regularArgRegex.exec(arg) ) {
-      inputStrings.push(arg);
-	} else if( arg == '--diagonal' ) {
-		mode = 'diagonal';
-   } else {
-      throw new Error("Unrecognized argument: "+arg);
-   }
-}
-
 // A 'complex amount' is a thing like: {<unit> => {numerator:<n>, denominator:<d>}}
 
 function parseComplexAmount(amtStr) {
@@ -53,6 +31,7 @@ function formatComplexAmount(amt) {
 		if( q.denominator == 1 ) {
 			pParts.push(formatFraction(q.numerator, q.denominator));
 		} else {
+			// TODO: Handle negatives!!!
 			let wholes = Math.floor(q.numerator / q.denominator);
 			let num = q.numerator - wholes*q.denominator;
 
@@ -65,19 +44,45 @@ function formatComplexAmount(amt) {
 	return parts.join(" + ");
 }
 
-function toInches(amt) {
-	let totalInches = 0;
+const micrometerUnitValues = {
+	'µm': 1,
+	'mm': 1000,
+	'cm': 10000,
+	'in': 25400,
+	'mil': 25.4,
+};
+const unitAliases = {
+	'um': 'µm',
+	'inch': 'in',
+	'inches': 'inch',
+};
+
+// We'll use micrometers internally so that inches can be an integer multiple
+function complexAmountToMicrometers(amt) {
+	let totalMicrometers = 0;
 	for( let unitCode in amt ) {
 		let q = amt[unitCode];
-		let multiplier;
-		if( unitCode == 'in' || unitCode == 'inch' || unitCode == 'inches' ) multiplier = 1;
-		else if( unitCode == 'mm' ) multiplier = 1/25.4;
-		else if( unitCode == 'cm' ) multiplier = 1/2.54;
-		else throw new Error("Unrecognized unit: "+unitCode);
+		if( unitAliases[unitCode] ) unitCode = unitAliases[unitCode];
+		let multiplier = micrometerUnitValues[unitCode];
+		if( multiplier == undefined ) throw new Error("Unrecognized unit: "+unitCode);
 
-		totalInches += multiplier * q.numerator / q.denominator;
+		totalMicrometers += multiplier * q.numerator / q.denominator;
 	}
-	return totalInches;
+	return totalMicrometers;
+}
+
+function micrometersToInches(um) {
+	return um / 25400;
+}
+
+
+function scaleComplexAmount(amt, scale) {
+	let scaled = {};
+	for( let unitCode in amt ) {
+		let q = amt[unitCode];
+		scaled[unitCode] = {numerator:q.numerator * scale, denominator:q.denominator};
+	}
+	return scaled;
 }
 
 function denominateComplexAmount(amt, denominator) {
@@ -92,20 +97,54 @@ function denominateComplexAmount(amt, denominator) {
 	return fixed;
 }
 
-if( mode == 'diagonal' ) {
-	let totalSquared = 0;
-	for( let i in inputStrings ) {
-		let amt = parseComplexAmount(inputStrings[i]);
-		let inches = toInches(amt);
-		totalSquared += inches*inches;
+
+if( typeof(module) != 'undefined' && typeof(require) != 'undefined' && module == require.main ) {
+	let denominator = 16;
+	
+	let mode = 'normal';
+	let inputStrings = [];
+	
+	const numberArgRegex = /^--(\d+)$/;
+	const regularArgRegex = /^[^-]/;
+   
+	for( let i=2; i<process.argv.length; ++i ) {
+		let arg = process.argv[i];
+		let m;
+		if( (m = numberArgRegex.exec(arg)) ) {
+			denominator = +m[1];
+		} else if( regularArgRegex.exec(arg) ) {
+			inputStrings.push(arg);
+		} else if( arg == '--diagonal' ) {
+			mode = 'diagonal';
+		} else {
+			throw new Error("Unrecognized argument: "+arg);
+		}
 	}
-	let amt = {"in": {numerator: Math.sqrt(totalSquared), denominator:1}};
-	console.log("diagonal = "+formatComplexAmount(amt));
-} else {
-	for( let i in inputStrings ) {
-		let amt = parseComplexAmount(inputStrings[i]);
-		amt = {"in": {numerator:toInches(amt), denominator:1}};
-		amt = denominateComplexAmount(amt, denominator);
-		console.log(inputStrings[i] + " = " + formatComplexAmount(amt));
+	
+	if( mode == 'diagonal' ) {
+		let totalSquared = 0;
+		for( let i in inputStrings ) {
+			let amt = parseComplexAmount(inputStrings[i]);
+			let micrometers = complexAmountToMicrometers(amt);
+			totalSquared += micrometers*micrometers;
+		}
+		let amt = {"in": {numerator: micrometersToInches(Math.sqrt(totalSquared)), denominator:1}};
+		console.log("diagonal = "+formatComplexAmount(amt));
+	} else {
+		for( let i in inputStrings ) {
+			let amt = parseComplexAmount(inputStrings[i]);
+			amt = {"in": {numerator:micrometersToInches(complexAmountToMicrometers(amt)), denominator:1}};
+			amt = denominateComplexAmount(amt, denominator);
+			console.log(inputStrings[i] + " = " + formatComplexAmount(amt));
+		}
 	}
 }
+
+module.exports = {
+	parseComplexAmount,
+	formatComplexAmount,
+	scaleComplexAmount,
+	complexAmountToMicrometers,
+	micrometersToInches,
+	denominateComplexAmount
+};
