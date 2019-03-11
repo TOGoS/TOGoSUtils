@@ -15,7 +15,7 @@ for( let i=2; i<process.argv.length; ++i ) {
 	let arg = process.argv[i];
 	let m;
 	if( (m = /^--dividers=(\d+)$/.exec(arg)) ) {
-		dividerCount += arg;
+		dividerCount += +m[1];
 	} else if( (m = numberArgRegex.exec(arg)) ) {
 		denominator = +m[1];
 	} else if( (m = /^--thickness=(.*)$/.exec(arg)) ) {
@@ -33,16 +33,17 @@ if( dims.length != 3 ) {
 	throw new Error("Give me a width, height, and depth.  Gave "+dims.length+" dimensions");
 }
 
-console.log("Board thickness: "+ca.formatComplexAmount(thickness));
-console.log("Dado depth: "+ca.formatComplexAmount(dadoDepth));
-
 let caToUm = ca.complexAmountToMicrometers
 let remainderUm = caToUm(thickness) - caToUm(dadoDepth);
-console.log("Thickness behind dados: "+ca.formatComplexAmount(umToCa(remainderUm)));
 let dimsUm = dims.map(caToUm);
 function umToCa(um) {
 	return {"in": {numerator: um/25400, denominator:1}};
 }
+
+console.log("Board thickness: "+ca.formatComplexAmount(thickness));
+console.log("Dado depth: "+ca.formatComplexAmount(dadoDepth));
+console.log("Thickness behind dados: "+ca.formatComplexAmount(umToCa(remainderUm)));
+console.log("Box dimensions: "+dims.map(ca.formatComplexAmount).join(" x "));
 
 let cuts = [];
 cuts.push( {count: 2, name:"top/bottom", dimensions:[dims[0], dims[2]]} );
@@ -54,9 +55,20 @@ for( let c in cuts ) {
 	longestNameLength = Math.max(longestNameLength, cuts[c].name);
 }
 
+function denfmt(amt) {
+	return ca.formatComplexAmount(ca.denominateComplexAmount(amt, denominator));
+}
+
 console.log();
 console.log("Cuts: ");
 for( let c in cuts ) {
 	let cut = cuts[c];
-	console.log("  (" + cut.count + ") " + cut.dimensions.map(dim => ca.formatComplexAmount(ca.denominateComplexAmount(dim, denominator))).join(" x ") + " -- " + cut.name)
+	let diagSquared = 0;
+	for( let d in cut.dimensions ) {
+		let dimUm = caToUm(cut.dimensions[d]);
+		diagSquared += dimUm*dimUm;
+	}
+	let diag = umToCa(Math.sqrt(diagSquared));
+	let dimsStr = cut.dimensions.map(denfmt).join(" x ");
+	console.log("  (" + cut.count + ") " + dimsStr + " -- diagonal: "+denfmt(diag)+" -- " + cut.name)
 }
