@@ -13,6 +13,11 @@
   (insert "https://github.com/wube/Factorio/commit/"))
 (global-set-key (kbd "C-x g f c") 'insert-factorio-github-commit-prefix)
 
+(defun insert-github-factorio-commit-url-prefix ()
+  (interactive)
+  (insert "https://github.com/Wube/Factorio/commit/"))
+(global-set-key (kbd "C-x g f c") 'insert-github-factorio-commit-url-prefix)
+
 (defun insert-open-angle-quote () (interactive) (insert "‹"))
 (global-set-key (kbd "C-x a ,") 'insert-open-angle-quote)
 
