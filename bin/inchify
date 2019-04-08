@@ -129,6 +129,7 @@ if( typeof(module) != 'undefined' && typeof(require) != 'undefined' && module ==
 			totalSquared += micrometers*micrometers;
 		}
 		let amt = {"in": {numerator: micrometersToInches(Math.sqrt(totalSquared)), denominator:1}};
+		amt = denominateComplexAmount(amt, denominator);
 		console.log("diagonal = "+formatComplexAmount(amt));
 	} else {
 		for( let i in inputStrings ) {
