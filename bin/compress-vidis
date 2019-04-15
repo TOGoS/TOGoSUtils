@@ -8,6 +8,8 @@ module TOGoS ; class VidiProcessor
   attr_accessor :fps
   attr_accessor :ao_opts
   attr_accessor :vo_opts
+  # Useful options for rotate are 1 = 90 deg clockwise, 2 = 90 degrees counterclockwise
+  # See http://www.dzhang.com/blog/2011/12/25/basic-video-manipulation-with-ffmpeg
   attr_accessor :rotate
   
   def initialize
