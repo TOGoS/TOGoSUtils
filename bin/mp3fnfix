@@ -54,7 +54,7 @@ for( let i=0; i<argv.length; ++i ) {
 		console.error(argv0+": Error: Unrecognized argument: '"+arg+"''; maybe try --help");
 		process.exit(1);
 	} else {
-		dirs.push(dir);
+		dirs.push(arg);
 	}
 }
 
