@@ -11,6 +11,8 @@ const repoNames = [
 	"TOGoS/job/Factorio/notes",
 	"TOGoS/job/SA/notes",
 	"TOGoS/proj/TOGoSUtils",
+	"TOGoS/sites/nuke24",
+	"TOGoS/sites/dp",
 ];
 
 function listToSet(list, filter) {
