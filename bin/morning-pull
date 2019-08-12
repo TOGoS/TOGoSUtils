@@ -3,6 +3,7 @@
 const repoNames = [
 	"TOGoS/docs/doke",
 	"TOGoS/docs/imps",
+	"TOGoS/docs/job",
 	"TOGoS/docs/meeting-notes",
 	"TOGoS/docs/financial/4909",
 	"TOGoS/docs/ArchiveInfo",
