@@ -148,9 +148,9 @@ def transfer_file( source, dest )
   
   case $transfer_mode
   when :copy
-    copy_file( source, dest )
+    return copy_file( source, dest )
   when :hardlink
-    link_file( source, dest )
+    return link_file( source, dest )
   else
     raise "Unrecognized transfer mode (indicates bug in #{File.basename($0)}): '#{$transfer_mode}'"
   end
@@ -190,6 +190,8 @@ def figger_mtime( file )
     return Time.at(0)
   end
 end
+
+# TODO: Probably rename and/or repurpose these to make more sense lol
 
 $files_found     = 0
 $files_ignored   = 0
@@ -277,4 +279,7 @@ end
 
 if $verbose
   STDERR.puts
+  STDERR.puts "Relevant files processed: #{$files_processed}"
+  STDERR.puts "Files copied: #{$files_copied}"
+  STDERR.puts "Files skipped: #{$files_existing}"
 end
