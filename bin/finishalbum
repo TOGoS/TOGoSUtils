@@ -47,7 +47,8 @@ if [ "$mode" == "help" ] ; then
 	echo "Album_Title is used as part of the file names, as in 00-<album_title_goes_here>.m3u."
 	echo "Usually this includes artist name."
 	echo
-	echo "Will advise but not actually touch anything unless '--run' is specified"
+	echo "Will advise but not actually touch anything unless '--run' is specified,"
+	echo "in which case an attempt will be made to generate M3U and SVF files."
 	exit
 fi
 
@@ -98,7 +99,7 @@ if [ -z "$recreate" ] && [ -f "$sfv_file" ] ; then
 	echo "exists"
 elif [ "$mode" == "run" ] ; then
 	echo "generating..."
-	if (create_sfv "$sfv_file.0" *.mp3) && (grep -v ';' "$sfv_file.0" > "$sfv_file") && [ -f "$sfv_file" ]; then
+	if (create_sfv "$sfv_file.0" *.mp3 *.ogg *.flac) && (grep -v ';' "$sfv_file.0" > "$sfv_file") && [ -f "$sfv_file" ]; then
 		rm "$sfv_file.0"
 		echo "created"
 	else
