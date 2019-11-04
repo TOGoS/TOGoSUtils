@@ -83,6 +83,10 @@ function findRepo(repoName) {
 const xpr = new ExternalProcessRunner();
 //xpr.logger = console;
 
+let remoteFilter = (remote) => {
+	return true;
+}
+
 function updateRepo(path, repoName) {
 	return fsu.readFileToString(path+"/.git/HEAD").then( headStr => {
 		return headStr.trim().split(/:\s+/)[1];
@@ -96,7 +100,7 @@ function updateRepo(path, repoName) {
 		var prom = Promise.resolve();
 		var successfulPullCount = 0;
 		var errorsByRemote = {};
-		remotes.forEach( remote => {
+		remotes.filter( remoteFilter ).forEach( remote => {
 			prom = prom.then( () => {
 				var cmdOpts = {
 					cwd: path,
@@ -119,23 +123,54 @@ function updateRepo(path, repoName) {
 	});
 }
 
-repoNames.forEach( repoName => {
-	findRepo(repoName).then( paths => {
-		//console.log(repoName + " -> " + paths.join(", "))
-		paths.forEach( path => {
-			updateRepo(path, repoName).then( result => {
-				if( result.successfulPullCount > 0 ) {
-					console.log("Updated "+path);
-				} else {
-					var remotesList = [];
-					for( var remoteName in result.errorsByRemote ) {
-						remotesList.push("- "+remoteName+": "+result.errorsByRemote[remoteName][0].message);
+let processArgsPromise = new Promise((resolve,reject) => {
+	let selfName = process.argv[1];
+	for( let i=2; i<process.argv.length; ++i ) {
+		let m;
+		let arg = process.argv[i];
+		if( (m = /^--remotes=(.*)$/.exec(arg)) ) {
+			let remoteNames = m[1].split(',');
+			remoteFilter = (remote) => {
+				return remoteNames.indexOf(remote.name) >= 0;
+			};
+		} else if( arg == "--help" || arg == "-?" ) {
+			console.log("Usage: "+selfName+" [--remotes=<remote1>,<remote2>...]");
+			reject(0);
+		} else {
+			console.error("Error: Unrecognized argument: "+arg);
+			console.error("Try '"+selfName+" --help' for help");
+			reject(1);
+		}
+	}
+	resolve();
+});
+
+processArgsPromise.then( (exitCode) => {
+	repoNames.forEach( repoName => {
+		findRepo(repoName).then( paths => {
+			//console.log(repoName + " -> " + paths.join(", "))
+			paths.forEach( path => {
+				updateRepo(path, repoName).then( result => {
+					if( result.successfulPullCount > 0 ) {
+						console.log("Updated "+path);
+					} else {
+						var remotesList = [];
+						for( var remoteName in result.errorsByRemote ) {
+							remotesList.push("- "+remoteName+": "+result.errorsByRemote[remoteName][0].message);
+						}
+						console.error("Did not update "+path+": no pulls were successful; attempted remotes:\n"+remotesList.join("\n"));
 					}
-					console.error("Did not update "+path+": no pulls were successful; attempted remotes:\n"+remotesList.join("\n"));
-				}
-			}, error => {
-				console.error("Did not update "+path+": "+error.message);
+				}, error => {
+					console.error("Did not update "+path+": "+error.message);
+				});
 			});
-		});
+		})
 	})
-})
+}).catch( (err) => {
+	if( typeof(err) == 'number' ) {
+		process.exit(err);
+	} else {
+		console.error(err.stack);
+		process.exit(1);
+	}
+});
