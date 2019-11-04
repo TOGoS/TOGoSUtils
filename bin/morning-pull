@@ -158,7 +158,8 @@ processArgsPromise.then( (exitCode) => {
 						for( var remoteName in result.errorsByRemote ) {
 							remotesList.push("- "+remoteName+": "+result.errorsByRemote[remoteName][0].message);
 						}
-						console.error("Did not update "+path+": no pulls were successful; attempted remotes:\n"+remotesList.join("\n"));
+						console.error("Did not update "+path+": no pulls were successful; "+
+							(remotesList.length > 0 ? "attempted remotes:\n"+remotesList.join("\n") : "no remotes configured!"));
 					}
 				}, error => {
 					console.error("Did not update "+path+": "+error.message);
