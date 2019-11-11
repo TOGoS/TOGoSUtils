@@ -109,6 +109,56 @@
 	(concat (match-string 1 repository-url) "/commit/" commit-id)
       (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
 
+(defun find-tog-proj-dir-in (projname stuffdirlist)
+  (if stuffdirlist
+      (let ((potentialprojdir (concat (car stuffdirlist) "/" projname)))
+	(if (file-directory-p potentialprojdir) potentialprojdir
+	  (find-tog-proj-dir-in projname (cdr stuffdirlist))))
+    nil))
+
+(defun find-tog-proj-dir (projname)
+  (find-tog-proj-dir-in projname
+			(list (getenv "HOME")
+			      (getenv "USERPROFILE")
+			      (concat (getenv "USERPROFILE") "/stuff"))))
+
+(defun find-tog-proj-file (projname file)
+  (let ((dir (find-tog-proj-dir projname)))
+    (and dir (concat dir "/" file))))
+
+(defun find-eit-timelog-file ()
+  (find-tog-proj-file "job/EarthIT/timelog" "timelog.txt"))
+
+(defun find-todays-jht-notes-file ()
+  (let ((jhtnotesdir (find-tog-proj-dir "job/JHT/notes"))
+	(datestr (format-time-string "%Y/%m/%Y%m%d")))
+    (if jhtnotesdir (concat jhtnotesdir "/" datestr "-jht-notes.org") nil)))
+
+(defun visit-tog-proj-file (projname file)
+  (interactive "MProject name:\nMFile:")
+  (let ((fullpath (find-tog-proj-file projname file)))
+    (if fullpath (find-file fullpath)
+      (error (concat "Could not find project '" projname "'")))))
+
+(defun visit-todays-doke-entry ()
+  (interactive)
+  (visit-tog-proj-file "docs/doke" (concat "entries/" (format-time-string "%Y-%m-%d")))
+  (if (= (buffer-size) 0)
+      (insert "date: " (format-time-string "%Y-%m-%d") "\n\n")))
+
+(defun visit-eit-timelog ()
+  (interactive)
+  (find-file (find-eit-timelog-file))
+  (end-of-buffer)
+  (search-backward-regexp "^= "))
+
+(defun visit-todays-jht-notes ()
+  (interactive)
+  (find-file (find-todays-jht-notes-file))
+  (if (= (buffer-size) 0)
+      (insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n"))
+  (end-of-buffer))
+
 ;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
 ;(tog-parse-x-git-commit-url-body "asdf?no-repo=Hello")
 ;(tog-generate-git-commit-web-link
