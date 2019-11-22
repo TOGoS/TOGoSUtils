@@ -1,41 +1,8 @@
-(defun insert-name-in-database-template ()
-  (interactive)
-  (insert "name in database @ \"\"")
-  (backward-char))
-(global-set-key (kbd "C-x a n") 'insert-name-in-database-template)
-
-(defun insert-picture-files-url-prefix ()
-  (interactive)
-  (insert "http://picture-files.nuke24.net/uri-res/raw/"))
-(global-set-key (kbd "C-x p f") 'insert-picture-files-url-prefix)
-(defun insert-factorio-github-commit-prefix ()
-  (interactive)
-  (insert "https://github.com/wube/Factorio/commit/"))
-(global-set-key (kbd "C-x g f c") 'insert-factorio-github-commit-prefix)
-
-(defun insert-github-factorio-commit-url-prefix ()
-  (interactive)
-  (insert "https://github.com/Wube/Factorio/commit/"))
-(global-set-key (kbd "C-x g f c") 'insert-github-factorio-commit-url-prefix)
-
-(defun insert-open-angle-quote () (interactive) (insert "‹"))
-(global-set-key (kbd "C-x a ,") 'insert-open-angle-quote)
-
-(defun insert-close-angle-quote () (interactive) (insert "›"))
-(global-set-key (kbd "C-x a .") 'insert-close-angle-quote)
-
-(defun insert-open-angle-double-quote () (interactive) (insert "«"))
-(global-set-key (kbd "C-x a <") 'insert-open-angle-double-quote)
-
-(defun insert-close-angle-double-quote () (interactive) (insert "»"))
-(global-set-key (kbd "C-x a >") 'insert-close-angle-double-quote)
-
 (defun replace-last-sexp ()
   (interactive)
   (let ((value (eval (preceding-sexp))))
     (kill-sexp -1)
     (insert (format "%S" value))))
-(global-set-key (kbd "C-x r e") 'replace-last-sexp)
 
 (defun insert-timestamp ()
   (interactive)
@@ -61,17 +28,12 @@
   (setq indent-tabs-mode t)
   (local-set-key "\t" 'self-insert-command))
 
-
-(global-set-key (kbd "C-x t t t") 'tog-tabs)
-
 (defun real-tabs () (interactive) (local-set-key "\t" 'self-insert-command))
 
 (defun tog-tabs-harder ()
   (interactive)
   (tog-tabs)
   (local-set-key "\t" 'self-insert-command))
-
-(global-set-key (kbd "C-x t t h") 'tog-tabs-harder)
 
 
 (defun infer-indentation-style ()
@@ -140,9 +102,13 @@
     (if fullpath (find-file fullpath)
       (error (concat "Could not find project '" projname "'")))))
 
+(defun visit-doke-entry (entry-id)
+  (interactive "MVisit Doke entry with ID:")
+  (visit-tog-proj-file "docs/doke" (concat "entries/" entry-id)))
+
 (defun visit-todays-doke-entry ()
   (interactive)
-  (visit-tog-proj-file "docs/doke" (concat "entries/" (format-time-string "%Y-%m-%d")))
+  (visit-doke-entry (format-time-string "%Y-%m-%d"))
   (if (= (buffer-size) 0)
       (insert "date: " (format-time-string "%Y-%m-%d") "\n\n")))
 
