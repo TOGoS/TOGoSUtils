@@ -14,6 +14,7 @@ Options:
   -newer-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime > given
   -newer-than-file <file> ; only process files with mtime > that of given one
   -mtime-offset [+-]<seconds> ; add this many seconds when determining file modification times
+  -link ; Hardlink files instead of copying
 EOS
 
 $dryrun = false
