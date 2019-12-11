@@ -117,6 +117,12 @@
   (find-file (find-eit-timelog-file))
   (end-of-buffer)
   (search-backward-regexp "^= "))
+(defun visit-bodylog ()
+  (interactive)
+  (find-file (find-tog-proj-file "job/EarthIT/timelog" "bodylog.txt"))
+  (end-of-buffer)
+  (call-interactively 'eval-last-sexp)
+  (search-backward-regexp "^= "))
 
 (defun visit-todays-jht-notes ()
   (interactive)
