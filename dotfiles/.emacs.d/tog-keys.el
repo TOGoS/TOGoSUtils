@@ -1,5 +1,8 @@
 ; Inserting stuff
 
+(global-set-key (kbd "C-x a t") 'insert-timestamp)
+(global-set-key (kbd "C-x a d") 'insert-date)
+
 (defun insert-name-in-database-template ()
   (interactive)
   (insert "name in database @ \"\"")
@@ -31,6 +34,10 @@
 
 (defun insert-close-angle-double-quote () (interactive) (insert "»"))
 (global-set-key (kbd "C-x a >") 'insert-close-angle-double-quote)
+
+; I like to use em-dashes for quotes, since org-mode things I'm making a list if I just use a hyphen.
+(defun insert-emdash () (interactive) (insert "—"))
+(global-set-key (kbd "C-x a m") 'insert-emdash)
 
 ;
 

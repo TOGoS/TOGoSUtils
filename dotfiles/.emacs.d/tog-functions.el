@@ -8,13 +8,9 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%dT%H:%M:%S%:z")))
 
-(global-set-key (kbd "C-x a t") 'insert-timestamp)
-
 (defun insert-date ()
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
-
-(global-set-key (kbd "C-x a d") 'insert-date)
 
 (defun tog-tabs ()
   (interactive)
