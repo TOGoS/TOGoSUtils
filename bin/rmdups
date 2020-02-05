@@ -3,9 +3,63 @@
 require 'digest/md5'
 require 'shellwords'
 
-dirs = $*.clone
+dirs = []
+invalid_args = []
+archive_dirs = []
+mode = :Run
 
-$hash_files = {}
+$verbosity = 100
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when /^[^-]/
+    dirs << arg
+  when '--help', '-h', '-?'
+    mode = :Help
+  when /^--archive=(.*)/
+    archive_dirs << $1
+  when '-v'
+    $verbosity = 200
+  else
+    invalid_args << arg
+  end
+end
+
+selfname = File.basename($0)
+
+unless invalid_args.empty?
+  for arg in invalid_args
+    STDERR.puts "#{selfname}: Error: Invalid argument: #{arg}"
+  end
+  STDERR.puts "#{selfname}: Try --help for help"
+  exit 1
+end
+
+if mode == :Help
+  STDOUT.puts <<EOS
+Usage: #{selfname} <options> <directory> ...
+
+Options:
+  --help           ; Print help text and exit
+  -v               ; Be verbose
+
+Finds duplicate files (based on MD5 of file content) and emits a shell script of 'rm' commands
+to remove copies that have no hardlinks.
+EOS
+  
+end
+
+def log_verbose(text, line_end="\n")
+  if $verbosity >= 200
+    STDERR << "# " << text << line_end
+  end
+end
+def log_info(text, line_end="\n")
+  if $verbosity >= 100
+    STDERR << "# " << text << line_end
+  end
+end
 
 def walk(dir, &prok)
   if File.directory? dir
@@ -18,53 +72,125 @@ def walk(dir, &prok)
   end
 end
 
-def fh( file )
+def hash_file( file )
   return Digest::MD5.file(file).hexdigest
 end
 
-FileInfo = Struct.new( :path, :mtime, :nlink )
+FileInfo = Struct.new( :path, :mtime, :nlink, :ino )
 
-STDERR.puts "Walking directories..."
+# File hash => list of file infos
+$hash_files = {}
+# File hash => list of file infos of archived files
+#$hash_archive_files
+# Inode number => list of archive paths
+$inode_archive_files = {}
+
+if archive_dirs.length > 0
+  log_verbose "Walking archive directories..."
+  walked_file_count = 0
+  for dir in archive_dirs
+    walk(dir) do |f|
+      stat = File.stat(f)
+      info = FileInfo.new( f, stat.mtime, stat.nlink, stat.ino )
+      # ($hash_archive_files[hash_file(f)] ||= []) << info
+      ($inode_archive_files[stat.ino] ||= []) << info
+      walked_file_count += 1
+      if (walked_file_count % 20) == 0
+        log_verbose "#{walked_file_count} files...          ", "\r"
+      end
+    end
+  end
+  log_verbose "#{walked_file_count} files...          "
+end
+
+log_verbose "Walking directories..."
 
 $total_file_count = 0
 for dir in dirs
   walk(dir) do |f|
     stat = File.stat(f);
-    info = FileInfo.new( f, stat.mtime, stat.nlink )
-    ($hash_files[fh(f)] ||= []) << info
+    info = FileInfo.new( f, stat.mtime, stat.nlink, stat.ino )
+    ($hash_files[hash_file(f)] ||= []) << info
     $total_file_count += 1
-    STDERR.print "#{$total_file_count} files, #{$hash_files.length} distinct...          \r"
+    log_verbose "#{$total_file_count} files, #{$hash_files.length} distinct...          ", "\r"
   end
 end
-
-STDERR.puts
+log_verbose "#{$total_file_count} files, #{$hash_files.length} distinct...          "
 
 require 'pp'
+
+def describe_infos(infos)
+  infos.collect{|i| "#{i.path} (#{i.nlink} links)"}.join(", ")
+end
 
 for (hash,infos) in $hash_files
   if infos.length > 1
     copies_with_multiple_links = []
     copies_with_single_link = []
+    archived_copies = []
+    non_archived_copies = []
     for info in infos
+      if $inode_archive_files[info.ino]
+        archived_copies << info
+      else
+        non_archived_copies << info
+      end
       if info.nlink > 1
         copies_with_multiple_links << info
       else
         copies_with_single_link << info
       end
     end
-    if copies_with_multiple_links.length == 1
+
+    copies_to_remove = nil
+    copies_to_keep = nil
+    keepal_code = nil
+    removal_code = nil
+    
+    if archived_copies.length > 0
+      removal_code = :SomeCopiesArchived
+      keepal_code = :Archived
+      copies_to_keep = archived_copies
+      copies_to_remove = non_archived_copies
+    elsif copies_with_multiple_links.length > 0
+      keepal_code = :MultipleHardlinks
+      removal_code = :OneCopyHasHardlinks
+      copies_to_keep = copies_with_multiple_links
       copies_to_remove = copies_with_single_link
     elsif copies_with_multiple_links.length == 0
-      copies_to_remove = (copies_with_single_link.sort { |a,b| a.mtime <=> b.mtime })[1..-1]
+      keepal_code = :Oldest
+      removal_code = :NotOldest
+      sorted_copies = (copies_with_single_link.sort { |a,b| a.mtime <=> b.mtime })
+      copies_to_keep = sorted_copies[0]
+      copies_to_remove = sorted_copies[1..-1]
     else
-      STDERR.puts "Ambiguous case: " + copies_with_multiple_links.collect{|i| i.path}.join(", ")
-      copies_to_remove = []
+      raise "Impossible situation"
+    end
+    
+    if copies_to_keep.length > 1
+      case keepal_code
+      when :Archived
+        keepal_reason = "archived"
+      when :MultipleHardlinks
+        keepal_reason = "not archived, multiple hardlinks"
+      when :Oldest
+        keepal_reason = "oldest"
+      else
+        keepal_reason = "ambiguous"
+      end
+      log_info "Duplicates remain (#{keepal_reason}): "+describe_infos(copies_to_keep)
     end
     
     for c in copies_to_remove
-      puts "rm "+Shellwords.escape(c.path)
+      case removal_code
+      when :SomeCopiesArchived
+        situation_description = "Other copies archived: "+describe_infos(archived_copies)
+      when :OneCopyHasHardlinks
+        situation_description = "Another copy has hardlinks: "+describe_infos(copies_to_keep)
+      when :NotOldest
+        situation_description = "No copies had hardlinks; keeping the oldest"
+      end
+      puts "rm #{Shellwords.escape(c.path)} # #{situation_description}"
     end
   end
 end
-
-
