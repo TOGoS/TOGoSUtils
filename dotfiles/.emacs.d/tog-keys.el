@@ -1,5 +1,11 @@
 ; Inserting stuff
 
+;; > C-x reserved for Emacs native essential keybindings: buffer, window, frame, file, directory, etc...
+;; > C-c reserved for user and major mode: C-c letter reserved for user. <F5>-<F9> reserved for user. C-c C-letter reserved for major mode.
+;; > Don't rebind C-g , C-h and ESC .
+;; -- https://www.google.com/search?client=firefox-b-1-d&q=emacs+key+conventions
+;; So I guess these 'C-x ...'s should really be C-cs.
+
 (global-set-key (kbd "C-x a t") 'insert-timestamp)
 (global-set-key (kbd "C-x a d") 'insert-date)
 
