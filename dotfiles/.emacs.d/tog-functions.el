@@ -54,7 +54,7 @@
       '()
     (tog-parse-query-string-parts-to-alist (split-string qs "&"))))
 
-(tog-parse-query-string-to-alist "foo=bar&baz=quux")
+;(tog-parse-query-string-to-alist "foo=bar&baz=quux")
 
 (defun tog-parse-x-git-commit-url-body (urlbody)
   (let ((splitq (split-string urlbody "?")))
@@ -66,6 +66,20 @@
     (if (string-match "^\\(https?://github\\.com/.*?\\)\\(?:\\.git\\)?$" repository-url)
 	(concat (match-string 1 repository-url) "/commit/" commit-id)
       (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
+
+(defun latest-file-in (dirs filter)
+  (if (eq '() dirs)
+      nil
+    (or
+     (let ((dir (car dirs)))
+       (if (not (file-directory-p dir))
+	   (if (funcall filter dir) dir)
+	 (let ((sorted-subdirs (mapcar (lambda (filename) (concat dir "/" filename))
+				       (let ((filenames (directory-files dir)))
+					 (sort (seq-filter (lambda (a) (not (= ?. (string-to-char a)))) filenames)
+					       (lambda (a b) (string> a b)))))))
+	   (latest-file-in sorted-subdirs filter))))
+     (latest-file-in (cdr dirs) filter))))
 
 (defun find-tog-proj-dir-in (projname stuffdirlist)
   (if stuffdirlist
@@ -91,6 +105,10 @@
   (let ((jhtnotesdir (find-tog-proj-dir "job/JHT/notes"))
 	(datestr (format-time-string "%Y/%m/%Y%m%d")))
     (if jhtnotesdir (concat jhtnotesdir "/" datestr "-jht-notes.org") nil)))
+
+(defun find-latest-jht-notes-file ()
+  (latest-file-in '("C:/Users/dan.stevens/stuff/job/JHT/notes/2020")
+		  (lambda (f) (string-match "-jht-notes\\.org$" f))))
 
 (defun visit-tog-proj-file (projname file)
   (interactive "MProject name:\nMFile:")
@@ -126,6 +144,9 @@
   (if (= (buffer-size) 0)
       (insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n"))
   (end-of-buffer))
+(defun visit-latest-jht-notes ()
+  (interactive)
+  (find-file (find-latest-jht-notes-file)))
 
 ;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
 ;(tog-parse-x-git-commit-url-body "asdf?no-repo=Hello")
