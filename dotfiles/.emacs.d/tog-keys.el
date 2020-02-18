@@ -57,5 +57,6 @@
 (global-set-key (kbd "M-g d t") 'visit-todays-doke-entry)
 (global-set-key (kbd "M-g d e") 'visit-doke-entry)
 (global-set-key (kbd "M-g e t") 'visit-eit-timelog)
+(global-set-key (kbd "M-g e b") 'visit-bodylog)
 (global-set-key (kbd "M-g j t") 'visit-todays-jht-notes)
 (global-set-key (kbd "M-g j l") 'visit-latest-jht-notes)
