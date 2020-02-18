@@ -9,9 +9,9 @@ const Log = {
 			console.log("# "+tag+"/info: "+stuff);
 		}
 	},
-	result: function(key, value) {
-		if( verbosity > 0 ) {
-			console.log(key+" "+value);
+	equivalence: function(names) {
+		if( verbosity > 0 && names.length > 0 ) {
+			console.log(names.join("\t"));
 		}
 	}
 }
@@ -50,7 +50,7 @@ function reportHeads(headsDir, headName, recurse) {
 	const tshash = require('tshash');
 	return walkHeadFiles(headsDir, headName, recurse, (headUri, headFile) => {
 		return fsu.readFileToUint8Array(headFile).then(tshash.sha1Urn).then( sha1Urn => {
-			Log.result(headUri, sha1Urn);
+			Log.equivalence([headUri, "file:"+headFile, sha1Urn]);
 		})
 	});
 }
