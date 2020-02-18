@@ -2,21 +2,57 @@
 
 let fsu = require('../lib/node/FSUtil');
 
-function promiseEach( items, callback ) {
-	return items.reduce( (prom,item) => prom.then( () => callback(item) ), Promise.resolve() );
+let verbosity = 100; // 0 = silent, 50 = errors, 100 = warnings, 200 = informational, 300 = extremely verbose
+const Log = {
+	i: function(tag, stuff) {
+		if( verbosity >= 300 ) {
+			console.log("# "+tag+"/info: "+stuff);
+		}
+	},
+	result: function(key, value) {
+		if( verbosity > 0 ) {
+			console.log(key+" "+value);
+		}
+	}
 }
 
-function reportHeads(headsDir, headName) {
-	let tshash = require('tshash');
+const RESOLVED_PROMISE = Promise.resolve();
+
+function promiseEach( items, callback ) {
+	return items.reduce( (prom,item) => prom.then( () => callback(item) ), RESOLVED_PROMISE );
+}
+
+function walkHeadFiles(headsDir, headName, recurse, callback) {
 	let dir = headsDir+"/"+headName;
-	return fsu.readDir(dir).then( files => promiseEach(files, filename => {
-		// TODO: Ignore subdirs
-		let fullPath = dir + "/" + filename;
-		let headUri = "x-ccouch-head:"+headName+"/"+filename;
-		return fsu.readFileToUint8Array(fullPath).then(tshash.sha1Urn).then( sha1Urn => {
-			console.log(headUri+" "+sha1Urn);
-		});
-	}));
+	Log.i("list-ccouch-heads", `Scanning ${dir}...`);
+	return fsu.stat(dir).then( dirStat => {
+		if( !dirStat.isDirectory() ) {
+			Log.i("list-ccouch-heads", `${dir} is not a directory!`);
+			return RESOLVED_PROMISE;
+		}
+
+		return fsu.readDir(dir).then( files => promiseEach(files, filename => {
+			let fullPath = dir + "/" + filename;
+			let headUri = "x-ccouch-head:"+headName+"/"+filename;
+			return fsu.stat(fullPath).then( stat => {
+				if( stat.isDirectory() ) {
+					if( recurse ) return walkHeadFiles(headsDir, headName+"/"+filename, recurse, callback);
+					return RESOLVED_PROMISE;
+				}
+				
+				return callback(headUri, fullPath);
+			})
+		}));
+	})
+}
+
+function reportHeads(headsDir, headName, recurse) {
+	const tshash = require('tshash');
+	return walkHeadFiles(headsDir, headName, recurse, (headUri, headFile) => {
+		return fsu.readFileToUint8Array(headFile).then(tshash.sha1Urn).then( sha1Urn => {
+			Log.result(headUri, sha1Urn);
+		})
+	});
 }
 
 function findCcouchDir() {
@@ -42,13 +78,25 @@ const commands = {
 	"list-ccouch-heads": {
 		shortDescription: "List ccouch heads and their hashes",
 		invoke: (args) => {
+			let recurse = false;
+			let headPrefixes = [];
+			for( let i=0; i<args.length; ++i ) {
+				if( args[i] == '--recurse' ) {
+					recurse = true;
+				} else {
+					headPrefixes.push(args[i]);
+				}
+			}
+			if( headPrefixes.length == 0 ) {
+				Log.i("list-ccouch-heads", "No heads specified; result will be empty");
+			}
 			return findCcouchDir().then( (ccouchDir) => {
 				let headsDir = ccouchDir + "/heads";
 				let headNames = [];
-				for( let a in args ) {
-					headNames.push(args[a]);
+				for( let a in headPrefixes ) {
+					headNames.push(headPrefixes[a]);
 				}
-				return promiseEach(headNames, headName => reportHeads(headsDir, headName));
+				return promiseEach(headNames, headName => reportHeads(headsDir, headName, recurse));
 			});
 		}
 	}
@@ -58,7 +106,9 @@ const commands = {
 const optRegex = /^-/;
 function parseArgs(argv) {
 	let commandName = undefined;
-	let generalArgs = [];
+	let generalOptions = {
+		verbosity: 100
+	};
 	let commandArgs = [];
 	for( let i=2; i<argv.length; ++i ) {
 		if( commandName == undefined ) {
@@ -66,8 +116,16 @@ function parseArgs(argv) {
 				commandName = argv[i];
 			} else if( argv[i] == "-?" || argv[i] == "--help" ) {
 				commandName = "help";
+			} else if( argv[i] == "-qq" ) {
+				generalOptions.verbosity = 0;
+			} else if( argv[i] == "-q" ) {
+				generalOptions.verbosity = 50;
+			} else if( argv[i] == "-v" ) {
+				generalOptions.verbosity = 200;
+			} else if( argv[i] == "-vv" ) {
+				generalOptions.verbosity = 300;
 			} else {
-				generalArgs.push(argv[i]);
+				return Promise.reject(new Error(`Unrecognized general argument: ${argv[i]}`));
 			}
 		} else if( commandName != undefined ) {
 			commandArgs.push(argv[i]);
@@ -75,12 +133,13 @@ function parseArgs(argv) {
 	}
 	return Promise.resolve({
 		commandName,
-		generalArgs,
+		generalOptions,
 		commandArgs
 	})
 }
 
 parseArgs(process.argv).then( commandInfo => {
+	verbosity = commandInfo.generalOptions.verbosity;
 	if( commandInfo.commandName == undefined ) {
 		console.log("Welcome to TOGUtil!");
 		console.log("No command given.  Try 'help'");
@@ -88,7 +147,7 @@ parseArgs(process.argv).then( commandInfo => {
 	}
 	let command = commands[commandInfo.commandName];
 	if( command == undefined ) {
-		console.error("Unrecognized command: '"+commandInfo.commandName+".  Try 'help'");
+		console.error("Unrecognized command: '"+commandInfo.commandName+"'.  Try 'help'");
 		process.exitCode = 1;
 		return;
 	}
