@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+$: << File.dirname(File.dirname(__FILE__))+"/src/lib/ruby"
 require 'TOGoS/Riptool3/Encodings'
 include TOGoS::Riptool3
 
