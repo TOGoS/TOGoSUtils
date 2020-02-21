@@ -4,3 +4,4 @@ Personal command-line utilities to automate my life.
 
 - `bin/` - Command-line programs
 - `src/` - Source code for commands/libraries
+- `ext-bin/` - Binaries imported from elsewhere
