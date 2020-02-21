@@ -3,9 +3,9 @@
 
 var currentDir = process.cwd();
 var childProcess = require('child_process');
-//var Builder = require('../lib/node/Builder');
+//var Builder = require('../src/lib/node/Builder');
 var readline = require('readline');
-var _epr = require('../lib/node/ExternalProcessRunner');
+var _epr = require('../src/lib/node/ExternalProcessRunner');
 var epr = new _epr.default();
 
 //var builder = new Builder();

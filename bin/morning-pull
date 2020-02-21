@@ -43,8 +43,8 @@ const remoteGenerators = [
 	(repoName) => [{name: "gitlab", url: "ssh://git@gitlab.com/"+toGithubProjectName(repoName)+".git"}],
 ];
 
-var fsu = require('../lib/node/FSUtil');
-var ExternalProcessRunner = require('../lib/node/ExternalProcessRunner').default;
+var fsu = require('../src/lib/node/FSUtil');
+var ExternalProcessRunner = require('../src/lib/node/ExternalProcessRunner').default;
 
 var homeDirCandidates = listToSet([
 	process.env.HOME,

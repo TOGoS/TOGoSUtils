@@ -3,8 +3,8 @@
 
 const fs = require('fs');
 const readline = require('readline');
-const promises = require('../lib/node/promises');
-const fsu = require('../lib/node/FSUtil');
+const promises = require('../src/lib/node/promises');
+const fsu = require('../src/lib/node/FSUtil');
 
 // Reads lines from standard input
 // and writes to log files!

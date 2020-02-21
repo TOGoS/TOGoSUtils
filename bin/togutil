@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-let fsu = require('../lib/node/FSUtil');
+let fsu = require('../src/lib/node/FSUtil');
 
 let verbosity = 100; // 0 = silent, 50 = errors, 100 = warnings, 200 = informational, 300 = extremely verbose
 const Log = {
