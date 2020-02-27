@@ -2,7 +2,7 @@
 
 // Try to stay compatible with NodeBuildUtil's FSUtil!
 
-import { readFile as nodeReadFile } from 'fs';
+import { readFile as nodeReadFile, writeFile as nodeWriteFile } from 'fs';
 
 type FilePath = string;
 
@@ -41,4 +41,16 @@ export function readStreamToUint8Array( stream:NodeJS.ReadableStream ):Promise<U
         })
         stream.resume();
     });
+}
+
+export function writeFile( file:FilePath, data:string|Uint8Array ):Promise<FilePath> {
+	// TODO: PRobably unlink any existing file first,
+	// because I like to think I'm replacing the file, not rewriting it!
+	// Or maybe that should be called putFile instead idk.
+	return new Promise( (resolve,reject) => {
+		nodeWriteFile( file, data, (err:Error|null) => {
+			if( err ) reject(err);
+			resolve(file);
+		});
+	});
 }

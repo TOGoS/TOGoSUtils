@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+const gitutil = require('togosutils/gitutil.js');
+
+let inputFiles = [];
+let mode = "output";
+for( let i=2; i<process.argv.length; ++i ) {
+    let arg = process.argv[i];
+    if( arg == "-" || arg.length > 0 && arg[0] != "-" ) {
+        inputFiles.push(arg);
+    } else if( arg == "--store" ) {
+        mode = "store";
+    } else {
+        console.error("Unrecognized argument: "+arg);
+        process.exit(1);
+    }
+}
+
+let storePromises = [];
+if( mode != "store" ) {
+    console.error("Unsupported mode: "+mode+" (try --store)");
+}
+inputFiles.forEach( (file) => {
+    storePromises.push(gitutil.fetchBlob(file).then( (blob) => {
+        let obj = JSON.parse(blob.toString());
+        return gitutil.storeGitObject(obj);
+    }));
+});
+Promise.all(storePromises).then( hashes => {
+    for( let h in hashes ) {
+        console.log(hashes[h])
+    }
+}).catch( e => {
+    console.error(e.stack);
+    process.exitCode = 1;
+});
