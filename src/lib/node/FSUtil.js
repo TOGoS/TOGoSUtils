@@ -127,6 +127,7 @@ function unlink(file) {
 }
 exports.unlink = unlink;
 function rmRf(fileOrDir) {
+    throw new Error("Deleting "+fileOrDir+"!");
     if (typeof fileOrDir == 'object') {
         return Promise.all(fileOrDir.map(rmRf)).then(function () { });
     }

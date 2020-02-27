@@ -13,21 +13,22 @@ builder.targets = {
         prereqs: ["node_modules/togosutils"]
     },
     "node_modules/typescript": {
-        isDir: true,
+        isDirectory: true,
         prereqs: ["package.json"],
         invoke: ctx => {
             return ctx.builder.npm(["install"]);
         }
     },
     "node_modules/togosutils": {
-        isDir: true,
-        prereqs: ["node_modules/typescript"],
+        isDirectory: true,
+        prereqs: ["node_modules/typescript", "src/togosutils"],
         invoke: ctx => {
+            console.log("Building "+ctx.targetName+"...");
             return ctx.builder.tsc(["-p", "src/togosutils/ts/tsconfig.json","--module","commonjs","--outDir",ctx.targetName]);
         }
     },
     "hello": {
-        invoke: ctx => { console.log("Hello, world!"); }
+        invoke: ctx => { console.log("Hello, world!\n--build.js"); return Promise.resolve(); }
     }
 }
 

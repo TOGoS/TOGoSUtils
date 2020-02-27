@@ -2,4 +2,32 @@
 
 const gitutil = require('togosutils/gitutil.js');
 
-gitutil.printHello();
+let outputMode = "jsonl";
+let commitNames = [];
+for( let i=2; i<process.argv.length; ++i ) {
+    let arg = process.argv[i];
+    if( arg == "-" || arg.length > 0 && arg[0] != "-" ) {
+        commitNames.push(arg);
+    } else if( arg == "--pretty" ) {
+        outputMode = "pretty";
+    } else {
+        console.error("Unrecognized argument: "+arg);
+        process.exit(1);
+    }
+}
+
+let jsonPromises = [];
+commitNames.forEach( (name) => {
+    jsonPromises.push(gitutil.fetchGitObject(name));
+});
+Promise.all(jsonPromises).then( (commits) => {
+    for( let c in commits ) {
+        let json;
+        if( outputMode == "jsonl" ) json = JSON.stringify(commits[c]);
+        else json = JSON.stringify(commits[c], null, "\t");
+        console.log(json)
+    }
+}).catch( e => {
+    console.error(e.stack);
+    process.exitCode = 1;
+});

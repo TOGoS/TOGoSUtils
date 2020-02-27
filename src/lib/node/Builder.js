@@ -257,7 +257,18 @@ Builder.prototype.buildTarget = function( target, targetName, stackTrace ) {
 				return Promise.resolve();
 			}
 		});
-	});
+	}).then( () => {
+		if( target.isDirectory || target.isFile ) {
+			return fsutil.stat(targetName).then( stat => {
+				if( target.isDirectory && !stat.isDirectory() ) {
+					throw new Error(targetName+" expected to be directory, but is not!");
+				}
+				if( !target.isDirectory && stat.isDirectory() ) {
+					throw new Error(targetName+" expected to be regular file, but is directory!");
+				}
+			})
+		}
+	})
 }
 
 Builder.prototype.build = function( targetName, stackTrace ) {

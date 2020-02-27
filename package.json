@@ -5,6 +5,7 @@
         "url": "http://www.nuke24.net/"
     },
     "dependencies": {
-        "typescript": "^3.8.2"
+        "typescript": "^3.8.2",
+        "@types/node": "^6.0.0"
     }
 }
