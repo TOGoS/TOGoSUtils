@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+const gitutil = require('togosutils/gitutil.js');
+
+gitutil.printHello();
