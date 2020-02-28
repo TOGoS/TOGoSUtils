@@ -2,7 +2,7 @@
 
 // Try to stay compatible with NodeBuildUtil's FSUtil!
 
-import { readFile as nodeReadFile, writeFile as nodeWriteFile } from 'fs';
+import { readFile as nodeReadFile, writeFile as nodeWriteFile, mkdir as nodeMkdir } from 'fs';
 
 type FilePath = string;
 
@@ -53,4 +53,36 @@ export function writeFile( file:FilePath, data:string|Uint8Array ):Promise<FileP
 			resolve(file);
 		});
 	});
+}
+
+export function mkdir( dir:FilePath ):Promise<FilePath> {
+	return new Promise( (resolve,reject) => {
+		nodeMkdir( dir, (err) => {
+			if( err && err.code !== 'EEXIST' ) {
+				reject(err);
+			} else {
+				resolve(dir);
+			}
+		});
+	});
+}
+
+export function mkdirR( dir:FilePath ):Promise<void> {
+	if( dir == '' ) return Promise.resolve();
+	let prefix = '';
+	if( dir[0] == '/' ) {
+		dir = dir.substr(1);
+		prefix = '/';
+	}
+	let comps = dir.split('/');
+	let prom:Promise<any> = Promise.resolve();
+	for( let i=1; i<=comps.length; ++i ) {
+		prom = prom.then( () => mkdir(prefix+comps.slice(0,i).join('/')) );
+	}
+	return prom;
+}
+
+export function mkParentDirs( file:FilePath ):Promise<void> {
+	let comps = file.split('/');
+	return mkdirR( comps.slice(0,comps.length-1).join('/') );
 }

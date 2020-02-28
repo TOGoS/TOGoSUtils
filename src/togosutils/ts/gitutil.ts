@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import { readStreamToUint8Array, readFileToUint8Array, writeFile } from './fsutil';
+import { readStreamToUint8Array, readFileToUint8Array, writeFile, mkParentDirs } from './fsutil';
 import { parse } from 'querystring';
-import { inflate as zlibInflate, deflate as zlibDeflate, deflateRaw as zlibDeflateRaw } from 'zlib';
+import { inflate as zlibInflate, deflate as zlibDeflate } from 'zlib';
 import { hash, hexEncode } from 'tshash';
 import SHA1 from 'tshash/SHA1';
 import { resolve } from 'url';
@@ -73,10 +73,11 @@ function parseGitCommit(blob:Uint8Array, offset:number, sourceDesc:string):GitCo
     let committer : GitAuthoring|undefined = undefined;
 
     // Not allowing for non-UTF-8 messages, sorry!
-    let body = blob.slice(offset).toString();
-    let xx = body.split("\n\n", 2);
-    let headers = xx[0].split("\n");
-    let message = xx[1];
+    let commitData = blob.slice(offset).toString();
+    let splitPoint = commitData.indexOf("\n\n");
+    if( splitPoint == -1 ) throw new Error("Failed to parse message from commit!");
+    let headers = commitData.substr(0, splitPoint).split("\n");
+    let message = commitData.substr(splitPoint+2);
     for( let h in headers ) {
         const tokens:string[] = headers[h].split(" ");
         switch( tokens[0] ) {
@@ -129,8 +130,7 @@ export function parseGitObject(blob:Uint8Array, sourceDesc:string):GitObject {
 
 export function deflate(text:Uint8Array):Promise<Uint8Array> {
     return new Promise( (resolve,reject) => {
-        console.error("Attempting to deflate "+text);
-        zlibDeflateRaw(Buffer.from(text), (err:Error,deflated:Uint8Array) => {
+        zlibDeflate(Buffer.from(text), (err:Error,deflated:Uint8Array) => {
             if(err) reject(err);
             else resolve(deflated);
         });
@@ -220,7 +220,9 @@ export function storeCommit(obj:GitCommit):Promise<GitURIString> {
     let ref:GitHashString = gitRef(ser0);
     let path:string = ".git/objects/"+(ref as string).substr(0,2)+"/"+(ref as string).substring(2);
     return deflate(ser0).then(deflated => {
-        return writeFile(path,deflated);
+        return mkParentDirs(path).then(() => {
+            writeFile(path,deflated)
+        });
     }).then(() => gitHashToUriString(ref));
 }
 
