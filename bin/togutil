@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 let fsu = require('../src/lib/node/FSUtil');
+let CCouchTool = require('togosutils/CCouchTool').default;
 
 let verbosity = 100; // 0 = silent, 50 = errors, 100 = warnings, 200 = informational, 300 = extremely verbose
 const Log = {
@@ -15,93 +16,8 @@ const Log = {
 		}
 	},
 	head: function(head) {
-		this.equivalence([head.name, "file:"+head.file, head.hashUrn]);
+		this.equivalence([head.headUri, "file:"+head.file, head.hashUrn]);
 	}
-}
-
-const RESOLVED_PROMISE = Promise.resolve();
-
-function promiseEach( items, callback ) {
-	return items.reduce( (prom,item) => prom.then( () => callback(item) ), RESOLVED_PROMISE );
-}
-
-function walkHeadFiles(headsDir, headName, recurse, callback) {
-	let dir = headsDir+"/"+headName;
-	Log.i("list-ccouch-heads", `Scanning ${dir}...`);
-	return fsu.stat(dir).then( dirStat => {
-		if( !dirStat.isDirectory() ) {
-			Log.i("list-ccouch-heads", `${dir} is not a directory!`);
-			return RESOLVED_PROMISE;
-		}
-
-		return fsu.readDir(dir).then( files => promiseEach(files, filename => {
-			let fullPath = dir + "/" + filename;
-			let headUri = "x-ccouch-head:"+headName+"/"+filename;
-			return fsu.stat(fullPath).then( stat => {
-				if( stat.isDirectory() ) {
-					if( recurse ) return walkHeadFiles(headsDir, headName+"/"+filename, recurse, callback);
-					return RESOLVED_PROMISE;
-				}
-				
-				return callback(headUri, fullPath);
-			})
-		}));
-	})
-}
-
-// Returns heads, sorted by path and 'natural order'.
-function getHeads(headsDir, headName, recurse) {
-	const tshash = require('tshash');
-	let headList = [];
-	return walkHeadFiles(headsDir, headName, recurse, (headUri, headFile) => {
-		return fsu.readFileToUint8Array(headFile).then(tshash.sha1Urn).then( sha1Urn => {
-			//Log.equivalence([headUri, "file:"+headFile, sha1Urn]);
-			headList.push({
-				file: headFile,
-				name: headUri,
-				hashUrn: sha1Urn,
-			});
-		})
-	}).then( () => {
-		return headList.sort( (a,b) => compareHeadNames(a.name, b.name) );
-	});
-}
-
-function findCcouchDir() {
-	if( process.env.ccouch_repo_dir != undefined ) {
-		return Promise.resolve(process.env.ccouch_repo_dir);
-	} else {
-		return Promise.reject(new Error("ccouch_repo_dir not specified"));
-	}
-}
-
-function _headOrder(path) {
-	let m;
-	if( (m = /^(.*)\/(\d+)$/.exec(path)) != undefined ) {
-		return [m[1],+m[2]];
-	} else if( (m = /^(.*)\/([^\\/]+)$/.exec(path)) != undefined ) {
-		return [m[1],m[2]];
-	} else {
-		return [path, ""];
-	}
-}
-
-function headOrder(path) {
-	let order = _headOrder(path);
-	//Log.i("head-order/"+path, JSON.stringify(order));
-	return order;
-}
-
-function compareHeadNames(a, b) {
-	let oa = headOrder(a);
-	let ob = headOrder(b);
-	let compared = (
-		oa[0] < ob[0] ? -1 : oa[0] > ob[0] ? +1 :
-		oa[1] < ob[1] ? -1 : oa[1] > ob[1] ? +1 :
-		0
-	);
-	//Log.i("head-comparison", JSON.stringify(oa)+" vs "+JSON.stringify(ob)+": "+compared);
-	return compared;
 }
 
 const commands = {
@@ -119,37 +35,27 @@ const commands = {
 	"list-ccouch-heads": {
 		shortDescription: "List ccouch heads and their hashes",
 		invoke: (args) => {
-			let recurse = false;
-			let headPrefixes = [];
-			let lastN = undefined;
+			let opts = {
+				headPrefixes: [],
+				lastN: Infinity,
+				recurse: false,
+			}
 			let m;
 			for( let i=0; i<args.length; ++i ) {
 				if( args[i] == '--recurse' ) {
-					recurse = true;
+					opts.recurse = true;
 				} else if( (m = /^--last=(\d+)$/.exec(args[i])) ) {
-					lastN = +m[1];
+					opts.lastN = +m[1];
 				} else {
-					headPrefixes.push(args[i]);
+					opts.headPrefixes.push(args[i]);
 				}
 			}
-			if( headPrefixes.length == 0 ) {
+			if( opts.headPrefixes.length == 0 ) {
 				Log.i("list-ccouch-heads", "No heads specified; result will be empty");
 			}
-			return findCcouchDir().then( (ccouchDir) => {
-				let headsDir = ccouchDir + "/heads";
-				let headNames = [];
-				for( let a in headPrefixes ) {
-					headNames.push(headPrefixes[a]);
-				}
-				return promiseEach(headNames, headName => {
-				    return getHeads(headsDir, headName, recurse).then( heads => {
-						let startAt = 0;
-						if( lastN != undefined ) startAt = Math.max(startAt, heads.length - lastN);
-						for( let i=startAt; i<heads.length; ++i ) {
-							Log.head(heads[i]);
-						}
-				    });
-				});
+			let cct = new CCouchTool();
+			return cct.findLocalHeads(opts, (head) => {
+				Log.head(head);
 			});
 		}
 	}

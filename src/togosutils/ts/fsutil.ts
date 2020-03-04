@@ -2,9 +2,25 @@
 
 // Try to stay compatible with NodeBuildUtil's FSUtil!
 
-import { readFile as nodeReadFile, writeFile as nodeWriteFile, mkdir as nodeMkdir } from 'fs';
+import {
+	readFile as nodeReadFile,
+	writeFile as nodeWriteFile,
+	mkdir as nodeMkdir,
+	stat as nodeStat,
+	readdir as nodeReadDir,
+	Stats
+} from 'fs';
 
 type FilePath = string;
+
+export function stat( file:FilePath ):Promise<Stats> {
+	return new Promise( (resolve,reject) => {
+		nodeStat(file, (err,stats) => {
+			if( err ) reject(err);
+			else resolve(stats);
+		})
+	});
+}
 
 export function readFile( file:FilePath, options:{encoding?:string, flag?:string}={} ):Promise<Buffer|string> {
 	return new Promise( (resolve,reject) => {
@@ -51,6 +67,15 @@ export function writeFile( file:FilePath, data:string|Uint8Array ):Promise<FileP
 		nodeWriteFile( file, data, (err:Error|null) => {
 			if( err ) reject(err);
 			resolve(file);
+		});
+	});
+}
+
+export function readDir( dir:FilePath ):Promise<FilePath[]> {
+	return new Promise( (resolve,reject) => {
+		nodeReadDir( dir, (err,files) => {
+			if( err ) return reject(err);
+			return resolve(files);
 		});
 	});
 }
