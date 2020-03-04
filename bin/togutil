@@ -142,13 +142,13 @@ const commands = {
 					headNames.push(headPrefixes[a]);
 				}
 				return promiseEach(headNames, headName => {
-					return getHeads(headsDir, headName, recurse)
-				}).then( heads => {
-					let startAt = 0;
-					if( lastN != undefined ) startAt = Math.max(startAt, heads.length - lastN);
-					for( let i=startAt; i<heads.length; ++i ) {
-						Log.head(heads[i]);
-					}
+				    return getHeads(headsDir, headName, recurse).then( heads => {
+						let startAt = 0;
+						if( lastN != undefined ) startAt = Math.max(startAt, heads.length - lastN);
+						for( let i=startAt; i<heads.length; ++i ) {
+							Log.head(heads[i]);
+						}
+				    });
 				});
 			});
 		}
