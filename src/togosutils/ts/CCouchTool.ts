@@ -4,17 +4,41 @@ import * as fsu from './fsutil';
 
 type FilePath = string;
 
-type CCouchHeadURI = string; // x-ccouch-head:...
-type CCouchHashURN = string; // urn:bitprint:...
+type CCouchHeadURI = string&{isCCouchHeadUri:true}; // x-ccouch-head:...
+type CCouchHashURN = string&{isCCouchHashUrn:true}; // urn:bitprint:...
+type CCouchHeadPrefix = string&{isCCouchHeadPrefix:true}; // some-repo/archives/images/foo ; doesn't include number
+type CCouchResolvedHeadName = CCouchHeadPrefix&{isCCouchResolvedHeadName:true}; // some-repo/archives/images/foo/123 ; full name of specific head with actual number (not 'latest')
+
+// String validation/converstion functions
+
+function headPrefix(prefix:CCouchHeadPrefix, postfix:string):CCouchHeadPrefix {
+	return prefix + "/" + postfix as CCouchHeadPrefix;
+}
+function resolvedHeadName(prefix:CCouchHeadPrefix, postfix:string):CCouchResolvedHeadName {
+	return prefix + "/" + postfix as CCouchResolvedHeadName;
+}
+function isCCouchHashUrn(str:string):str is CCouchHashURN {
+	return /^(?:urn:sha1:|urn:bitprint:).*$/.exec(str) != null;
+}
+
+function ccouchHashUrn(str:string):CCouchHashURN {
+	if (isCCouchHashUrn(str)) return str;
+	throw new Error(`"${str}" is not a valid contentcouch hash URN`);
+}
+
+function nameToHeadUri(name:CCouchHeadPrefix):CCouchHeadURI {
+	return "x-ccouch-head:"+encodeURI(name) as CCouchHeadURI;
+}
 
 interface LocalCCouchHead {
 	file : FilePath;
 	headUri : CCouchHeadURI;
+	headName : CCouchResolvedHeadName;
 	hashUrn : CCouchHashURN;
 }
 
 interface FindLocalHeadsOptions {
-	headPrefixes : string[];
+	headPrefixes : CCouchHeadPrefix[];
 	recurse : boolean;
 	lastN : number;
 }
@@ -23,8 +47,8 @@ function promiseEach<T>( items:T[], callback:(x:T)=>void ):Promise<void> {
 	return items.reduce( (prom,item) => prom.then( () => callback(item) ), RESOLVED_PROMISE );
 }
 
-function walkHeadFiles(headsDir:FilePath, headName:string, recurse:boolean, callback:(headUri:CCouchHeadURI, fullPath:FilePath)=>void):Promise<void> {
-	let dir = headsDir+"/"+headName;
+function walkHeadFiles(headsDir:FilePath, headPrefix:CCouchHeadPrefix, recurse:boolean, callback:(headName:CCouchResolvedHeadName, fullPath:FilePath)=>void):Promise<void> {
+	let dir = headsDir+"/"+headPrefix;
 	//Log.i("list-ccouch-heads", `Scanning ${dir}...`);
 	return fsu.stat(dir).then( dirStat => {
 		if( !dirStat.isDirectory() ) {
@@ -34,14 +58,14 @@ function walkHeadFiles(headsDir:FilePath, headName:string, recurse:boolean, call
 
 		return fsu.readDir(dir).then( files => promiseEach(files, filename => {
 			let fullPath = dir + "/" + filename;
-			let headUri = "x-ccouch-head:"+headName+"/"+filename;
+			let headName:CCouchResolvedHeadName = resolvedHeadName(headPrefix, filename);
 			return fsu.stat(fullPath).then( stat => {
 				if( stat.isDirectory() ) {
-					if( recurse ) return walkHeadFiles(headsDir, headName+"/"+filename, recurse, callback);
+					if( recurse ) return walkHeadFiles(headsDir, headName, recurse, callback);
 					return RESOLVED_PROMISE;
 				}
 				
-				return callback(headUri, fullPath);
+				return callback(headName, fullPath);
 			})
 		}));
 	})
@@ -71,19 +95,20 @@ function compareHeadNames(a:FilePath, b:FilePath) {
 }
 
 // Returns heads, sorted by path and 'natural order'.
-function findLocalHeads2(headsDir:FilePath, headName:string, recurse:boolean):Promise<LocalCCouchHead[]> {
+function findLocalHeads2(headsDir:FilePath, headPrefix:CCouchHeadPrefix, recurse:boolean):Promise<LocalCCouchHead[]> {
 	let headList:LocalCCouchHead[] = [];
-	let walked:Promise<void> = walkHeadFiles(headsDir, headName, recurse, (headUri:CCouchHeadURI, headFile:FilePath) => {
-		return fsu.readFileToUint8Array(headFile).then(tshash.sha1Urn).then( (sha1Urn:CCouchHashURN) => {
+	let walked:Promise<void> = walkHeadFiles(headsDir, headPrefix, recurse, (headName:CCouchResolvedHeadName, headFile:FilePath) => {
+		return fsu.readFileToUint8Array(headFile).then(blob => ccouchHashUrn(tshash.sha1Urn(blob))).then( (sha1Urn:CCouchHashURN) => {
 			headList.push({
 				file: headFile,
-				headUri: headUri,
+				headUri: nameToHeadUri(headName),
+				headName,
 				hashUrn: sha1Urn,
 			});
 		})
 	});
 	return walked.then( () => {
-		return headList.sort( (a:LocalCCouchHead,b:LocalCCouchHead) => compareHeadNames(a.headUri, b.headUri) );
+		return headList.sort( (a:LocalCCouchHead,b:LocalCCouchHead) => compareHeadNames(a.headName, b.headName) );
 	});
 }
 
@@ -98,16 +123,16 @@ export default class CCouchTool {
 	}    
 
 	findLocalHeads(options:FindLocalHeadsOptions, callback:(h:LocalCCouchHead)=>Promise<void> ):Promise<void> {
-		let headNames:string[] = [];
+		let headPrefixes:CCouchHeadPrefix[] = [];
 		for( let a in options.headPrefixes ) {
-			headNames.push(options.headPrefixes[a]);
+			headPrefixes.push(options.headPrefixes[a]);
 		}
 		return this.fetchLocalCcouchDirs().then( (ccouchDirs:FilePath[]) => {
 			let repoPromises:Promise<void>[] = [];
 			for( let cd in ccouchDirs ) {
 				let headsDir = ccouchDirs[cd] + "/heads";
-				for( let hn in headNames ) {
-					let headName = headNames[hn];
+				for( let hn in headPrefixes ) {
+					let headName = headPrefixes[hn];
 					repoPromises.push(findLocalHeads2(headsDir, headName, options.recurse).then( (heads:LocalCCouchHead[]) => {
 						let startAt = Math.max(0, heads.length - options.lastN);
 						let cbPromises:Promise<void>[] = [];

@@ -40,12 +40,16 @@ const commands = {
 				lastN: Infinity,
 				recurse: false,
 			}
+			let outputFormat = undefined;
+			let scpDests = [];
 			let m;
 			for( let i=0; i<args.length; ++i ) {
 				if( args[i] == '--recurse' ) {
 					opts.recurse = true;
 				} else if( (m = /^--last=(\d+)$/.exec(args[i])) ) {
 					opts.lastN = +m[1];
+				} else if( (m = /^--output-format=(.*)/.exec(args[i])) ) {
+					outputFormat = m[1];
 				} else {
 					opts.headPrefixes.push(args[i]);
 				}
@@ -55,7 +59,19 @@ const commands = {
 			}
 			let cct = new CCouchTool();
 			return cct.findLocalHeads(opts, (head) => {
-				Log.head(head);
+				if( outputFormat == undefined ) {
+					Log.head(head);
+				} else {
+					let parentName = head.headName.replace(/\/[^\/]$/,'');
+					let output = outputFormat.
+						replace(/{name}/g, head.headName).
+						replace(/{parentName}/g, parentName).
+						replace(/{file}/g, head.file).
+						replace(/{headUri}/g, head.headUri).
+						replace(/{hashUrn}/g, head.hashUrn).
+						replace(/{nl}/g, "\n");
+					process.stdout.write(output);
+				}
 			});
 		}
 	}
