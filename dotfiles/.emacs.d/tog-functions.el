@@ -126,6 +126,17 @@
   (if (= (buffer-size) 0)
       (insert "date: " (format-time-string "%Y-%m-%d") "\n\n")))
 
+(defun visit-4909-transfers ()
+  (interactive)
+  (visit-tog-proj-file "docs/financial/4909" "transfers.txt"))
+
+(defun visit-togos-music-metadata ()
+  (interactive)
+  (visit-tog-proj-file "music/TOGoSMusicMetadata" "music.txt"))
+(defun visit-togos-music-notes ()
+  (interactive)
+  (visit-tog-proj-file "music/TOGoSMusicMetadata" "notes.tef"))
+
 (defun visit-eit-timelog ()
   (interactive)
   (find-file (find-eit-timelog-file))
