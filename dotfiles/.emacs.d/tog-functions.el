@@ -125,7 +125,9 @@
   (interactive)
   (visit-doke-entry (format-time-string "%Y-%m-%d"))
   (if (= (buffer-size) 0)
-      (insert "date: " (format-time-string "%Y-%m-%d") "\n\n")))
+      (progn
+	(insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n")
+	(draft-mode 1))))
 
 (defun visit-4909-transfers ()
   (interactive)
