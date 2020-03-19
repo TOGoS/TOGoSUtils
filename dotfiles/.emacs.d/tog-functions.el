@@ -99,7 +99,8 @@
     (and dir (concat dir "/" file))))
 
 (defun find-eit-timelog-file ()
-  (find-tog-proj-file "job/EarthIT/timelog" "timelog.txt"))
+  (latest-file-in (list (find-tog-proj-dir "job/EarthIT/timelog"))
+		  (lambda (f) (string-match "-timelog\\.txt$" f))))
 
 (defun find-todays-jht-notes-file ()
   (let ((jhtnotesdir (find-tog-proj-dir "job/JHT/notes"))
