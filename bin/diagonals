@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+let maxSize = 31;
+
+let results = [];
+
+for( let x=1; x<maxSize; ++x ) {
+	for( let y=x; y<maxSize; ++y ) {
+		let diagonal = Math.sqrt(x*x + y*y);
+		let imperfection = Math.abs(diagonal - Math.round(diagonal));
+		results.push({
+			x, y, diagonal, imperfection
+		});
+	}
+}
+
+function compare(a,b) {
+	return a < b ? -1 : a > b ? +1 : 0;
+}
+
+results.sort( (a,b) => {
+	return a.imperfection < b.imperfection ? -1 : a.imperfection > b.imperfection ? +1 :
+		a.x < b.x ? -1 : a.x > b.x ? +1 : 0;
+});
+
+
+function pad(len, str) {
+	while( str.length < len ) str = " "+str;
+	return str;
+}
+function formatNum(pre, post, num) {
+	return pad(pre+post+1, num.toFixed(post));
+}
+
+for( let r in results ) {
+	let res = results[r];
+	if( res.imperfection > 1/9 ) break;
+	console.log(`  ${formatNum(2, 0, res.x)}  ${formatNum(2, 0, res.y)}  ${formatNum(2, 2, res.diagonal)}  ${formatNum(2, 3, res.imperfection)}`);
+}
