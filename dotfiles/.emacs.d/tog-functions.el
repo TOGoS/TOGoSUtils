@@ -171,6 +171,9 @@
   (call-interactively 'eval-last-sexp)
   (search-backward-regexp "^= "))
 
+(defun visit-jht-help ()
+  (interactive)
+  (find-file (find-tog-proj-file "job/JHT/notes" "help.org")))
 (defun visit-todays-jht-notes ()
   (interactive)
   (find-file (find-todays-jht-notes-file))
