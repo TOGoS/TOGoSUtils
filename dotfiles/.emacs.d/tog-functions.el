@@ -86,7 +86,7 @@
       (let ((potentialprojdir (concat (car stuffdirlist) "/" projname)))
 	(if (file-directory-p potentialprojdir) potentialprojdir
 	  (find-tog-proj-dir-in projname (cdr stuffdirlist))))
-    nil))
+    (error (concat "Couln't find proj dir: " projname))))
 
 (defun find-tog-proj-dir (projname)
   (find-tog-proj-dir-in projname
