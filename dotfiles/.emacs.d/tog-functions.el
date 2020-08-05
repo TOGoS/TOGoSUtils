@@ -67,19 +67,27 @@
 	(concat (match-string 1 repository-url) "/commit/" commit-id)
       (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
 
+(defun first-matching (things matcher)
+  (let ((result nil))
+    (progn
+      (while (and things (not result))
+	(let ((thing (car things)))
+	  (setq result (funcall matcher thing)))
+	(setq things (cdr things)))
+      result)))
+
 (defun latest-file-in (dirs filter)
   (if (eq '() dirs)
       nil
-    (or
-     (let ((dir (car dirs)))
-       (if (not (file-directory-p dir))
-	   (if (funcall filter dir) dir)
-	 (let ((sorted-subdirs (mapcar (lambda (filename) (concat dir "/" filename))
-				       (let ((filenames (directory-files dir)))
-					 (sort (seq-filter (lambda (a) (not (= ?. (string-to-char a)))) filenames)
-					       (lambda (a b) (string> a b)))))))
-	   (latest-file-in sorted-subdirs filter))))
-     (latest-file-in (cdr dirs) filter))))
+    (first-matching dirs
+		    (lambda (dir)
+		      (if (not (file-directory-p dir))
+			  (if (funcall filter dir) dir)
+			(let ((sorted-subdirs (mapcar (lambda (filename) (concat dir "/" filename))
+						      (let ((filenames (directory-files dir)))
+							(sort (seq-filter (lambda (a) (not (= ?. (string-to-char a)))) filenames)
+							      (lambda (a b) (string> a b)))))))
+			  (latest-file-in sorted-subdirs filter)))))))
 
 (defun find-tog-proj-dir-in (projname stuffdirlist)
   (if stuffdirlist
@@ -111,6 +119,11 @@
   (latest-file-in (list (find-tog-proj-dir "job/JHT/notes"))
 		  (lambda (f) (string-match "-jht-notes\\.org$" f))))
 
+(defun find-latest-doke-file ()
+  (latest-file-in (list (find-tog-proj-dir "docs/doke/entries"))
+		  ; Only look at year-based for lack of a natural string comparison function
+		  (lambda (f) (string-match "^[0-9]\\{4\\}" (file-name-nondirectory f)))))
+
 (defun visit-tog-proj-file (projname file)
   (interactive "MProject name:\nMFile:")
   (let ((fullpath (find-tog-proj-file projname file)))
@@ -128,6 +141,9 @@
       (progn
 	(insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n")
 	(draft-mode 1))))
+(defun visit-latest-doke-entry ()
+  (interactive)
+  (find-file (find-latest-doke-file)))
 
 (defun visit-4909-transfers ()
   (interactive)
