@@ -108,7 +108,7 @@
     (if jhtnotesdir (concat jhtnotesdir "/" datestr "-jht-notes.org") nil)))
 
 (defun find-latest-jht-notes-file ()
-  (latest-file-in '("C:/Users/dan.stevens/stuff/job/JHT/notes/2020")
+  (latest-file-in (list (find-tog-proj-dir "job/JHT/notes"))
 		  (lambda (f) (string-match "-jht-notes\\.org$" f))))
 
 (defun visit-tog-proj-file (projname file)
