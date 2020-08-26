@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Apparently DockerHub will start removing old docker images
+# after 6 months.  Run this occasionally to pull them.
+
+cat $HOME/docs/ArchiveInfo/info/docker-images.lst | xargs -n 1 docker pull
