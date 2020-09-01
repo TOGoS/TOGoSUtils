@@ -5,5 +5,9 @@
 ;; Maybe one of my other scripts messes it up?
 ;; But this seems to fix the problem:
 (defun tog-org-mode-hook ()
-  (local-set-key "\t" 'org-cycle))
+  (local-set-key "\t" 'org-cycle)
+;; Careful!!  Emacs might think you mean Shift + "r" followed by "e" "t" "u" 'r" "n"!
+;; I need to figure out how that all works.
+;  (local-set-key "S-RET" 'org-table-copy-down)
+  )
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
