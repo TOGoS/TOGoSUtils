@@ -38,6 +38,7 @@ function toGithubProjectName( repoName ) {
 
 const remoteGenerators = [
 	(repoName) => [{name: "fs.marvin", url: "ssh://tog@fs.marvin.nuke24.net/~tog/git/"+repoName+".git"}],
+	(repoName) => [{name: "togos-fbs", url: "ssh://tog@togos-fbs.nuke24.net/~tog/git/"+repoName+".git"}],
 	(repoName) => [{name: "toggh1", url: "ssh://tog@toggh1.nuke24.net/~tog/git/"+repoName+".git"}],
 	(repoName) => [{name: "github", url: "ssh://git@github.com/"+toGithubProjectName(repoName)+".git"}],
 	(repoName) => [{name: "gitlab", url: "ssh://git@gitlab.com/"+toGithubProjectName(repoName)+".git"}],
