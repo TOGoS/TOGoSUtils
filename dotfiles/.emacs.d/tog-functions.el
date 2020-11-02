@@ -139,8 +139,7 @@
   (visit-doke-entry (format-time-string "%Y-%m-%d"))
   (if (= (buffer-size) 0)
       (progn
-	(insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n")
-	(draft-mode 1))))
+	(insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n"))))
 (defun visit-latest-doke-entry ()
   (interactive)
   (find-file (find-latest-doke-file)))
