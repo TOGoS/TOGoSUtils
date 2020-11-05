@@ -22,6 +22,7 @@ function printHelp() {
 	console.log("  -q | --quiet                      ; be less verbose");
 	console.log("  -v | --verbose                    ; be more verbose");
 	console.log("  --insert-artist=<name>            ; artist name to be inserted after track number");
+	console.log("  --capitalize-words                ; capitalize (most) words in filenames");
 }
 
 let dirs = [];
@@ -29,6 +30,7 @@ let replacements = [
 	["feat.","feat"]
 ];
 let artistNameToInsert = undefined;
+let shouldCapitalizeWords = false;
 let mode = undefined;
 let verbosity = undefined;
 let m;
@@ -44,6 +46,8 @@ for( let i=0; i<argv.length; ++i ) {
 		mode = 'dry-run';
 	} else if( (m = /^--insert-artist=(.*)/.exec(arg)) ) {
 		artistNameToInsert = m[1];
+	} else if( arg == '--capitalize-words' ) {
+		shouldCapitalizeWords = true;
 	} else if( arg == '-q' || arg == '--quiet' ) {
 		verbosity = 50;
 	} else if( arg == '-v' || arg == '--verbose' ) {
@@ -90,6 +94,12 @@ function fixFilename( fn ) {
 	fn = fn.replace(/[_-]$|^[_-]/g,'');       // Remove spacelikes at beginning and end
 	fn = fn.replace(/[_-]*\.[_-]*/g,'.');     // Remove spacelikes around "."
 	fn = fn.replace(/[^a-zA-Z0-9\._+-]/g,''); // Remove any odd characters that are left
+	if( shouldCapitalizeWords ) {
+		fn = fn.replace(/(\b|[\s_-])(([^\s_-])([^\s_-]*))/g, (match, prefix, word, firstLetter, restOfWord) => {
+				if( word == 'feat' ) return prefix+word;
+			return prefix + firstLetter.toUpperCase() + restOfWord;
+		});
+	}
 	return fn;
 }
 
