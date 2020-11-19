@@ -195,8 +195,9 @@
   (interactive)
   (find-file (find-todays-jht-notes-file))
   (if (= (buffer-size) 0)
-      (insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n"))
-  (end-of-buffer))
+      (progn
+	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n")
+	(end-of-buffer))))
 (defun visit-latest-jht-notes ()
   (interactive)
   (find-file (find-latest-jht-notes-file)))
