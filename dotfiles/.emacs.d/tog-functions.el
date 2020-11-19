@@ -202,6 +202,15 @@
   (interactive)
   (find-file (find-latest-jht-notes-file)))
 
+(defun visit-todays-sa-meeting-notes ()
+  (interactive)
+  (find-file (find-tog-proj-file "job/SA" (format-time-string "notes/%Y/%m/%Y%m%d-sa-meeting-notes.org")))
+  (if (= (buffer-size) 0)
+      (progn
+	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " SA meeting notes\n\n")
+	(end-of-buffer))))
+
+
 ;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
 ;(tog-parse-x-git-commit-url-body "asdf?no-repo=Hello")
 ;(tog-generate-git-commit-web-link
