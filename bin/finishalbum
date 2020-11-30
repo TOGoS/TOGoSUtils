@@ -77,8 +77,8 @@ if [ -z "$recreate" ] && [ -f "$m3u_file" ] ; then
 	echo "exists"
 elif [ "$mode" == "run" ] ; then
 	echo "generating..."
-	echo '$ ls *.mp3 | process-m3u -add-extinf | ccouch3 annotate-m3u >"'$m3u_file'"'
-	ls *.mp3 | process_m3u -add-extinf | annotate_m3u >"$m3u_file" || true
+	echo '$ ls *.mp3 *.ogg *.flac | process-m3u -add-extinf | ccouch3 annotate-m3u >"'$m3u_file'"'
+	ls *.mp3 *.ogg *.flac | process_m3u -add-extinf | annotate_m3u >"$m3u_file" || true
 	
 	m3u_size="$(wc -c < "$m3u_file")"
 	if [ ! -f "$m3u_file" ] ; then
