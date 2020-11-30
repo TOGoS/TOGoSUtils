@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "$music_work_dir" ]
+then
+    echo $0: Error: music_work_dir not defined >&2
+    exit 1						       
+fi
+
+set -euo pipefail
+
+ableton_backup_recycle_dir="$music_work_dir\.relocated-ableton-backups"
+
+mkdir -p "$ableton_backup_recycle_dir/"
+find "$music_work_dir" -path '*/Backup/*.als' -exec mv "{}" "$ableton_backup_recycle_dir/" ";"
+find "$music_work_dir" -name 'Backup' -type d -delete
+
+find "$music_work_dir/2019/ableton-live-library" -type d -empty -delete
