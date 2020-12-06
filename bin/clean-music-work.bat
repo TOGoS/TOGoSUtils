@@ -1,8 +1,8 @@
 @echo off
 rem Clean up the music/work directory before storing it!
 
-echo We should switch to the bash version
-echo But in the meantime...
+rem HINT: Fix your path (or set unix_find_exe) to use find.exe that comes with Git!
+rem Otherwise you might end up using an old veresion that doesn't support -delete
 
 if not defined music_work_dir (echo %~nx0: Error: music_work_dir not defined >&2 & goto fail)
 if not defined unix_find_exe set unix_find_exe=find
