@@ -1,5 +1,29 @@
 #!/bin/bash
 
+pull_mode=--ff-only
+rest=()
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+        --rebase)
+            pull_mode=--rebase
+            ;;
+        --ff-only)
+            pull_mode=--ff-only
+            ;;
+        --allow-merge)
+            pull_mode=""
+            ;;
+        *)
+            rest+=("$key")
+            ;;
+    esac
+    shift
+done
+
+
 set -euo pipefail
 BRANCH=`git branch | grep '* ' | sed 's/* //'`
-git remote | xargs -I '{}' -n 1 -P 1 git pull '{}' "$BRANCH" "$@"
+git remote | xargs -I '{}' -n 1 -P 1 git pull $pull_mode '{}' "$BRANCH" "${rest[@]}"
