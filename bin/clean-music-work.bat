@@ -22,6 +22,11 @@ rem Ableton likes to create lots of empty directories, but I don't care for them
 %unix_find_exe% %music_work_dir%/2019/ableton-live-library -type d -empty -delete
 
 
+rem Delete some other files that I don't want...
+rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac"
+rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac.asd"
+
+
 :stdbatfooter
 goto eof
 :fail
