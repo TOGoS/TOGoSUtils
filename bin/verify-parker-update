@@ -1,0 +1,61 @@
+#!/usr/bin/env ruby
+
+require 'digest/md5'
+
+class ParkerUpdateChecker
+  def check( update_xml_path )
+    dir = File.dirname(update_xml_path)
+    ok = true
+    parse(File.read( update_xml_path )) do |file_relative_path,expected_md5_hex|
+      file = dir + "/" + file_relative_path
+      md5_hex = Digest::MD5.file(file).hexdigest
+      if md5_hex == expected_md5_hex
+        puts "ok: file:#{file} == md5:#{expected_md5_hex}"
+      else
+        ok = false
+        puts "mismatch: file:#{file} = md5:#{md5_hex} != #{expected_md5_hex}"
+      end
+    end
+    return ok
+  end
+
+  def parse( update_xml )
+    update_xml.scan /<update(.*)\/>/ do |match|
+      update_attrs_string = match[0]
+      if update_attrs_string =~ /file="([^"]+)"/
+        update_file = $1
+      end
+      if update_attrs_string =~ /md5="([^"]+)"/
+        update_md5_hex = $1
+      end
+      if update_file.nil?
+        STDERR.puts "No file found in: "+update_attrs_string
+        next
+      end
+      if update_md5_hex.nil?
+        STDERR.puts "No MD5 found in: "+update_attrs_string
+        next
+      end
+      yield update_file, update_md5_hex
+    end
+  end
+end
+
+update_xml_file = "update.xml"
+
+args = $*.clone
+while arg = args.shift
+  if arg =~ /^-/
+    STDERR.puts "Oh no, unrecognized argument: #{arg}"
+  else
+    update_xml_file = arg
+  end
+end
+
+puts "Checking #{update_xml_file}..."
+if ParkerUpdateChecker.new.check(update_xml_file)
+  puts "All is well!"
+else
+  STDERR.puts "Some hashes did not match"
+  exit 1
+end
