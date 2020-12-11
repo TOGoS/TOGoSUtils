@@ -131,6 +131,23 @@ def savevars( vars=$vars )
   end
 end
 
+def find_input( basename )
+  dirs = [".", ".wav"]
+  exts = [".wav"]
+  tried = []
+  for dir in dirs
+    for ext in exts
+      f = dir + "/" + basename + ext
+      if File.exist? f
+        return f
+      else
+        tried << f
+      end
+    end
+  end
+  raise "Couldn't find input file for '#{basename}' (tried "+tried.join(', ')+")"
+end
+
 def encode( vars=$vars )
   for (k,v) in vars
     next unless v
@@ -146,7 +163,7 @@ def encode( vars=$vars )
   end
   for encname in encodings
     if( enc = Encodings::ByName[ encname ] )
-      infile = "#{vars['basefile']}.wav"
+      infile = find_input(vars['basefile'])
       outfile = "#{vars['basefile']}#{enc.postfix}"
       if( vars['overwrite'] or !File.exist?( outfile ) )
 	STDOUT.print("Creating #{outfile}\n")
