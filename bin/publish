@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 sector=user
 recurse_opt=""
 things=()
@@ -48,4 +50,4 @@ exec ccouch3 upload \
      -http-server:piccouch piccouch.appspot.com \
      -command-server:zappie1 ssh tog@zappie1.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
      -command-server:fs.marvin ssh tog@fs.marvin.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
-     "${things[@]}"
+     ${things[@]+"${things[@]}"}

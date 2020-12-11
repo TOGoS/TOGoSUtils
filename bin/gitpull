@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 pull_mode=--ff-only
 rest=()
 
@@ -23,7 +25,7 @@ do
     shift
 done
 
-
-set -euo pipefail
 BRANCH=`git branch | grep '* ' | sed 's/* //'`
-git remote | xargs -I '{}' -n 1 -P 1 git pull $pull_mode '{}' "$BRANCH" "${rest[@]}"
+# Explanation of ${arr[@]+"${arr[@]}"} syntax:
+# https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u
+git remote | xargs -I '{}' -n 1 -P 1 git pull $pull_mode '{}' "$BRANCH" ${rest[@]+"${rest[@]}"}
