@@ -1,0 +1,36 @@
+#!/bin/bash
+
+verbosity=2
+to_time_string=""
+resolution_mode=absolute
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-q)
+	    verbosity=1
+	    shift
+	    ;;
+	--next)
+	    resolution_mode=next
+	    ;;
+	*)
+	    to_time_string="$key"
+	    ;;
+    esac
+    shift
+done
+
+use_to_time_string=
+if [[ $resolution_mode == next ]]
+then
+    use_to_time_string="tomorrow $to_time_string"
+else
+    use_to_time_string="$to_time_string"
+fi
+seconds=$(expr $(date +%s --date="$use_to_time_string") - $(date +%s --date=now))
+if [[ $resolution_mode == next ]] ; then seconds=$(expr $seconds "%" 86400); fi # Might not work when DST changing lol
+
+if [[ $verbosity > 1 ]] ; then echo "Sleeping until $to_time_string, or $seconds seconds" ; fi
+sleep $seconds
