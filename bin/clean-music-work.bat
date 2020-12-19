@@ -23,9 +23,15 @@ rem Ableton likes to create lots of empty directories, but I don't care for them
 
 
 rem Delete some other files that I don't want...
+rem Or Maybe I do want those, but *not* the 'Imported' ones.
+rem What does 'Imported' even mean in my library?  Who cares that it was imported.
 rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac"
 rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac.asd"
-
+rem This was accidentally included because it was in a clip; it's a wasted 8MB;
+rem It is also known as urn:sha1:CDZEDEXE4QNNQHZNQZPNHQ4YAC3XIUX2
+rm -f "%music_work_dir%\2020\xmas2020p1\Samples\Processed\Consolidate\TOGoS-RVT_2001-ab [2020-12-17 215725].wav"
+rem TODO: Implement ccouch purge
+rem ccouch purge urn:sha1:CDZEDEXE4QNNQHZNQZPNHQ4YAC3XIUX2
 
 :stdbatfooter
 goto eof
