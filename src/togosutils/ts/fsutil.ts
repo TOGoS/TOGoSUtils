@@ -19,6 +19,7 @@ export function chmod( file:FilePath, mode:number ):Promise<void> {
 	return new Promise( (resolve,reject) => {
 		fs.chmod( file, mode, (err) => {
 			if( err ) reject(err);
+			else resolve();
 		});
 	});
 }
