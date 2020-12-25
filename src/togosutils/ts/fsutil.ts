@@ -44,19 +44,19 @@ export function readFileToUint8Array( file:FilePath, options:{flag?:string}={} )
 }
 
 export function readStreamToUint8Array( stream:NodeJS.ReadableStream ):Promise<Uint8Array> {
-    return new Promise<Uint8Array>( (resolve, reject) => {
-        let buffers:Buffer[] = [];
-        stream.on('data', (buf:Buffer) => {
-            buffers.push(buf);
-        })
-        stream.on('end', () => {
-            resolve(Buffer.concat(buffers));
-        })
-        stream.on('error', (err:Error) => {
-            reject(err);
-        })
-        stream.resume();
-    });
+	return new Promise<Uint8Array>( (resolve, reject) => {
+		let buffers:Buffer[] = [];
+		stream.on('data', (buf:Buffer) => {
+			buffers.push(buf);
+		})
+		stream.on('end', () => {
+			resolve(Buffer.concat(buffers));
+		})
+		stream.on('error', (err:Error) => {
+			reject(err);
+		})
+		stream.resume();
+	});
 }
 
 export function writeFile( file:FilePath, data:string|Uint8Array ):Promise<FilePath> {
