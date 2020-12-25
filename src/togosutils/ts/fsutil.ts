@@ -154,7 +154,6 @@ export function cp( src:FilePath, dest:FilePath ):Promise<FilePath> {
 
 export function mkdir( dir:FilePath ):Promise<FilePath> {
 	return new Promise( (resolve,reject) => {
-		console.log('mkdir "'+dir+'"');
 		fs.mkdir( dir, (err) => {
 			if( err && err.code !== 'EEXIST' ) {
 				reject(err);
