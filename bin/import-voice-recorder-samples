@@ -1,7 +1,9 @@
+const path = require('path');
 let fsutil = require('togosutils/fsutil');
 
 let indir = 'C:/backup/2020/TOGoS_Galaxy_Note_8/Voice Recorder';
-let outdir = 'F:/stuff/music/work/2019/ableton-live-library/Samples/Imported/Voice Recorder';
+//let outdir = 'F:/stuff/music/work/2019/ableton-live-library/Samples/Imported/Voice Recorder';
+let outdir = 'F:/incoming/2019/ableton-live-library/Samples/Imported/Voice Recorder';
 
 // TODO: Maybe put walk in fsutil
 // TODO: Less verbosity by default
@@ -16,31 +18,41 @@ function walk(file, fileCallback, dirCallback, options) {
     if( options == null ) options = defaultWalkOptions;
     return fsutil.stat(file).then( stat => {
 	if( stat.isDirectory() ) {
-	    return dirCallback(file).then( shouldRecurse => {
+	    return dirCallback(file, stat).then( shouldRecurse => {
 		return shouldRecurse ? fsutil.readDir(file).then( subnames => {
 		    if( !options.includeDotFiles ) subnames = subnames.filter( n => n.substr(0,1) != '.' );
 		    if( options.parallel ) {
 			let results = [];
 			for( let f in subnames ) {
+			    console.log(`# Parallel recurse into ${subnames[f]}...`);
 			    results.push( walk(file+pathSegmentSeparator+subnames[f], fileCallback, dirCallback, options) );
 			}
 			return Promise.all(results);
 		    } else {
 			let result = Promise.resolve();
 			for( let f in subnames ) {
-			    result = result.then( () => walk(file+pathSegmentSeparator+subnames[f], fileCallback, dirCallback, options) );
+			    result = result.then( () => {
+				console.log(`# Recurse into ${subnames[f]}...`);				
+				return walk(file+pathSegmentSeparator+subnames[f], fileCallback, dirCallback, options);
+			    });
 			}
 			return result;
 		    }
-		}) : undefined;
+		}) : Promise.resolve();
 	    });
 	} else {
-	    return fileCallback(file);
+	    return fileCallback(file, stat);
 	}
     });
 }
 
+let mode = 'do-it';
 function linkOrCopy(source, dest) {
+    if( mode != 'do-it' ) {
+	console.log(`ln-or-cp "${source}" "${dest}"`);
+	return Promise.resolve()
+    }
+    
     if( source == dest ) return Promise.reject(new Error(`Source and dest files are the same: ${source}`));
     return Promise.resolve().then( () => {
 	return fsutil.mkParentDirs(dest);
@@ -49,40 +61,64 @@ function linkOrCopy(source, dest) {
 	return fsutil.link(source, dest).catch( err => {
 	    console.log(`cp "${source}" "${dest}"`);
 	    return fsutil.cp(source, dest);
-	//}).catch( err => {
-	//    return Promise.reject(err);
 	});
     }).then( () => {
 	return fsutil.stat(dest);
     }).then( stat => {
-	let newMode = stat.mode & ~0o222;
+	let newMode = stat.mode & 0o777 & ~0o222;
 	return fsutil.chmod(dest, newMode);
     });
 }
 
+function pad(toLength, usingChar, input) {
+    input = ""+input;
+    while( input.length < toLength ) input = usingChar + input;
+    return input;
+}
+
+function formatYmd(date) {
+    return pad(4,'0',date.getFullYear())+'-'+pad(2,'0',date.getMonth()+1)+'-'+pad(2,'0',date.getDate())
+}
+
 let copyCount = 0;
 
-function fileCallback(infile) {
+function fileCallback(infile, infileStat) {
     let outfile = outdir + infile.substr(indir.length);
+    let outBasename = path.basename(outfile);
+    let outDirname = path.dirname(outfile);
+    
     let m;
-    if( m = /^(.*).(mp4|m4a)$/.exec(outfile) ) {
-	outfile = m[1]+".mp4";
+    
+    if( m = /^(.*).(mp4|m4a)$/.exec(outBasename) ) {
+	outBasename = m[1]+".mp4";
     } else {
 	// At the moment I'm /only/ interested in m4a files.
 	return;
     }
+
+    if( m = /^(\d{4}-\d{2}-\d{2}) (.*)/.exec(outBasename) ) {
+    } else if( m = /^(\d+)/.exec(outBasename) ) {
+	console.log(`# Warning: File starts with digit but is not the expected YYYY-mm-dd date format: '${outBasename}'`);
+    } else {
+	outBasename = formatYmd(infileStat.mtime)+' '+outBasename;
+    }
+
+    outfile = outDirname + pathSegmentSeparator + outBasename;
+    
     return fsutil.stat( outfile ).then( _ => true ).catch( _ => false ).then( exists => {
 	if( exists ) {
-	    console.log(`# ${outfile} already exists`);
-	    return undefined;
+	    console.log(`# Already exists: ${outfile}`);
+	    return Promise.resolve();
 	} else {
-	    return linkOrCopy(infile, outfile).then( () => ++copyCount );
+	    return linkOrCopy(infile, outfile).then( () => {
+		++copyCount;
+	    });
 	}
     })
 }
 
 walk(indir, fileCallback, undefined, {parallel:false}).then( (exitCode) => {
-    console.log(`# ${copyCount} files copied`);
+    console.log(`# ${copyCount} files copied to ${outdir}`);
     return 0;
 }).catch( err => {
     console.error("There was a problem.");
