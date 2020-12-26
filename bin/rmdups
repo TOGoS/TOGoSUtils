@@ -9,6 +9,7 @@ archive_dirs = []
 mode = :Run
 
 $verbosity = 100
+$zealous = false
 
 args = $*.clone
 while arg = args.shift
@@ -19,6 +20,8 @@ while arg = args.shift
     mode = :Help
   when /^--archive=(.*)/
     archive_dirs << $1
+  when '--zealous'
+    $zealous = true
   when '-v'
     $verbosity = 200
   else
@@ -42,6 +45,8 @@ Usage: #{selfname} <options> <directory> ...
 
 Options:
   --help           ; Print help text and exit
+  --archive=<dir>  ; Search <dir> for archived hardlinks
+  --zealous        ; Remove duplicates even when they have more than one hardlink
   -v               ; Be verbose
 
 Finds duplicate files (based on MD5 of file content) and emits a shell script of 'rm' commands
@@ -123,6 +128,10 @@ def describe_infos(infos)
   infos.collect{|i| "#{i.path} (#{i.nlink} links)"}.join(", ")
 end
 
+def preference_compare(a, b)
+  [a.nlink,a.mtime,File.basename(a.path)] <=> [b.nlink,b.mtime,File.basename(b.path)]
+end
+
 for (hash,infos) in $hash_files
   if infos.length > 1
     copies_with_multiple_links = []
@@ -159,14 +168,21 @@ for (hash,infos) in $hash_files
       copies_to_remove = copies_with_single_link
     elsif copies_with_multiple_links.length == 0
       keepal_code = :Oldest
-      removal_code = :NotOldest
-      sorted_copies = (copies_with_single_link.sort { |a,b| a.mtime <=> b.mtime })
+      removal_code = :NoLinksNotOldest
+      sorted_copies = (copies_with_single_link.sort &method(:preference_compare))
       copies_to_keep = [sorted_copies[0]]
       copies_to_remove = sorted_copies[1..-1]
     else
       raise "Impossible situation"
     end
-    
+
+    if copies_to_keep.length > 1 and $zealous
+      removal_code = :LinksNotOldest
+      sorted_copies = copies_to_keep.sort &method(:preference_compare)
+      copies_to_keep = [sorted_copies[0]]
+      copies_to_remove.concat sorted_copies[1..-1]
+    end
+
     if copies_to_keep.length > 1
       case keepal_code
       when :Archived
@@ -187,8 +203,10 @@ for (hash,infos) in $hash_files
         situation_description = "Other copies archived: "+describe_infos(archived_copies)
       when :OneCopyHasHardlinks
         situation_description = "Another copy has hardlinks: "+describe_infos(copies_to_keep)
-      when :NotOldest
+      when :NoLinksNotOldest
         situation_description = "No copies had hardlinks; keeping the oldest"
+      when :LinksNotOldest
+        situation_description = "Had hardlinks, but keeping the oldest because --zealous"
       end
       puts "rm #{Shellwords.escape(c.path)} # #{situation_description}"
     end
