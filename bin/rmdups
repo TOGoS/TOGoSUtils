@@ -161,7 +161,7 @@ for (hash,infos) in $hash_files
       keepal_code = :Oldest
       removal_code = :NotOldest
       sorted_copies = (copies_with_single_link.sort { |a,b| a.mtime <=> b.mtime })
-      copies_to_keep = sorted_copies[0]
+      copies_to_keep = [sorted_copies[0]]
       copies_to_remove = sorted_copies[1..-1]
     else
       raise "Impossible situation"
