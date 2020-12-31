@@ -194,11 +194,18 @@ def touch( file, mtime )
   #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
 
+# Might be undesireable if the source of the filename
+# is using a timezone other than CST!
+# Using mtime /presumably/ takes that into account,
+# unless copying from a filesystem that records dates without timezone.
+# Might be useful to use it only for adjustments of a few seconds?
+$use_filename_time = true
+
 def figger_mtime( file )
   basename = File.basename(file)
   # Pix from our Galaxy phones are named in this format;
   # no need to guess the time, just take it from the filename!
-  if basename =~ /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})}/
+  if $use_filename_time and basename =~ /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})}/
     return Time.new($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i)
   end
   begin
