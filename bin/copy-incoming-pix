@@ -241,9 +241,6 @@ def process_image( infile )
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   return if $older_than and mtime >= $older_than
-
-  Time.new(2020,10,01,0,0,0)
-  
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
   return unless transfer_file( infile, outfile )
