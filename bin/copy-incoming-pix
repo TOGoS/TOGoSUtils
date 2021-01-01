@@ -49,7 +49,7 @@ end
 args = $*.clone
 while arg = args.shift
   case arg
-  when '-dryrun'
+  when '-dry-run'
     $dryrun = true
   when '-link'
     $transfer_mode = :hardlink
@@ -137,15 +137,26 @@ def link_file( source, dest )
   FileUtils.ln( source, dest )
 end
 
-def transfer_file( source, dest )
-  dest_dir = File.dirname(dest)
-  unless File.directory? dest_dir
+$dirs_mkd = {}
+def maybe_mkdir( dir )
+  # If we've already made it, no nothing!
+  return if $dirs_mkd[dir]
+
+  # If it doesn't exist, make it, or pretend do
+  unless File.directory? dir
     if $dryrun
-      puts "mkdir '#{dest_dir}'"
+      puts "mkdir '#{dir}'"
     else
-      FileUtils.mkdir_p(dest_dir)
+      FileUtils.mkdir_p(dir)
     end
   end
+
+  # And remember that we made it so we don't waste any more time
+  $dirs_mkd[dir] = dir
+end
+
+def transfer_file( source, dest )
+  maybe_mkdir File.dirname(dest)
   
   case $transfer_mode
   when :copy
@@ -183,10 +194,22 @@ def touch( file, mtime )
   #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
 
+# Might be undesireable if the source of the filename
+# is using a timezone other than CST!
+# Using mtime /presumably/ takes that into account,
+# unless copying from a filesystem that records dates without timezone.
+# Might be useful to use it only for adjustments of a few seconds?
+$use_filename_time = true
+
 def figger_mtime( file )
+  basename = File.basename(file)
+  # Pix from our Galaxy phones are named in this format;
+  # no need to guess the time, just take it from the filename!
+  if $use_filename_time and basename =~ /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})}/
+    return Time.new($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i)
+  end
   begin
     return File.mtime(file) + $mtime_offset
-    return File.mtime(file)
   rescue ArgumentError
     return Time.at(0)
   end
@@ -200,13 +223,31 @@ $files_processed = 0
 $files_existing  = 0 # i.e. not copied because the destination's already there
 $files_copied    = 0
 
+# Time at which I switched from HHMMSS-... to YYYYmmdd_HHMMSS... to match
+# What our Android phones give us by default.
+$name_v2_cutoff = Time.new(2020, 10, 01, 0, 0, 0)
+
+# Come up with a new basename for the given basename and Time
+def name_file( original_basename, mtime )
+  if mtime < $name_v2_cutoff
+    return mtime.strftime('%H%M%S-') + original_basename
+  else
+    timepart = mtime.strftime('%Y%m%d_%H%M%S')
+    if original_basename[0...timepart.length] == timepart
+      return original_basename
+    else
+      return timepart + '-' + original_basename
+    end
+  end
+end
+
 def process_image( infile )
   $files_processed += 1
   return unless $image_dest
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   return if $older_than and mtime >= $older_than
-  outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
+  outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
   return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
@@ -222,10 +263,8 @@ def process_video( infile )
   mtime = figger_mtime( infile )
   return if $newer_than and mtime <= $newer_than
   return if $older_than and mtime >= $older_than
-  outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/%H%M%S-') + File.basename(infile)
+  outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
-  outdir = File.dirname(outfile)
-  FileUtils.mkdir_p( outdir ) unless File.exist?( outdir )
   return unless transfer_file( infile, outfile )
   touch( outfile, mtime )
   $files_copied += 1
