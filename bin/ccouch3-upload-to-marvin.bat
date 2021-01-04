@@ -3,8 +3,7 @@
 call require-ccouch-env.bat
 if errorlevel 1 goto fail
 
-echo %~f0 doing okay still...
-
+if "%~1" EQU "-sector" set ccouch_store_sector=%~2
 if not defined ccouch_store_sector (echo ccouch_store_sector not specified & goto fail)
 
 @echo on
