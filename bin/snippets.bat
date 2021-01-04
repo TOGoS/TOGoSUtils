@@ -12,7 +12,7 @@ echo:Message: %message%
 echo:You can override the message by passing -m (message) to this script.
 echo:
 
-call require-ccouch-envx.bat
+call require-ccouch-env.bat
 if errorlevel 1 (echo Your ccouch environment variables are *NOT* set! & goto endcheck)
 if errorlevel 0 (echo Your ccouch environment variables are set!  Congrats! & goto endcheck)
 :endcheck
