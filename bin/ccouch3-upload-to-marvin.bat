@@ -10,7 +10,7 @@ if not defined ccouch_store_sector (echo ccouch_store_sector not specified & got
 @echo on
 java -jar %ccouch3_jar% upload -repo:%ccouch_repo_name% %ccouch_repo_dir% ^
 	-command-server:fs.marvin plink tog@fs.marvin.nuke24.net ccouch3 command-server -sector %ccouch_store_sector% ";" ^
-	-command-server:togos-fbs plink tog@external.marvin.nuke24.net -P ccouch3 command-server -sector %ccouch_store_sector% ";" ^
+	-command-server:togos-fbs plink -P 31522 tog@external.marvin.nuke24.net ccouch3 command-server -sector %ccouch_store_sector% ";" ^
 	%*
 @echo off
 goto eof
