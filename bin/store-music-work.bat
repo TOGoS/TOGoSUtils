@@ -2,7 +2,7 @@
 
 setlocal
 
-set script_version=2020-01-04
+set script_version=2020-01-04b
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
@@ -34,24 +34,11 @@ set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
 @echo on
-rem pscp -P 31522 %latest_head_file% tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/eng-lap-426-2019/tog/music/work/
 pscp %latest_head_file% tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
 pscp -P 31522 %latest_head_file% tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
 @echo off
 
-grep -o "urn:.*" %music_work_dir%\.commit-uris > %music_work_dir%\.commit-blob-uris
-set /p music_commit_blob_urn= <%music_work_dir%\.commit-blob-uris
-del %music_work_dir%\.commit-blob-uris
-
-echo Commit blob URN: %music_commit_blob_urn%
-
-@echo on
-java -jar %ccouch3_jar% upload -repo:%ccouch_repo_name% %ccouch_repo_dir% ^
-	-command-server:fs.marvin plink tog@fs.marvin.nuke24.net ccouch3 command-server -sector "%ccouch_store_sector%" ";" ^
-	-command-server:togos-fbs plink tog@external.marvin.nuke24.net -P 31522 ccouch3 command-server -sector "%ccouch_store_sector%" ";" ^
-	-recurse -v ^
-	%music_commit_blob_urn%
-@echo off
+call ccouch3-upload-to-marvin -recurse x-ccouch-head:%ccouch_repo_name%/tog/music/work/latest
 
 :stdbatfooter
 goto eof
