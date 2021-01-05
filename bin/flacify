@@ -1,0 +1,68 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+
+FileUtils.mkdir_p('.')
+
+def walk(dir, &prok)
+  if File.directory? dir
+    Dir.foreach(dir) do |e|
+      next if e[0] == ?.
+      walk "#{dir}/#{e}", &prok
+    end
+  else
+    prok.call(dir)
+  end
+end
+
+HELP_TEXT = <<EOS
+flacify: Convert .wav files to .flac and back up .wavs to .wav/*
+
+For help: flacify --help
+
+To convert .wavs to .flacs: flacify [-q] <file or directory> ...
+
+-q tells me to shut up about not getting any arguments.
+EOS
+
+dirs = []
+verbosity = 100
+
+args = $*.clone
+while arg = args.shift
+  case arg
+  when '-h', '-?', '--help'
+    puts HELP_TEXT
+    exit 0
+  when '-q'
+    verbosity = 0
+  when /^-/
+    STDERR.puts "Unrecognized argument: #{arg}"
+    STDERR.puts "Try #{$PROGRAM_NAME} --help for help."
+    exit 1
+  else
+    dirs << arg
+  end
+end
+
+if dirs.empty? and verbosity > 0
+  STDERR.puts "Warning: No inputs specified!  Please provide files or directories to process.\nOr try #{$PROGRAM_NAME} --help for help."
+end
+
+for d in dirs
+  walk d do |e|
+    if e =~ /(.*)\.wav$/
+      flac = "#{$1}.flac"
+      backup_dir = File.dirname(e) + "/.wav/"
+      unless File.exist? flac
+        cmd = ["ffmpeg", "-i", e, flac]
+        unless system(*cmd)
+          raise "Failed to run: "+cmd.join(' ')
+        end
+      end
+      FileUtils.mkdir_p(backup_dir)
+      backed_up_wav = backup_dir + File.basename(e)
+      File.rename(e, backed_up_wav)
+    end
+  end
+end
