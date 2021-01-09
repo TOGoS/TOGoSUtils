@@ -11,6 +11,7 @@ module TOGoS
       #  author  = name of artist/author
       #  album   = name of album
       #  track   = track number ["/" total track count]
+      #  bpm     = beats per minute
       #  date    = YYYY-MM-DD of release
       #  year    = year of release (alternative to specific date)
       #  genre   = name of genre
@@ -60,6 +61,9 @@ module TOGoS
 	  if v = tags['date'] || tags['year']
 	    tf << "--tag=DATE=#{v}"
 	  end
+          if v = tags['bpm']
+            tf << "--tag=BPM=#{v}"
+          end
 	  if v = tags['genre'] ; tf << "--tag=GENRE=#{v}" ; end
 	  if v = tags['comment'] ; tf << "--tag=COMMENT=#{v}" ; end
 	  if v = tags['cover-art-file'] ; tf << "--picture=#{v}" ; end

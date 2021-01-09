@@ -85,6 +85,7 @@ def defaultinputs( vars=$vars )
     "cover-art-file [#{cafile}]",
     'genre',
     'date',
+    'bpm',
     'comment',
   ]
   for i in attrnames
