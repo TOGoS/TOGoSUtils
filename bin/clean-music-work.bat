@@ -1,4 +1,7 @@
 @echo off
+
+setlocal
+
 rem Clean up the music/work directory before storing it!
 
 rem HINT: Fix your path (or set unix_find_exe) to use find.exe that comes with Git!
@@ -8,6 +11,12 @@ if not defined music_work_dir (echo %~nx0: Error: music_work_dir not defined >&2
 if not defined unix_find_exe set unix_find_exe=find
 
 set ableton_backup_recycle_dir=%music_work_dir%\.relocated-ableton-backups
+
+set self_dir=%~dp0
+set dotfiled_dir=%self_dir%\..\dotfiles
+
+for /f "eol=# tokens=*" %%i in (%dotfiled_dir%\music\work\.banned-files) do rm -f "%music_work_dir:\=/%/%%i"
+
 
 rem Remove Ableton Backup directories
 rem Windows md/mkdir requires backslashes...
@@ -21,17 +30,8 @@ rem TODO: Remove Reason Backup dirs, also?
 rem Ableton likes to create lots of empty directories, but I don't care for them!
 %unix_find_exe% %music_work_dir%/2019/ableton-live-library -type d -empty -delete
 
-
-rem Delete some other files that I don't want...
-rem Or Maybe I do want those, but *not* the 'Imported' ones.
-rem What does 'Imported' even mean in my library?  Who cares that it was imported.
-rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac"
-rm -f "%music_work_dir%\2019\ableton-live-library\Samples\silence.flac.asd"
-rem This was accidentally included because it was in a clip; it's a wasted 8MB;
-rem It is also known as urn:sha1:CDZEDEXE4QNNQHZNQZPNHQ4YAC3XIUX2
-rm -f "%music_work_dir%\2020\xmas2020p1\Samples\Processed\Consolidate\TOGoS-RVT_2001-ab [2020-12-17 215725].wav"
 rem TODO: Implement ccouch purge
-rem ccouch purge urn:sha1:CDZEDEXE4QNNQHZNQZPNHQ4YAC3XIUX2
+rem ccouch purge urn:sha1:CDZEDEXE4QNNQHZNQZPNHQ4YAC3XIUX2  (aka TOGoS-RVT_2001-ab [2020-12-17 215725].wav)
 
 :stdbatfooter
 goto eof
