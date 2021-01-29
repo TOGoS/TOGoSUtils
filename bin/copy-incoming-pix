@@ -206,7 +206,7 @@ def figger_mtime( file )
   # Pix from our Galaxy phones are named in this format;
   # no need to guess the time, just take it from the filename!
   if $use_filename_time and basename =~ /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})}/
-    return Time.new($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i)
+    return Time.local($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i)
   end
   begin
     return File.mtime(file) + $mtime_offset
@@ -225,7 +225,7 @@ $files_copied    = 0
 
 # Time at which I switched from HHMMSS-... to YYYYmmdd_HHMMSS... to match
 # What our Android phones give us by default.
-$name_v2_cutoff = Time.new(2020, 10, 01, 0, 0, 0)
+$name_v2_cutoff = Time.local(2020, 10, 01, 0, 0, 0)
 
 # Come up with a new basename for the given basename and Time
 def name_file( original_basename, mtime )
