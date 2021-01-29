@@ -4,6 +4,7 @@
 
 require 'fileutils'
 require 'time'
+require 'date'
 
 USAGE = <<EOS
 Usage: copy-incoming-pix [options] [input dir] ...
@@ -194,24 +195,44 @@ def touch( file, mtime )
   #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
 end
 
-# Might be undesireable if the source of the filename
-# is using a timezone other than CST!
-# Using mtime /presumably/ takes that into account,
-# unless copying from a filesystem that records dates without timezone.
-# Might be useful to use it only for adjustments of a few seconds?
-$use_filename_time = true
-
 def figger_mtime( file )
+  mtime_exception = nil
+  begin
+    regular_mtime = File.mtime(file) + $mtime_offset
+  rescue => e
+    mtime_exception = e
+  end
+  fn_based_mtime = nil
+  
   basename = File.basename(file)
   # Pix from our Galaxy phones are named in this format;
   # no need to guess the time, just take it from the filename!
-  if $use_filename_time and basename =~ /^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})}/
-    return Time.local($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i)
+  if basename =~ /^(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)(\d\d)/
+    fn_based_mtime = Time.local($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i) + $mtime_offset
   end
-  begin
-    return File.mtime(file) + $mtime_offset
-  rescue ArgumentError
-    return Time.at(0)
+
+  if fn_based_mtime and regular_mtime
+    diff = regular_mtime - fn_based_mtime
+    diff_hours = (diff / 3600).round
+    diff_only_seconds = diff - diff_hours*3600
+    if diff_only_seconds.abs < 30
+      # Let the filname be authoritative on seconds
+      # but the mtime on the hour, since it
+      # will not be biased by whatever timezone
+      if diff_hours != 0
+        puts "# #{fn_based_mtime} + #{diff_hours} = #{fn_based_mtime + diff_hours} for #{file}"
+      end
+      return fn_based_mtime + diff_hours
+    else
+      # Otherwise take...the mtime
+      return regular_mtime
+    end
+  elsif fn_based_mtime
+    return fn_based_mtime
+  elsif regular_mtime
+    return regular_mtime
+  else
+    raise "Couldn't determine mtime for #{file}: #{mtime_exception}"
   end
 end
 
