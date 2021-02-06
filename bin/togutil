@@ -64,7 +64,7 @@ const commands = {
 				if( outputFormat == undefined ) {
 					Log.head(head);
 				} else {
-					let parentName = head.headName.replace(/\/[^\/]$/,'');
+					let parentName = head.headName.replace(/\/[^\/]+$/,'');
 					let output = outputFormat.
 						replace(/{name}/g, head.headName).
 						replace(/{parentName}/g, parentName).

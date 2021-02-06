@@ -2,7 +2,7 @@
 
 setlocal
 
-set script_version=2020-01-04
+set script_version=2020-02-06
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
@@ -41,9 +41,9 @@ call togutil list-ccouch-heads %ccouch_repo_name%/archives/images ^
 	--recurse --last=1 ^
 	--output-format="" ^
 	--output-format+="plink -batch tog@fs.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
-	--output-format+="pscp {file} ""tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/""{nl}" ^
+	--output-format+="pscp {file} ""tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
 	--output-format+="plink -P 31522 -batch tog@external.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
-	--output-format+="pscp -P 31522 {file} ""tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/""{nl}" ^
+	--output-format+="pscp -P 31522 {file} ""tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
 	> %push_image_archives_bat%
 echo Generated push script, %push_image_archives_bat%
 @echo on
