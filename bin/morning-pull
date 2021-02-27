@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const repoNames = [
+	"EarthIT/OIDAllocator",
 	"TOGoS/docs/doke",
 	"TOGoS/docs/imps",
 	"TOGoS/docs/job",
@@ -60,6 +61,9 @@ function findRepo(repoName) {
 	var m;
 	var promises = [];
 	var allPaths = [];	
+	if( (m = /EarthIT\/(.*)/.exec(repoName)) ) {
+		repoName = "TOGoS/proj/"+m[1]; // Hack until I rewrite all this code lol
+	}
 	if( (m = /TOGoS\/(.*)/.exec(repoName)) ) {
 		var mainName = m[1];
 		var homeDir;
