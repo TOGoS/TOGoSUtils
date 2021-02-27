@@ -1,4 +1,5 @@
 (add-hook 'c++-mode-hook 'infer-indentation-style)
+(add-hook 'c-mode-hook 'infer-indentation-style)
 (add-hook 'text-mode-hook 'tog-tabs-8)
 
 ;; Seems like this should be default!
@@ -11,3 +12,8 @@
 ;  (local-set-key "S-RET" 'org-table-copy-down)
   )
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
+
+(defun tog-php-mode-hook ()
+  (tog-tabs)
+  (infer-indentation-style))
+(add-hook 'php-mode-hook 'tog-php-mode-hook)
