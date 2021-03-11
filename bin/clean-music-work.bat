@@ -22,8 +22,10 @@ rem Remove Ableton Backup directories
 rem Windows md/mkdir requires backslashes...
 if not exist "%ableton_backup_recycle_dir:/=\%" mkdir "%ableton_backup_recycle_dir:/=\%"
 rem but find likes forward ones, lol
-%unix_find_exe% %music_work_dir% -path "*/Backup/*.als" -exec mv "{}" "%ableton_backup_recycle_dir:\=/%/" ";"
-%unix_find_exe% %music_work_dir% -name "Backup" -type d -delete
+rem %unix_find_exe% %music_work_dir% -path "*/Backup/*.als" -exec mv "{}" "%ableton_backup_recycle_dir:\=/%/" ";"
+rem %unix_find_exe% %music_work_dir% -name "Backup" -type d -delete
+%unix_find_exe% %music_work_dir% -name "Backup" -type d -exec attrib +h "{}" ";"
+%unix_find_exe% %music_work_dir% -name "Ableton Folder Info" -exec attrib +h "{}" ";"
 
 rem TODO: Remove Reason Backup dirs, also?
 
