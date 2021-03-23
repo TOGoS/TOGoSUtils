@@ -20,3 +20,25 @@
 (defun tog-js-mode-hook ()
   (infer-indentation-style))
 (add-hook 'js-mode-hook 'tog-js-mode-hook)
+
+(defun tog-cargo-build ()
+  (interactive)
+  (compile "cargo build"))
+(defun tog-cargo-run ()
+  (interactive)
+  (compile "cargo run"))
+(defun tog-cargo-run-default ()
+  (interactive)
+  (compile "cargo run-default"))
+(defun tog-cargo-test ()
+  (interactive)
+  (compile "cargo test"))
+
+(defun tog-rust-mode-hook ()
+  (interactive) ; sometimes it doesn't seem to run?
+  (setq indent-tabs-mode nil) ; RUST USES SPACES STOP TURNING THEM INTO TABS
+  (local-set-key (kbd "C-c C-c") 'tog-cargo-build)
+  (local-set-key (kbd "C-c C-r") 'tog-cargo-run)
+  (local-set-key (kbd "C-c r d") 'tog-cargo-run-default)
+  (local-set-key (kbd "C-c C-t") 'tog-cargo-test))
+(add-hook 'rust-mode-hook 'tog-rust-mode-hook)
