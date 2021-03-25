@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -euo pipefail
+
+self_name="$(basename "$0")"
+
+if [ -z "${ccouch_repo_name+x}" ]
+then
+    echo "$selfname: error: ccouch_repo_name not specified" >&2
+    exit 1
+fi
+
+commit_message="TOGoS music archive on $ccouch_repo_name"
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-m)
+	    commit_message="$2"
+	    shift
+	    ;;
+	--debug)
+	    set -x
+	    ;;
+	*)
+	    echo "$self_name: error: Unrecognized argument: '$1'" >&2
+	    exit 1
+	    ;;
+    esac
+    shift
+done
+
+ccouch_store() {
+    ccouch store \
+	   -link \
+	   -sector music \
+	   -use-uri-dot-files -create-uri-dot-files \
+	   "$@"
+}
+
+find_urns() {
+    grep -o 'urn:.*'
+}
+
+uri_list_file=$(tempfile)
+
+ccouch_store \
+       -n tog/music/archive \
+       -m "$commit_message" \
+       -a TOGoS \
+       -v \
+       $HOME/music/archive | find_urns >>"$uri_list_file"
+rsync-push-ccouch-heads
+ssh tog@fs.marvin.nuke24.net "ccouch3-cache -recurse @-" <"$uri_list_file"
+echo "URNs were stored in $uri_list_file"
