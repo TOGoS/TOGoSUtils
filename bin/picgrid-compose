@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ -n "${ccouch_repo_dir+x}" ] ; then
+    echo "Please set ccouch_repo_dir" >&2
+    exit 1
+fi
+
+exec docker run \
+       -v "$ccouch_repo_dir":/.ccouch \
+       togos/picgrid:latest compose \
+       -datastore /.ccouch/data/picgrid \
+       -ms-datasource /.ccouch/data \
+       -page-style hover \
+       -layouter multifit:1024x768 \
+       -function-cache-dir /.ccouch/cache/picgrid \
+       "$@"
