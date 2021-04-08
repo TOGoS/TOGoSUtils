@@ -17,6 +17,7 @@
   (setq tab-width 3)
   (setq c-basic-offset tab-width)
   (setq js-indent-level tab-width)
+  (setq nxml-child-indent tab-width)
   (setq indent-tabs-mode t))
 
 (defun tog-tabs-8 ()
@@ -32,14 +33,17 @@
   (tog-tabs)
   (local-set-key "\t" 'self-insert-command))
 
+(defun looks-like-indentation-is-tabs ()
+  (let ((space-count (how-many "^  " (point-min) (point-max)))
+        (tab-count (how-many "^\t" (point-min) (point-max))))
+    (> tab-count space-count)))
 
 (defun infer-indentation-style ()
   ;; if our source file uses tabs, we use tabs, if spaces spaces, and if
   ;; neither, we use the current indent-tabs-mode
-  (let ((space-count (how-many "^  " (point-min) (point-max)))
-        (tab-count (how-many "^\t" (point-min) (point-max))))
-    (if (> space-count tab-count) (setq indent-tabs-mode nil))
-    (if (> tab-count space-count) (tog-tabs))))
+  (if (looks-like-indentation-is-tabs)
+      (tog-tabs)
+    (setq indent-tabs-mode nil)))
 
 ;; Me learning elisp
 

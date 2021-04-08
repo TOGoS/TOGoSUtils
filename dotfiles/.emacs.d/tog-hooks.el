@@ -42,3 +42,11 @@
   (local-set-key (kbd "C-c r d") 'tog-cargo-run-default)
   (local-set-key (kbd "C-c C-t") 'tog-cargo-test))
 (add-hook 'rust-mode-hook 'tog-rust-mode-hook)
+
+(defun tog-nxml-mode-hook ()
+  (if (looks-like-indentation-is-tabs)
+      (progn
+	(setq indent-tabs-mode t)
+	(setq tab-width 3)
+	(setq nxml-child-indent tab-width))))
+(add-hook 'nxml-mode-hook 'tog-nxml-mode-hook)
