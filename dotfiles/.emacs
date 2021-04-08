@@ -3,3 +3,6 @@
 
 (load "~/.emacs.d/tog-functions")
 (load "~/.emacs.d/tog-hooks")
+
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
