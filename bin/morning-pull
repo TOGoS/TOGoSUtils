@@ -17,6 +17,7 @@ const repoNames = [
 	"TOGoS/job/JHT/notes",
 	"TOGoS/music/TOGoSMusicMetadata",
 	"TOGoS/proj/TOGoSUtils",
+	"TOGoS/proj/SynthGen2100",
 	"TOGoS/sites/nuke24",
 	"TOGoS/sites/dp",
 ];
