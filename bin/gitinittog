@@ -95,7 +95,8 @@ var sshServers = {
 	},
 	"togos-fbs": {
 		sshUser: "tog",
-		sshHost: "togos-fbs.nuke24.net",
+		//sshHost: "togos-fbs.nuke24.net",
+		sshHost: "external.marvin.nuke24.net:31522",
 		remoteGitRootDir: "/home/tog/git",
 	}
 };
