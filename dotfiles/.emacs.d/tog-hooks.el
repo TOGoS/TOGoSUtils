@@ -14,6 +14,9 @@
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
 
 (defun tog-php-mode-hook ()
-  (tog-tabs)
   (infer-indentation-style))
 (add-hook 'php-mode-hook 'tog-php-mode-hook)
+
+(defun tog-js-mode-hook ()
+  (infer-indentation-style))
+(add-hook 'js-mode-hook 'tog-js-mode-hook)

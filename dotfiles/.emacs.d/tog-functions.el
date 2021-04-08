@@ -15,7 +15,8 @@
 (defun tog-tabs ()
   (interactive)
   (setq tab-width 3)
-  (setq c-basic-offset 3)
+  (setq c-basic-offset tab-width)
+  (setq js-indent-level tab-width)
   (setq indent-tabs-mode t))
 
 (defun tog-tabs-8 ()
@@ -38,7 +39,7 @@
   (let ((space-count (how-many "^  " (point-min) (point-max)))
         (tab-count (how-many "^\t" (point-min) (point-max))))
     (if (> space-count tab-count) (setq indent-tabs-mode nil))
-    (if (> tab-count space-count) (setq indent-tabs-mode t))))
+    (if (> tab-count space-count) (tog-tabs))))
 
 ;; Me learning elisp
 
