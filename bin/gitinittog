@@ -13,7 +13,7 @@ var epr = new _epr.default();
 
 function parseDirectoryToProjectNameStructure(dir) {
 	var m;
-	if( (m = /(?:^|\/)(docs|games|proj|music)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
+	if( (m = /(?:^|\/)(docs|games|proj|music|video)\/([^\/]+)(?:$|\/)/.exec(dir)) ) {
 		return {
 			organizationName: 'TOGoS',
 			projectSectorName: m[1],
