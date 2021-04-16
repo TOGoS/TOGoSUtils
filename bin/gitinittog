@@ -68,7 +68,7 @@ function doCommands( commands ) {
 	return prom;
 }
 
-var cwd = process.cwd();
+var cwd = process.cwd().replace(/\\/g,"/");
 var projectNs = parseDirectoryToProjectNameStructure(cwd);
 var projectName = null;
 var guessedProjectName = projectNs == undefined ? "" : 'TOGoS/'+projectNs.projectSectorName+"/"+projectNs.projectName;
