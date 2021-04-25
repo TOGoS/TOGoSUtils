@@ -28,18 +28,20 @@ list_pids_recursively() {
     done
 }
 
+self_pid="$$"
+
 # Pass child PIDs to cleanup so that it doesn't
 # accidentally clean-up the clean-up processes!
 cleanup() {
+    child_pids=$(list_pids_recursively "$@")
     echo "$$: Cleaning up.  \$\$=$$, \$BASHPID=$BASHPID, child PIDs=$@"
-    for pid in $@ ; do
+    for pid in $child_pids ; do
 	echo "kill $pid..."
 	kill "$pid" || echo "Failed to kill $pid.  That's okay."
     done
     echo "All clean."
 }
 
-self_pid="$$"
 trap_command="cleanup \$(exec pgrep --parent "$$")"
 
 echo "Trap command: $trap_command"
