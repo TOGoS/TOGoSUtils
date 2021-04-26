@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Killing all child processes seems to be a Hard Problem.
+# Here's one approach, using pgrep, kill, and recursive bash functions.
+
+set -euo pipefail
+
+test-child() {
+    filename="$1"
+    echo "Hi, this is $BASHPID, writing to $filename"
+    
+    while true ; do
+	echo "$(date --iso-8601=second) $BASHPID" >> "$filename"
+	sleep 1
+    done
+}   
+
+list_child_pids_recursively() {
+    for pid in "$@" ; do
+	list_pids_recursively $(pgrep --parent "$pid")
+    done
+}
+
+list_pids_recursively() {
+    for pid in "$@" ; do
+	list_child_pids_recursively "$pid"
+	echo "$pid"
+    done
+}
+
+# Pass child PIDs to cleanup so that it doesn't
+# accidentally clean-up the clean-up processes!
+cleanup() {
+    echo "$$: Cleaning up.  \$\$=$$, \$BASHPID=$BASHPID, child PIDs=$@"
+    for pid in $@ ; do
+	echo "kill $pid..."
+	kill "$pid" || echo "Failed to kill $pid.  That's okay."
+    done
+    echo "All clean."
+}
+
+self_pid="$$"
+trap_command="cleanup \$(pgrep --parent "$$")"
+
+echo "Trap command: $trap_command"
+trap "$trap_command" EXIT
+
+self_name="$(basename "$0")"
+
+echo "Hi, and welcome to $self_name; \$\$=$$, and \$BASHPID=$BASHPID"
+
+test-child "/tmp/foo" &
+echo "Started $!"
+test-child "/tmp/bar" &
+echo "Started $!"
+
+echo "Waiting 10 seconds"
+sleep 10
+
+echo "Time to automatically kill the children"
+eval $trap_command
+
+echo "Waiting 10 seconds"
+sleep 10
