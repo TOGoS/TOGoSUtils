@@ -40,7 +40,7 @@ cleanup() {
 }
 
 self_pid="$$"
-trap_command="cleanup \$(pgrep --parent "$$")"
+trap_command="cleanup \$(exec pgrep --parent "$$")"
 
 echo "Trap command: $trap_command"
 trap "$trap_command" EXIT
