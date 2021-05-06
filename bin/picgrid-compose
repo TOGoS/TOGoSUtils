@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -n "${ccouch_repo_dir+x}" ] ; then
+if [ -z "${ccouch_repo_dir+x}" ] ; then
     echo "Please set ccouch_repo_dir" >&2
     exit 1
 fi

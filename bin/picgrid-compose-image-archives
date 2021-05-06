@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -euo pipefail
+
+togosutils_dir="$(dirname "$0")"/..
+
+. "${togosutils_dir}/src/lib/bash/ccouch-functions.bash"
+
+self_name="$(basename "$0")"
+
+if [ -z "${ccouch_repo_dir+x}" ] ; then
+    echo "$self_name: error: ccouch_repo_dir not set" >&2
+    exit 1
+fi
+if [ -z "${archive_info_dir+x}" ] ; then
+    echo "$self_name: error: archive_info_dir not set" >&2
+    exit 1
+fi
+
+latest_head_urn_file="$archive_info_dir"/heads/master/ccouch/archives/images.urn
+latest_picgrid_urn_file="$archive_info_dir"/heads/master/ccouch/archives/images.picgrid.urn
+latest_picgrid_urn_temp_file="$archive_info_dir"/heads/master/ccouch/archives/images.picgrid.urn.temp
+
+if [ ! -r "$latest_head_urn_file" ] ; then
+    echo "$self_name: error: $latest_head_urn_file is not readable" >&2
+    # TODO: Should be clever enough to parse either x-rdf-subject:URN, URN#, or just URN.
+    # Probably have some bash library function to do that.
+    echo "It should contain the URN of the [blob representing the] latest commit" >&2
+    exit 1
+fi
+
+commit_urn=$(<"$latest_head_urn_file")
+echo "Commit URN: $commit_urn"
+tree_urn=$(get_ccouch_commit_target $commit_urn)
+echo "Tree URN: $tree_urn"
+
+picgrid-compose "$tree_urn" > "$latest_picgrid_urn_temp_file"
+mv "$latest_picgrid_urn_temp_file" "$latest_picgrid_urn_file"
+echo "Wrote $latest_picgrid_urn_file:"
+cat "$latest_picgrid_urn_file" | sed 's/^/  '
+echo "Check that it looks good and commit"
+echo "TODO: This script should do that automatically"
