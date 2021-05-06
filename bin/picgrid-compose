@@ -5,9 +5,13 @@ if [ -z "${ccouch_repo_dir+x}" ] ; then
     exit 1
 fi
 
+if [ -z "${picgrid_docker_image_name+x}" ] ; then
+    picgrid_docker_image_name=togos/picgrid:latest
+fi
+
 exec docker run \
        -v "$ccouch_repo_dir":/.ccouch \
-       togos/picgrid:latest compose \
+       "$picgrid_docker_image_name" compose \
        -datastore /.ccouch/data/picgrid \
        -ms-datasource /.ccouch/data \
        -page-style hover \
