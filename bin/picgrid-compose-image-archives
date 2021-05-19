@@ -8,6 +8,24 @@ togosutils_dir="$(dirname "$0")"/..
 
 self_name="$(basename "$0")"
 
+picgrid_flags=""
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-debug|-v)
+	    picgrid_flags="$picgrid_flags $key"
+	    ;;
+	*)
+	    echo "$self_name: error: Unrecognized argument: $key" >&2
+	    exit 1
+	    ;;
+    esac
+    shift
+done
+
+
 if [ -z "${ccouch_repo_dir+x}" ] ; then
     echo "$self_name: error: ccouch_repo_dir not set" >&2
     exit 1
@@ -34,7 +52,7 @@ echo "Commit URN: $commit_urn"
 tree_urn=$(get_ccouch_commit_target $commit_urn)
 echo "Tree URN: $tree_urn"
 
-picgrid-compose "$tree_urn" > "$latest_picgrid_urn_temp_file"
+picgrid-compose "$tree_urn" $picgrid_flags > "$latest_picgrid_urn_temp_file"
 mv "$latest_picgrid_urn_temp_file" "$latest_picgrid_urn_file"
 echo "Wrote $latest_picgrid_urn_file:"
 cat "$latest_picgrid_urn_file" | sed 's/^/  '
