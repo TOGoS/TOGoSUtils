@@ -202,8 +202,8 @@ def figger_mtime( file )
   rescue => e
     mtime_exception = e
   end
+ 
   fn_based_mtime = nil
-  
   basename = File.basename(file)
   # Pix from our Galaxy phones are named in this format;
   # no need to guess the time, just take it from the filename!
@@ -219,10 +219,12 @@ def figger_mtime( file )
       # Let the filname be authoritative on seconds
       # but the mtime on the hour, since it
       # will not be biased by whatever timezone
+      adjusted = fn_based_mtime + diff_hours*3600
       if diff_hours != 0
-        puts "# #{fn_based_mtime} + #{diff_hours} = #{fn_based_mtime + diff_hours} for #{file}"
+        puts "# Reconciling hour difference between mtime/filename-indicated time of #{file}..."
+        puts "#   #{fn_based_mtime} + #{diff_hours} hours = #{adjusted}"
       end
-      return fn_based_mtime + diff_hours
+      return adjusted
     else
       # Otherwise take...the mtime
       return regular_mtime
