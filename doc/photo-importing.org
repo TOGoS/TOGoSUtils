@@ -1,0 +1,18 @@
+Determining the proper timestamp to associate with imported pictures
+is always a mess, especially when multiple timezones are involved.
+My attempts to solve this problem might be an even bigger mess.
+
+** [2021-05-21]: Ctime is correct?  Wait no.
+
+APPARENTLY some of my photos have mtime/ctime that differ by...an hour!
+maybe because timezone difference, and /someone/ (my phone?  Windows' copy-it-off-the-phone logic?)
+put in different values for modified and created times.
+It looks like the modified time is maybe based on the photo metadata, which is a datetime without timezone,
+because it matches the timestamp in the filename (which my phone made based on the local timezone at the point the photo was taken)
+so open to misinterpretation, wheras the ctime is the correct timestamp (an hour 'ahead').
+e.g. ~WSITEM-3306.1/backup/2020/TOGoS_Galaxy_Note_8/DCIM/Camera/2020/20200822_074317.jpg~:
+modification time is 2020-08-22T07:43:17 -0500 (it would be correct if mountain time instead of -0500),
+creation time is...wait, it doesn't look like that.
+Somehow the ctime of ~WSITEM-3306.1/incoming/images/TOGoS/photos/2020/08/2020_08_22/074317-20200822_074317.jpg~ looks like that.
+Even though it's the same file?  I am very confused how it got that way.
+ 
