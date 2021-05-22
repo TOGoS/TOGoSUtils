@@ -72,6 +72,16 @@
 	(concat (match-string 1 repository-url) "/commit/" commit-id)
       (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
 
+
+;; "Warning: Don't use this function in Lisp programs!"
+;; -- https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-End-Motion.html, regarding end-of-buffer
+;; So I'll write my own:
+(defun goto-end-of-buffer ()
+  (goto-char (point-max)))
+
+
+;; Functions to find and visit files
+
 (defun first-matching (things matcher)
   (let ((result nil))
     (progn
@@ -166,7 +176,7 @@
 (defun visit-eit-timelog ()
   (interactive)
   (find-file (find-eit-timelog-file))
-  (end-of-buffer)
+  (goto-end-of-buffer)
   (search-backward-regexp "^= "))
 (defun visit-tog-todo ()
   (interactive)
@@ -174,23 +184,23 @@
 (defun visit-bodylog ()
   (interactive)
   (find-file (find-tog-proj-file "job/EarthIT/timelog" "bodylog.txt"))
-  (end-of-buffer)
+  (goto-end-of-buffer)
   (call-interactively 'eval-last-sexp)
   (search-backward-regexp "^= "))
 (defun visit-love-notes ()
   (interactive)
   (find-file (find-tog-proj-file "docs/LoveNotes" "2019/20191031-poly-thoughts.org"))
-  (end-of-buffer)
+  (goto-end-of-buffer)
   (search-backward-regexp "^\*\* "))
 (defun visit-workshop-parts-file ()
   (interactive)
   (find-file (find-tog-proj-file "docs/ProjectNotes2" "2019/Parts.tef"))
-  (end-of-buffer)
+  (goto-end-of-buffer)
   (search-backward-regexp "^="))
 (defun visit-workshop-stained-items-file ()
   (interactive)
   (find-file (find-tog-proj-file "docs/ProjectNotes2" "2018/StainTest/StainedItems.tef"))
-  (end-of-buffer)
+  (goto-end-of-buffer)
   (search-backward-regexp "^="))
 
 (defun visit-jht-help ()
@@ -202,7 +212,7 @@
   (if (= (buffer-size) 0)
       (progn
 	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n")
-	(end-of-buffer))))
+	(goto-end-of-buffer))))
 (defun visit-latest-jht-notes ()
   (interactive)
   (find-file (find-latest-jht-notes-file)))
@@ -213,8 +223,12 @@
   (if (= (buffer-size) 0)
       (progn
 	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " SA meeting notes\n\n")
-	(end-of-buffer))))
+	(goto-end-of-buffer))))
 
+(defun visit-synthgen2100-devlog ()
+  (interactive)
+  (find-file (find-tog-proj-file "proj/SynthGen2100" "DEVLOG.org"))
+  (goto-end-of-buffer))
 
 ;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
 ;(tog-parse-x-git-commit-url-body "asdf?no-repo=Hello")
