@@ -15,6 +15,6 @@ exec docker run \
        -datastore /.ccouch/data/picgrid \
        -ms-datasource /.ccouch/data \
        -page-style hover \
-       -layouter multifit:1024x768 \
+       -layouter multifit:1200x800 \
        -function-cache-dir /.ccouch/cache/picgrid \
        "$@"
