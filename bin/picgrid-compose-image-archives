@@ -8,7 +8,7 @@ togosutils_dir="$(dirname "$0")"/..
 
 self_name="$(basename "$0")"
 
-picgrid_flags=""
+picgrid_flags="-tolerate-compose-errors"
 
 while [[ $# > 0 ]]
 do
@@ -55,6 +55,6 @@ echo "Tree URN: $tree_urn"
 picgrid-compose "$tree_urn" $picgrid_flags > "$latest_picgrid_urn_temp_file"
 mv "$latest_picgrid_urn_temp_file" "$latest_picgrid_urn_file"
 echo "Wrote $latest_picgrid_urn_file:"
-cat "$latest_picgrid_urn_file" | sed 's/^/  '
+cat "$latest_picgrid_urn_file" | sed 's/^/  /'
 echo "Check that it looks good and commit"
 echo "TODO: This script should do that automatically"
