@@ -64,6 +64,7 @@
 (global-set-key (kbd "M-g j t") 'visit-todays-jht-notes)
 (global-set-key (kbd "M-g j l") 'visit-latest-jht-notes)
 (global-set-key (kbd "M-g j h") 'visit-jht-help)
+(global-set-key (kbd "M-g j b") 'visit-todays-jht-bullshit)
 (global-set-key (kbd "M-g 9 t") 'visit-4909-transfers)
 (global-set-key (kbd "M-g m m") 'visit-togos-music-metadata)
 (global-set-key (kbd "M-g m n") 'visit-togos-music-notes)

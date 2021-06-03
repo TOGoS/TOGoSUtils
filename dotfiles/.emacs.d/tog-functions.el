@@ -206,6 +206,13 @@
 (defun visit-jht-help ()
   (interactive)
   (find-file (find-tog-proj-file "job/JHT/notes" "help.org")))
+(defun visit-todays-jht-bullshit ()
+  (interactive)
+  (find-file (find-tog-proj-file "job/JHT/notes" (format-time-string "%Y/%m/%Y%m-bullshit.org")))
+  (if (= (buffer-size) 0)
+      (progn
+	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Bullshit\n\n** Any vaguely notable contributions")
+	(goto-end-of-buffer))))
 (defun visit-todays-jht-notes ()
   (interactive)
   (find-file (find-todays-jht-notes-file))
