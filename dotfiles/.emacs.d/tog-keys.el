@@ -72,4 +72,5 @@
 (global-set-key (kbd "M-g s t") 'visit-todays-sa-meeting-notes)
 (global-set-key (kbd "M-g s g d") 'visit-synthgen2100-devlog)
 (global-set-key (kbd "M-g w p") 'visit-workshop-parts-file)
+(global-set-key (kbd "M-g w i a") 'visit-workshop-available-ids-file)
 (global-set-key (kbd "M-g w s") 'visit-workshop-stained-items-file)
