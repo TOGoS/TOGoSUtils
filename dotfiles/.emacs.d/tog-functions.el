@@ -237,7 +237,7 @@
 
 (defun visit-synthgen2100-devlog ()
   (interactive)
-  (find-file (find-tog-proj-file "proj/SynthGen2100" "DEVLOG.org"))
+  (find-file (find-tog-proj-file "proj/SynthGen2100" "P0011/DEVLOG.org"))
   (goto-end-of-buffer))
 
 ;(tog-parse-x-git-commit-url-body "asdf?repository=Hello")
