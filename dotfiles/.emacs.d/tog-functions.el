@@ -272,8 +272,11 @@
 (defun defancy-quotes ()
   (interactive)
   (replace-string "’" "'")
+  (pop-global-mark)
   (replace-string "“" "\"")
-  (replace-string "”" "\""))
+  (pop-global-mark)
+  (replace-string "”" "\"")
+  (pop-global-mark))
 
 ;; Minor mode to help track time while staining
 ;; pieces of wood so I don't get as many keys stained
