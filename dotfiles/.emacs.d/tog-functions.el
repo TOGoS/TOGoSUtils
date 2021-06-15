@@ -265,6 +265,16 @@
 	    (alist-get 'repository link-info)))))
       ))
 
+;; Functions to fix stuff
+;; This doesn't seem to actually do all the replacements;
+;; I have to run it multiple times.
+;; TODO: Look into that.
+(defun defancy-quotes ()
+  (interactive)
+  (replace-string "’" "'")
+  (replace-string "“" "\"")
+  (replace-string "”" "\""))
+
 ;; Minor mode to help track time while staining
 ;; pieces of wood so I don't get as many keys stained
 (define-minor-mode
