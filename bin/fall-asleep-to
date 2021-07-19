@@ -1,0 +1,16 @@
+#!/bin/bash
+
+voldown_interval=300
+initial_volume=100
+
+echo Turning volume down every $voldown_interval seconds.
+
+voldown_agent() {
+    interval="$1"
+    while true ; do
+	sleep $interval
+	echo -n 9
+    done
+}
+
+voldown_agent "$voldown_interval" | mplayer -volume "$initial_volume" "$@"
