@@ -23,6 +23,11 @@ do
 	    shift
 	    shift
 	    ;;
+	--initial-volume)
+	    initial_volume="$2"
+	    shift
+	    shift
+	    ;;
 	--no-init)
 	    initial_volume=""
 	    shift
