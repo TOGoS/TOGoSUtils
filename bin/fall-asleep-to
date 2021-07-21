@@ -2,27 +2,40 @@
 
 set -euo pipefail
 
-voldown_interval=300
+self_name=$(basename "$0")
+voldown_interval=3
 initial_volume=100
 silence_file=/home/tog/music/work/2019/ableton-live-library/Samples/silence.flac
-
 
 while [[ $# > 0 ]]
 do
     key="$1"
     case $key in
-	-sector)
-	    sector="$2"
+	--minutes-to-zero)
+	    # Each volume down subtracts 4%, at least in my mplayer.
+	    # So do that 25 times to get from 100% to 0.
+	    voldown_interval=$(expr "$2" '*' 60 / '(' "${initial_volume:-100}" / 4 ')')
+	    shift
 	    shift
 	    ;;
-	-recurse)
-	    recurse_opt=-recurse
+	--interval)
+	    voldown_interval="$2"
+	    shift
+	    shift
+	    ;;
+	--no-init)
+	    initial_volume=""
+	    shift
+	    ;;
+	--)
+	    shift
+	    break
 	    ;;
 	*)
-	    things+=("$key")
+	    echo "$self_name: Unrecognized argument: $key" >&2
+	    exit 1
 	    ;;
     esac
-    shift
 done
 
 echo Turning volume down every $voldown_interval seconds.
@@ -31,11 +44,12 @@ voldown_agent() {
     interval="$1"
     while true ; do
 	sleep $interval
+	echo "# Attempting to volume down" >&2
 	echo -n 9
     done
 }
 
-echo "# To initialize volume, playing $(basename "$silence_file") at ${initial_volume}%..."
+echo "# To initialize volume, playing $(basename "$silence_file") at ${initial_volume}%..." >&2
 mplayer -volume "$initial_volume" "$silence_file"
-echo "# Okay, now on with whatever you said..."
+echo "# Okay, now on with whatever you said ($@)..." >&2
 voldown_agent "$voldown_interval" | mplayer "$@"
