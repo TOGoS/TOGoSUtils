@@ -1,7 +1,29 @@
 #!/bin/bash
 
+set -euo pipefail
+
 voldown_interval=300
 initial_volume=100
+silence_file=/home/tog/music/work/2019/ableton-live-library/Samples/silence.flac
+
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    case $key in
+	-sector)
+	    sector="$2"
+	    shift
+	    ;;
+	-recurse)
+	    recurse_opt=-recurse
+	    ;;
+	*)
+	    things+=("$key")
+	    ;;
+    esac
+    shift
+done
 
 echo Turning volume down every $voldown_interval seconds.
 
@@ -13,4 +35,7 @@ voldown_agent() {
     done
 }
 
-voldown_agent "$voldown_interval" | mplayer -volume "$initial_volume" "$@"
+echo "# To initialize volume, playing $(basename "$silence_file") at ${initial_volume}%..."
+mplayer -volume "$initial_volume" "$silence_file"
+echo "# Okay, now on with whatever you said..."
+voldown_agent "$voldown_interval" | mplayer "$@"
