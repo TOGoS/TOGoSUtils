@@ -205,6 +205,11 @@
   (find-file (find-tog-proj-file "docs/ProjectNotes2" "2018/StainTest/StainedItems.tef"))
   (goto-end-of-buffer)
   (search-backward-regexp "^="))
+(defun visit-joe-log ()
+  (interactive)
+  (find-file (find-tog-proj-file "docs/ProjectNotes2" "2021/Mint/JoeLog.tef"))
+  (goto-end-of-buffer)
+  (search-backward-regexp "^="))
 
 (defun visit-jht-help ()
   (interactive)

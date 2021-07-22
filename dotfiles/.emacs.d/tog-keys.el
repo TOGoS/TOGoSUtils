@@ -74,3 +74,4 @@
 (global-set-key (kbd "M-g w p") 'visit-workshop-parts-file)
 (global-set-key (kbd "M-g w i a") 'visit-workshop-available-ids-file)
 (global-set-key (kbd "M-g w s") 'visit-workshop-stained-items-file)
+(global-set-key (kbd "M-g j o e") 'visit-joe-log)
