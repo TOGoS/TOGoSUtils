@@ -1,3 +1,5 @@
+(require 'seq)
+
 (defun replace-last-sexp ()
   (interactive)
   (let ((value (eval (preceding-sexp))))
