@@ -40,7 +40,7 @@ goto eof
 
 
 :prepend
-if "%1" == "" goto :list
+if "%~1" == "" goto list
 echo %~1
 shift
 goto prepend
