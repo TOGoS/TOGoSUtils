@@ -117,7 +117,8 @@
   (find-tog-proj-dir-in projname
 			(list (getenv "HOME")
 			      (getenv "USERPROFILE")
-			      (concat (getenv "USERPROFILE") "/stuff"))))
+			      (concat (getenv "USERPROFILE") "/stuff")
+			      "D:/stuff")))
 
 (defun find-tog-proj-file (projname file)
   (let ((dir (find-tog-proj-dir projname)))
