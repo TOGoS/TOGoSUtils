@@ -17,7 +17,10 @@ goto list
 
 :show_help
 
-echo winpath.bat, a script to help manage the Path variable.
+echo %~nx0, a script to help manage the Path variable.
+echo:
+echo You probably want to use 'pathman', instead,
+echo but %~nx0 can be a backup if you don't have Deno.
 echo:
 echo Output modes:
 echo   winpath [--list]      ; list path, one directory per line
