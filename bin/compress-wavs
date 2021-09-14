@@ -27,6 +27,8 @@ EOS
 
 dirs = []
 verbosity = 100
+ext = nil
+aq = nil
 
 args = $*.clone
 while arg = args.shift
@@ -34,6 +36,12 @@ while arg = args.shift
   when '-h', '-?', '--help'
     puts HELP_TEXT
     exit 0
+  when '--flac'
+    ext = "flac"
+  when '--ogg'
+    ext = "ogg"
+  when '-aq'
+    aq = args.shift
   when '-q'
     verbosity = 0
   when /^-/
@@ -45,6 +53,11 @@ while arg = args.shift
   end
 end
 
+if ext == nil
+  STDERR.puts "Error: Please specify compression type: --flac, --ogg"
+  exit 1
+end
+
 if dirs.empty? and verbosity > 0
   STDERR.puts "Warning: No inputs specified!  Please provide files or directories to process.\nOr try #{$PROGRAM_NAME} --help for help."
 end
@@ -52,10 +65,15 @@ end
 for d in dirs
   walk d do |e|
     if e =~ /(.*)\.wav$/
-      flac = "#{$1}.flac"
+      outfile = "#{$1}.#{ext}"
       backup_dir = File.dirname(e) + "/.wav/"
-      unless File.exist? flac
-        cmd = ["ffmpeg", "-i", e, flac]
+      if aq
+        aqarg = ['-aq',aq]
+      else
+        aqarg = nil
+      end
+      unless File.exist? outfile
+        cmd = ["ffmpeg", "-i", e, *aqarg, outfile]
         unless system(*cmd)
           raise "Failed to run: "+cmd.join(' ')
         end

@@ -1,1 +1,1 @@
-@ruby %~dp0/flacify %*
+@ruby %~dp0/compress-wavs --flac %*
