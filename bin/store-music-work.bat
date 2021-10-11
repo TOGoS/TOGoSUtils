@@ -2,7 +2,8 @@
 
 setlocal
 
-set script_version=2020-01-04b
+set self_name=%~nx0
+set script_version=2021-10-11
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
@@ -11,8 +12,12 @@ if errorlevel 1 goto fail
 if "%~1" EQU "-m" set commit_message=%~2
 if not defined commit_message set commit_message=Music work on %ccouch_repo_name%
 rem TODO: tog_stuff_dir isn't really required if music_work_dir is set...
-if not defined tog_stuff_dir (echo tog_stuff_dir not specified >&2 & goto fail)
-if not defined music_work_dir set music_work_dir=%tog_stuff_dir%\music\work
+rem if not defined tog_stuff_dir (echo tog_stuff_dir not specified >&2 & goto fail)
+if defined music_work_dir goto find_music_work_dir_done
+if defined tog_stuff_dir (set music_work_dir=%tog_stuff_dir%\music\work & goto find_music_work_dir_done)
+echo %self_name%: Error: Neither music_work_dir nor tog_stuff_dir is set >&2 & goto fail)
+:find_music_work_dir_done
+
 if not defined ccouch_store_sector set ccouch_store_sector=music
 
 call clean-music-work
