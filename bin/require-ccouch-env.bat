@@ -26,6 +26,11 @@ goto fail
 if not defined ccouch_repo_dir (echo ccouch_repo_dir not specified >&2 & goto fail)
 if not defined ccouch_repo_name (echo ccouch_repo_name not specified >&2 & goto fail)
 
+if not defined fs_marvin_ssh_hostname set fs_marvin_hostname=fs.marvin.nuke24.net
+if not defined fs_marvin_ssh_port set fs_marvin_ssh_port=22
+if not defined togos_fbs_ssh_hostname set togos_fbs_hostname=togos-fbs.nuke24.net
+if not defined togos_fbs_ssh_port set togos_fbs_ssh_port=31522
+
 :stdbatfooter
 goto eof
 :fail

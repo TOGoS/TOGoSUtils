@@ -40,10 +40,10 @@ del %push_image_archives_bat%
 call togutil list-ccouch-heads %ccouch_repo_name%/archives/images ^
 	--recurse --last=1 ^
 	--output-format="" ^
-	--output-format+="plink -batch tog@fs.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
-	--output-format+="pscp {file} ""tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
-	--output-format+="plink -P 31522 -batch tog@external.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
-	--output-format+="pscp -P 31522 {file} ""tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
+	--output-format+="plink -P %fs_marvin_ssh_port% -batch tog@fs.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
+	--output-format+="pscp -P %fs_marvin_ssh_port% {file} ""tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
+	--output-format+="plink -P %togos_fbs_ssh_port% -batch tog@external.marvin.nuke24.net mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
+	--output-format+="pscp -P %togos_fbs_ssh_port% {file} ""tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/{parentName}/""{nl}" ^
 	> %push_image_archives_bat%
 echo Generated push script, %push_image_archives_bat%
 @echo on

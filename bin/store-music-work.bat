@@ -11,8 +11,7 @@ if errorlevel 1 goto fail
 
 if "%~1" EQU "-m" set commit_message=%~2
 if not defined commit_message set commit_message=Music work on %ccouch_repo_name%
-rem TODO: tog_stuff_dir isn't really required if music_work_dir is set...
-rem if not defined tog_stuff_dir (echo tog_stuff_dir not specified >&2 & goto fail)
+
 if defined music_work_dir goto find_music_work_dir_done
 if defined tog_stuff_dir (set music_work_dir=%tog_stuff_dir%\music\work & goto find_music_work_dir_done)
 echo %self_name%: Error: Neither music_work_dir nor tog_stuff_dir is set >&2 & goto fail)
@@ -39,8 +38,8 @@ set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
 @echo on
-pscp %latest_head_file% tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
-pscp -P 31522 %latest_head_file% tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% %latest_head_file% tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% %latest_head_file% tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
 @echo off
 
 call ccouch3-upload-to-marvin -recurse x-ccouch-head:%ccouch_repo_name%/tog/music/work/latest
