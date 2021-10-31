@@ -34,6 +34,11 @@ java -jar %ccouch_jar% -repo:%ccouch_repo_name% %ccouch_repo_dir% store ^
 	%music_work_dir%
 @echo off
 
+rem there has GOT to be a better way to do this stuff!
+rem (there is; it's rsync; I seem to recall having trouble finding an rsync for windows)
+rem does command-server not write heads?
+rem Yes, it does.  I could script something to push those using the existing command-server protocol.
+
 set lhn_tempfile=%music_work_dir%\.last-head-number
 find %ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work | sort -V | tail -n 1 >%lhn_tempfile%
 set /p latest_head_file= <%lhn_tempfile%
