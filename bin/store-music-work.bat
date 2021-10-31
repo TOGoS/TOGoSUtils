@@ -3,7 +3,9 @@
 setlocal
 
 set self_name=%~nx0
-set script_version=2021-10-11
+rem Version history:
+rem 2021-10-30: Updated clean-music-worl.bat to quote UNIX_FIND_EXE
+set script_version=2021-10-30
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
