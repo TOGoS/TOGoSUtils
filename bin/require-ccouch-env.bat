@@ -11,14 +11,14 @@ rem   ...and include a :fail section, similar to this one
 type nul>nul
 
 if defined ccouch_jar goto find_ccouch_jar_done
-if exist %USERPROFILE%\stuff\proj\Contentcouch\ContentCouch.jar (set ccouch_jar=%USERPROFILE%\stuff\proj\Contentcouch\ContentCouch.jar & goto find_ccouch_jar_done)
-if exist %USERPROFILE%\Apps\ContentCouch.jar (set ccouch_jar=%USERPROFILE%\Apps\ContentCouch.jar & goto find_ccouch_jar_done)
+if exist %USERPROFILE%\stuff\proj\Contentcouch\ContentCouch.jar (set "ccouch_jar=%USERPROFILE%\stuff\proj\Contentcouch\ContentCouch.jar" & goto find_ccouch_jar_done)
+if exist %USERPROFILE%\Apps\ContentCouch.jar (set "ccouch_jar=%USERPROFILE%\Apps\ContentCouch.jar" & goto find_ccouch_jar_done)
 echo "Couldn't find ContentCouch.jar!  Maybe set ccouch_jar and try again" >&2
 goto fail
 :find_ccouch_jar_done
 
 if defined ccouch3_jar goto find_ccouch3_jar_done
-if exist %USERPROFILE%\stuff\proj\ContentCouch3\CCouch3.jar (set ccouch3_jar=%USERPROFILE%\stuff\proj\ContentCouch3\CCouch3.jar & goto find_ccouch3_jar_done)
+if exist %USERPROFILE%\stuff\proj\ContentCouch3\CCouch3.jar (set "ccouch3_jar=%USERPROFILE%\stuff\proj\ContentCouch3\CCouch3.jar" & goto find_ccouch3_jar_done)
 echo "Couldn't find ContentCouch3.jar!  Maybe set ccouch3_jar and try again" >&2
 goto fail
 :find_ccouch3_jar_done
