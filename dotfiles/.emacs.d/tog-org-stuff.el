@@ -20,3 +20,7 @@
 	 "** %?\n\n%U")
 	("n" "Note" entry (file "~/job/EarthIT/timelog/notes.org")
 	 "* %?\nEntered on %U from file:%F")))
+
+;; Seems necessary with newer org-mode to include this so that
+;; "<e" + TAB etc works:
+(require 'org-tempo)
