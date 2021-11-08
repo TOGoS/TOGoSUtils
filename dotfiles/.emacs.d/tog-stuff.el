@@ -5,4 +5,6 @@
   (funcall lode "tog-functions.el")
   (funcall lode "tog-keys.el")
   (funcall lode "tog-hooks.el")
-  (funcall lode "tog-org-stuff.el"))
+  (funcall lode "tog-org-stuff.el")
+  
+  (funcall lode "typescript-mode.el"))
