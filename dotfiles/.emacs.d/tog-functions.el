@@ -20,6 +20,7 @@
   (setq c-basic-offset tab-width)
   (setq js-indent-level tab-width)
   (setq typescript-indent-level tab-width)
+  (setq powershell-indent tab-width)
   (setq nxml-child-indent tab-width)
   (setq indent-tabs-mode t))
 

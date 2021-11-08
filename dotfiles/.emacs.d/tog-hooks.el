@@ -4,6 +4,7 @@
 (add-hook 'php-mode-hook 'infer-indentation-style)
 (add-hook 'js-mode-hook 'infer-indentation-style)
 (add-hook 'typescript-mode-hook 'infer-indentation-style)
+(add-hook 'powershell-mode-hook 'infer-indentation-style)
 
 ;; Seems like this should be default!
 ;; Maybe one of my other scripts messes it up?
