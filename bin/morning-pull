@@ -81,10 +81,12 @@ function findRepo(repoName) {
 	var m;
 	var promises = [];
 	var allPaths = [];
-	if( (m = /EarthIT\/(.*)/.exec(repoName)) ) {
+	if( (m = /^EarthIT\/(.*)/.exec(repoName)) ) {
 		repoName = "TOGoS/proj/"+m[1]; // Hack until I rewrite all this code lol
+		// (by rewrite all this I mean probably reference a file from ArchiveInfo,
+		// see related notes in timelog from 2021-11-11 if curious).
 	}
-	if( (m = /TOGoS\/(.*)/.exec(repoName)) ) {
+	if( (m = /^TOGoS\/(.*)/.exec(repoName)) ) {
 		var mainName = m[1];
 		var homeDir;
 		var stuffPostfix;
