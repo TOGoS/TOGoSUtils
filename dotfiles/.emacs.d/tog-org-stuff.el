@@ -23,4 +23,12 @@
 
 ;; Seems necessary with newer org-mode to include this so that
 ;; "<e" + TAB etc works:
-(require 'org-tempo)
+(if (string-version-lessp "9.2" (org-version))
+    (progn
+      (require 'org-tempo)
+      ;; https://emacs.stackexchange.com/questions/52441/how-to-modify-org-structure-template-alist-after-org-mode-9-2
+      ;; Haven'tyet tested with org mode >= 9.2!
+      (add-to-list 'org-structure-template-alist '("s" . "SRC\n"))
+      (add-to-list 'org-structure-template-alist '("q" . "QUOTE\n"))
+      (add-to-list 'org-structure-template-alist '("e" . "EXAMPLE\n"))
+      ))
