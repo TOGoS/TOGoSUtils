@@ -10,10 +10,12 @@ set "remaining_args="
 
 
 :process_arg
-if "%1" == "" goto no_more_args
-if "%~1%" == "--pause-if-errors" goto parse_pause_if_errors
+if "" == "%1" goto no_more_args
+if "--pause-if-errors" == "%~1%" goto parse_pause_if_errors
 rem Otherwise add it to the list
+rem echo # set "remaining_args=%remaining_args% %1"
 set "remaining_args=%remaining_args% %1"
+rem echo # Remaining args: %remaining_args%
 :process_next_arg
 shift
 goto process_arg
@@ -27,6 +29,7 @@ goto process_next_arg
 
 :no_more_args
 rem echo Remaining args: %remaining_args%
+rem echo # Running: node %self_dir%morning-pull%remaining_args%
 node %self_dir%morning-pull%remaining_args%
 if errorlevel 1 goto fail
 goto eof
