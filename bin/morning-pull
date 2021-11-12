@@ -22,6 +22,14 @@ const repoNames = [
 	"TOGoS/sites/dp",
 ];
 
+const ANSI_FG_YELLOW = 33;
+const ANSI_FG_RED = 31;
+const ANSI_RESET = 0;
+
+function termColorCode(colorCode) {
+	return "\x1b["+colorCode+"m";
+}
+
 function prettifyPath(path) {
 	let m;
 	if( (m = /^([a-zA-Z]):(.*)$/.exec(path)) != null ) {
@@ -105,11 +113,18 @@ let remoteFilter = (remote) => {
 	return true;
 }
 
+function NotOnMasterError(message) {
+	this.name = 'NotOnMasterError';
+	this.message = message;
+	this.stack = (new Error()).stack;
+}
+NotOnMasterError.prototype = new Error;
+
 function updateRepo(path, repoName) {
 	return fsu.readFileToString(path+"/.git/HEAD").then( headStr => {
 		return headStr.trim().split(/:\s+/)[1];
 	}).then( headName => {
-		if( headName != "refs/heads/master" ) return Promise.reject(new Error("Not on master; HEAD="+headName));
+		if( headName != "refs/heads/master" ) return Promise.reject(new NotOnMasterError("Not on master; HEAD="+headName));
 	}).then( () => {
 		var remotes = [];
 		remoteGenerators.forEach( gen => {
@@ -141,6 +156,8 @@ function updateRepo(path, repoName) {
 	});
 }
 
+let interactiveResolutionMode = "none";
+
 let processArgsPromise = new Promise((resolve,reject) => {
 	let selfName = process.argv[1];
 	for( let i=2; i<process.argv.length; ++i ) {
@@ -151,8 +168,10 @@ let processArgsPromise = new Promise((resolve,reject) => {
 			remoteFilter = (remote) => {
 				return remoteNames.indexOf(remote.name) >= 0;
 			};
+		} else if( arg == "--interactive-resolution=cmd" ) {
+			interactiveResolutionMode = "cmd";
 		} else if( arg == "--help" || arg == "-?" ) {
-			console.log("Usage: "+selfName+" [--remotes=<remote1>,<remote2>...]");
+			console.log("Usage: "+selfName+" [--remotes=<remote1>,<remote2>...] [--interactive-resolution=cmd]");
 			reject(0);
 		} else {
 			console.error("Error: Unrecognized argument: "+arg);
@@ -165,7 +184,7 @@ let processArgsPromise = new Promise((resolve,reject) => {
 
 let pullFailures = [];
 
-processArgsPromise.then( (exitCode) => {
+processArgsPromise.then( (_exitCode) => {
 	let rp0 = Promise.resolve();
 	repoNames.forEach( repoName => {
 		const p0 = findRepo(repoName).then( paths => {
@@ -181,18 +200,28 @@ processArgsPromise.then( (exitCode) => {
 						for( var remoteName in result.errorsByRemote ) {
 							remotesList.push("- "+remoteName+": "+result.errorsByRemote[remoteName][0].message);
 						}
+						console.error(termColorCode(ANSI_FG_RED));
 						console.error("Did not update "+path+": no pulls were successful; "+
 							(remotesList.length > 0 ? "attempted remotes:\n"+remotesList.join("\n") : "no remotes configured!"));
+						console.error(termColorCode(ANSI_RESET));
 						pullFailures.push({
 							path,
 						});
 					}
 				}, error => {
-					console.error("Did not update "+path+": "+error.message);
-					pullFailures.push({
-						path,
-						error,
-					});
+					if( error instanceof NotOnMasterError ) {
+						console.error(termColorCode(ANSI_FG_YELLOW));
+						console.error("Did not update "+path+": "+error.message);
+						console.error(termColorCode(ANSI_RESET));
+					} else {
+						console.error(termColorCode(ANSI_FG_RED));
+						console.error("Did not update "+path+": "+error.message);
+						console.error(termColorCode(ANSI_RESET));
+						pullFailures.push({
+							path,
+							error,
+						});
+					}
 				});
 				rp1 = rp1.then(() => p1);
 			});
@@ -201,13 +230,6 @@ processArgsPromise.then( (exitCode) => {
 		rp0 = rp0.then(() => p0);
 	});
 	return rp0;
-}).catch( (err) => {
-	if( typeof(err) == 'number' ) {
-		process.exit(err);
-	} else {
-		console.error(err.stack);
-		process.exit(1);
-	}
 }).then( () => {
 	if( pullFailures.length > 0 ) {
 		// Maybe someday I make an interactive option that opens a cmd for each failed pull!
@@ -215,7 +237,41 @@ processArgsPromise.then( (exitCode) => {
 		for( let f in pullFailures ) {
 			console.error("  "+pullFailures[f].path);
 		}
-		console.error("exiting with status 1");
+		switch( interactiveResolutionMode ) {
+		case "none":
+			console.error("exiting with status 1");
+			process.exit(1);
+			break;
+		case "cmd":
+			{
+				let resolution = Promise.resolve();
+				for( let f in pullFailures ) {
+					const theFail = pullFailures[f];
+					resolution = resolution.then(() => {
+						console.error("Opening cmd in "+theFail.path+"; type 'exit 0' when done");
+						console.log(termColorCode(33));
+						return xpr.doCmd(["cmd"], {
+							cwd: theFail.path
+						}).then(() => {
+							console.log(termColorCode(ANSI_RESET));
+						}, (e) => {
+							console.log(termColorCode(ANSI_RESET));
+							return Promise.reject(e);
+						});
+					});
+				}
+				return resolution;
+			}
+		}
+	}
+}).then( () => {
+	console.log(termColorCode(ANSI_RESET));	
+}, (err) => {
+	console.log(termColorCode(ANSI_RESET));
+	if( typeof(err) == 'number' ) {
+		process.exit(err);
+	} else {
+		console.error(err.stack);
 		process.exit(1);
 	}
-});
+})
