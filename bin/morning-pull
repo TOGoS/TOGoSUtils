@@ -22,6 +22,17 @@ const repoNames = [
 	"TOGoS/sites/dp",
 ];
 
+function prettifyPath(path) {
+	let m;
+	if( (m = /^([a-zA-Z]):(.*)$/.exec(path)) != null ) {
+		// If Windows path, uppercase drive letter for beauty,
+		// and convert / to \ for copy-paste-ability into CMD:
+		return m[1].toUpperCase()+":"+m[2].replaceAll('/','\\');
+	} else {
+		return path;
+	}
+}
+
 function listToSet(list, filter) {
 	var set = {};
 	for( var i in list ) {
@@ -61,7 +72,7 @@ var stuffPostfixCandidates = ['', '/stuff']
 function findRepo(repoName) {
 	var m;
 	var promises = [];
-	var allPaths = [];	
+	var allPaths = [];
 	if( (m = /EarthIT\/(.*)/.exec(repoName)) ) {
 		repoName = "TOGoS/proj/"+m[1]; // Hack until I rewrite all this code lol
 	}
@@ -77,7 +88,7 @@ function findRepo(repoName) {
 			for( pc in stuffPostfixCandidates ) {
 				stuffPostfix = stuffPostfixCandidates[pc];
 				(fullPath => promises.push( fsu.stat(fullPath).then(stat => {
-					if( stat.isDirectory() ) allPaths.push(fullPath);
+					if( stat.isDirectory() ) allPaths.push(prettifyPath(fullPath));
 				}, error => {
 					// Do nothing
 				})))(homeDir + stuffPostfix + "/" + mainName);
@@ -152,12 +163,17 @@ let processArgsPromise = new Promise((resolve,reject) => {
 	resolve();
 });
 
+let pullFailures = [];
+
 processArgsPromise.then( (exitCode) => {
+	let rp0 = Promise.resolve();
 	repoNames.forEach( repoName => {
-		findRepo(repoName).then( paths => {
+		const p0 = findRepo(repoName).then( paths => {
+			let rp1 = Promise.resolve();
 			//console.log(repoName + " -> " + paths.join(", "))
 			paths.forEach( path => {
-				updateRepo(path, repoName).then( result => {
+				path = prettifyPath(path);
+				let p1 = updateRepo(path, repoName).then( result => {
 					if( result.successfulPullCount > 0 ) {
 						console.log("Updated "+path);
 					} else {
@@ -167,18 +183,39 @@ processArgsPromise.then( (exitCode) => {
 						}
 						console.error("Did not update "+path+": no pulls were successful; "+
 							(remotesList.length > 0 ? "attempted remotes:\n"+remotesList.join("\n") : "no remotes configured!"));
+						pullFailures.push({
+							path,
+						});
 					}
 				}, error => {
 					console.error("Did not update "+path+": "+error.message);
+					pullFailures.push({
+						path,
+						error,
+					});
 				});
+				rp1 = rp1.then(() => p1);
 			});
-		})
-	})
+			return rp1;
+		});
+		rp0 = rp0.then(() => p0);
+	});
+	return rp0;
 }).catch( (err) => {
 	if( typeof(err) == 'number' ) {
 		process.exit(err);
 	} else {
 		console.error(err.stack);
+		process.exit(1);
+	}
+}).then( () => {
+	if( pullFailures.length > 0 ) {
+		// Maybe someday I make an interactive option that opens a cmd for each failed pull!
+		console.error("Some pulls were not successfull; you may wish to investigate:");
+		for( let f in pullFailures ) {
+			console.error("  "+pullFailures[f].path);
+		}
+		console.error("exiting with status 1");
 		process.exit(1);
 	}
 });
