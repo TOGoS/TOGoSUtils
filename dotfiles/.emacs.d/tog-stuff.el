@@ -13,3 +13,7 @@
 
 (autoload 'powershell-mode "powershell-mode" "Edit PowerShell scripts" t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
+
+(let ((tef-mode-el-file (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp/tef-mode.el")))
+  (if tef-mode-el-file
+      (load tef-mode-el-file)))
