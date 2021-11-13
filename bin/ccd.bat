@@ -12,7 +12,7 @@ set "ccd_target_drive=%~d1"
 set "ccd_target_title=%~n1"
 set "ccd_target=%~1"
 
-if not exist "%ccd_target%" goto guesses
+if not exist "%ccd_target%" goto guess
 
 
 :go_ahead
@@ -23,7 +23,7 @@ cd "%ccd_target%"
 goto clean_up_and_exit
 
 
-:guesses
+:guess
 %ccd_debug% %ccd_target% does not exist.  Trying some guesses...
 
 set "ccd_guess=%UserProfile%\stuff\%ccd_target%"
@@ -35,10 +35,6 @@ set "ccd_guess=%UserProfile%\stuff\docs\%ccd_target%"
 if exist "%ccd_guess%" goto guess_okay
 
 set "ccd_guess=%UserProfile%\stuff\proj\%ccd_target%"
-%ccd_debug% Trying %ccd_guess%
-if exist "%ccd_guess%" goto guess_okay
-
-set "ccd_guess=%UserProfile%\stuff\job\EarthIT\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
@@ -54,9 +50,12 @@ set "ccd_guess=D:\stuff\proj\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
-set "ccd_guess=D:\stuff\job\EarthIT\%ccd_target%"
-%ccd_debug% Trying %ccd_guess%
-if exist "%ccd_guess%" goto guess_okay
+if "%ccd_target%" == "timelog" (set "ccd_target=job\EarthIT\timelog" & goto guess)
+
+if "%ccd_target%" == "/tl" (set "ccd_target=job\EarthIT\timelog" & goto guess)
+if "%ccd_target%" == "/pn2" (set "ccd_target=docs\ProjectNotes2" & goto guess)
+if "%ccd_target%" == "/tu" (set "ccd_target=proj/TOGoSUtils" & goto guess)
+if "%ccd_target%" == "/ln" (set "ccd_target=docs/LoveNotes" & goto guess)
 
 goto not_found
 
@@ -65,6 +64,7 @@ goto not_found
 :guess_okay
 set "ccd_target=%ccd_guess%"
 set "ccd_target_drive=%ccd_guess:~0,2%"
+for /F "delims=" %%i in ("%ccd_target%") do set "ccd_target_title=%%~ni"
 %ccd_debug% Found %ccd_target%! 
 goto go_ahead
 
