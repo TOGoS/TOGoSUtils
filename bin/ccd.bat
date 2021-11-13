@@ -54,8 +54,13 @@ if "%ccd_target%" == "timelog" (set "ccd_target=job\EarthIT\timelog" & goto gues
 
 if "%ccd_target%" == "/tl" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 if "%ccd_target%" == "/pn2" (set "ccd_target=docs\ProjectNotes2" & goto guess)
-if "%ccd_target%" == "/tu" (set "ccd_target=proj/TOGoSUtils" & goto guess)
-if "%ccd_target%" == "/ln" (set "ccd_target=docs/LoveNotes" & goto guess)
+if "%ccd_target%" == "/tu" (set "ccd_target=proj\TOGoSUtils" & goto guess)
+if "%ccd_target%" == "/ln" (set "ccd_target=docs\LoveNotes" & goto guess)
+if "%ccd_target%" == "/tmm" (set "ccd_target=music\TOGoSMusicMetadata" & goto guess)
+if "%ccd_target%" == "/n24" (set "ccd_target=sites\nuke24" & goto guess)
+if "%ccd_target%" == "/nuke" (set "ccd_target=sites\nuke24" & goto guess)
+if "%ccd_target%" == "/sg" (set "ccd_target=proj\SynthGen2100" & goto guess)
+if "%ccd_target%" == "/sgdl" (set "ccd_target=proj\SynthGen2100-devlog" & goto guess)
 
 goto not_found
 
