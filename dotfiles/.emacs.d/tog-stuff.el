@@ -16,4 +16,7 @@
 
 (let ((tef-mode-el-file (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp/tef-mode.el")))
   (if tef-mode-el-file
-      (load tef-mode-el-file)))
+      (progn
+	(load tef-mode-el-file)
+	(add-to-list 'auto-mode-alist '("timelog\\.txt\\'" . tef-mode))
+	(add-to-list 'auto-mode-alist '("bodylog\\.txt\\'" . tef-mode)))))
