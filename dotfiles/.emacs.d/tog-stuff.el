@@ -24,15 +24,15 @@
 	(,timelog-mode-comment-regex 1 'font-lock-comment-face t t) ;; other order without override didn't seem to work.  *shrug*
 	))
 
-(defun timelog-mode ()
-  (interactive)
-  (tef-mode)
+(define-derived-mode timelog-mode tef-mode "timelog"
+  "major mode for editing timelog.txt or similar, based on tef-mode"
   (font-lock-add-keywords nil timelog-mode-extra-font-lock-keywords))
 
-
-(let ((tef-mode-el-file (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp/tef-mode.el")))
-  (if tef-mode-el-file
+(let ((tef-elisp-dir (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp")))
+  (if tef-elisp-dir
       (progn
-	(load tef-mode-el-file)
+	(add-to-list 'load-path tef-elisp-dir)
+	(autoload 'tef-mode "tef-mode" "Edit TEF files" t)
+	(add-to-list 'auto-mode-alist '("\\.tef\\'" . tef-mode))
 	(add-to-list 'auto-mode-alist '("timelog\\.txt\\'" . timelog-mode))
 	(add-to-list 'auto-mode-alist '("bodylog\\.txt\\'" . tef-mode)))))
