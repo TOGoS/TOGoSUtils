@@ -52,7 +52,7 @@ if exist "%ccd_guess%" goto guess_okay
 
 if "%ccd_target%" == "timelog" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 
-if "%ccd_target%" == "/tl" (set "ccd_target=job\EarthIT\timelog" & goto guess)
+if "%ccd_target%" == "/et" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 if "%ccd_target%" == "/pn2" (set "ccd_target=docs\ProjectNotes2" & goto guess)
 if "%ccd_target%" == "/tu" (set "ccd_target=proj\TOGoSUtils" & goto guess)
 if "%ccd_target%" == "/ln" (set "ccd_target=docs\LoveNotes" & goto guess)
