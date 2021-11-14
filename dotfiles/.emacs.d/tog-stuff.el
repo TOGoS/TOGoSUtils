@@ -26,6 +26,7 @@
 
 (define-derived-mode timelog-mode tef-mode "timelog"
   "major mode for editing timelog.txt or similar, based on tef-mode"
+  (tog-tabs-8)
   (font-lock-add-keywords nil timelog-mode-extra-font-lock-keywords))
 
 (let ((tef-elisp-dir (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp")))
