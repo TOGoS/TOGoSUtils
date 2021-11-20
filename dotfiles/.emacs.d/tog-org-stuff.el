@@ -32,3 +32,6 @@
       (add-to-list 'org-structure-template-alist '("q" . "QUOTE\n"))
       (add-to-list 'org-structure-template-alist '("e" . "EXAMPLE\n"))
       ))
+
+;; Maybe this should be set in mode customization somehow?
+(setq org-adapt-indentation nil)
