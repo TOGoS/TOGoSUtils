@@ -79,24 +79,28 @@ var shouldInitLocal = true;
 var props = {};
 var sshServers = {
 	"fs.marvin": {
-		sshUser: "tog",
-		sshHost: "fs.marvin.nuke24.net",
+		//sshUser: "tog",
+		//sshHost: "fs.marvin.nuke24.net",
+		sshSessionName: "fs.marvin",
 		remoteGitRootDir: "/home/tog/git",
 	},
+	/*
 	"harold": {
 		sshUser: "stevens",
 		sshHost: "harold.nuke24.net",
 		remoteGitRootDir: "/home/stevens/git",
 	},
+	*/
 	"toggh1": {
 		sshUser: "tog",
 		sshHost: "toggh1.nuke24.net",
 		remoteGitRootDir: "/home/tog/git",
 	},
 	"togos-fbs": {
-		sshUser: "tog",
+		//sshUser: "tog",
 		//sshHost: "togos-fbs.nuke24.net",
-		sshHost: "external.marvin.nuke24.net:31522",
+		//sshHost: "external.marvin.nuke24.net:31522",
+		sshSessionName: "togos-fbs", // Only YOU can define this in PuTTY or whatever
 		remoteGitRootDir: "/home/tog/git",
 	}
 };
@@ -143,8 +147,9 @@ getProjectName().then( function(projectName) {
 	for( var r in sshServers ) {
 		var sshRemote = sshServers[r];
 		var projectGitRepoDir = sshRemote.remoteGitRootDir+"/"+projectName+'.git'
+		var hostPart = sshRemote.sshSessionName ? sshRemote.sshSessionName : sshRemote.sshUser+"@"+sshRemote.sshHost;
 		projectGitRemotes[r] = {
-			url: "ssh://"+sshRemote.sshUser+"@"+sshRemote.sshHost+projectGitRepoDir
+			url: "ssh://"+hostPart+projectGitRepoDir
 		};
 		var remoteCommands = [
 			'mkdir -p '+projectGitRepoDir,
@@ -156,7 +161,7 @@ getProjectName().then( function(projectName) {
 			remoteCommands.push('chmod +x hooks/post-update');
 		}
 		remoteCommandSets.push([
-			['ssh', '-o', 'ConnectTimeout=10', sshRemote.sshUser+'@'+sshRemote.sshHost,
+			['ssh', '-o', 'ConnectTimeout=10', hostPart,
 				"sh -c '"+remoteCommands.join(' && ')+"'"]
 		]);
 	}
