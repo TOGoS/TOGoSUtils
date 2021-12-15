@@ -28,10 +28,27 @@
       (require 'org-tempo)
       ;; https://emacs.stackexchange.com/questions/52441/how-to-modify-org-structure-template-alist-after-org-mode-9-2
       ;; Haven'tyet tested with org mode >= 9.2!
+
+      ;; Fix to get old uppercase BEGIN / END blocks back:
+      (defun org-tempo-add-block (entry)
+	"Add block entry from `org-structure-template-alist'."
+	(let* ((key (format "<%s" (car entry)))
+	       (name (cdr entry))
+	       (special (member name '("src" "export"))))
+	  (tempo-define-template (format "org-%s" (replace-regexp-in-string " " "-" name))
+				 `(,(format "#+BEGIN_%s%s" name (if special " " ""))
+				   ,(when special 'p) '> n ,(unless special 'p) n
+				   ,(format "#+END_%s" (car (split-string name " ")))
+				   >)
+				 key
+				 (format "Insert a %s block" name)
+				 'org-tempo-tags)))
       (add-to-list 'org-structure-template-alist '("s" . "SRC\n"))
       (add-to-list 'org-structure-template-alist '("q" . "QUOTE\n"))
       (add-to-list 'org-structure-template-alist '("e" . "EXAMPLE\n"))
       ))
+
+
 
 ;; Maybe this should be set in mode customization somehow?
 (setq org-adapt-indentation nil)
