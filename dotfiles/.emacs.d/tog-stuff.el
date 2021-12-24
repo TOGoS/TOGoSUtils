@@ -31,9 +31,12 @@
 
 (let ((tef-elisp-dir (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp")))
   (if tef-elisp-dir
-      (progn
-	(add-to-list 'load-path tef-elisp-dir)
-	(autoload 'tef-mode "tef-mode" "Edit TEF files" t)
-	(add-to-list 'auto-mode-alist '("\\.tef\\'" . tef-mode))
-	(add-to-list 'auto-mode-alist '("timelog\\.txt\\'" . timelog-mode))
-	(add-to-list 'auto-mode-alist '("bodylog\\.txt\\'" . tef-mode)))))
+      (add-to-list 'load-path tef-elisp-dir)))
+
+;; Set up TEF mode regardless!
+;; Because there's a copy of tef-mode.el here in TOGoSUtils/dotfiles/.emacs.d/
+(progn
+  (autoload 'tef-mode "tef-mode" "Edit TEF files" t)
+  (add-to-list 'auto-mode-alist '("\\.tef\\'" . tef-mode))
+  (add-to-list 'auto-mode-alist '("timelog\\.txt\\'" . timelog-mode))
+  (add-to-list 'auto-mode-alist '("bodylog\\.txt\\'" . tef-mode)))
