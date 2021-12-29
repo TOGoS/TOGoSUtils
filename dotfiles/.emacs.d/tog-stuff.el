@@ -29,7 +29,7 @@
   (tog-tabs-8)
   (font-lock-add-keywords nil timelog-mode-extra-font-lock-keywords))
 
-(let ((tef-elisp-dir (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp")))
+(let ((tef-elisp-dir (condition-case err (find-tog-proj-file "proj/TEF" "src/editor-integration/elisp") (error nil))))
   (if tef-elisp-dir
       (add-to-list 'load-path tef-elisp-dir)))
 
