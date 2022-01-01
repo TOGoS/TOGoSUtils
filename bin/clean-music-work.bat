@@ -24,6 +24,7 @@ if not exist "%ableton_backup_recycle_dir:/=\%" mkdir "%ableton_backup_recycle_d
 rem but find likes forward ones, lol
 rem "%UNIX_FIND_EXE%" %music_work_dir% -path "*/Backup/*.als" -exec mv "{}" "%ableton_backup_recycle_dir:\=/%/" ";"
 rem "%UNIX_FIND_EXE%" %music_work_dir% -name "Backup" -type d -delete
+rem [2022-01-01] This should all be obsolete now that ccouch (supposedly) respects .ccouchignore files!
 "%UNIX_FIND_EXE%" %music_work_dir% -name "Backup" -type d -exec attrib +h "{}" ";"
 "%UNIX_FIND_EXE%" %music_work_dir% -name "Ableton Folder Info" -exec attrib +h "{}" ";"
 

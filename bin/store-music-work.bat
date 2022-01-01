@@ -20,6 +20,8 @@ echo %self_name%: Error: Neither music_work_dir nor tog_stuff_dir is set >&2 & g
 :find_music_work_dir_done
 
 if not defined ccouch_store_sector set ccouch_store_sector=music
+if not defined UNIX_FIND_EXE set UNIX_FIND_EXE=find
+if not defined UNIX_SORT_EXE set UNIX_SORT_EXE=sort
 
 call clean-music-work
 if errorlevel 1 goto fail
@@ -40,7 +42,7 @@ rem does command-server not write heads?
 rem Yes, it does.  I could script something to push those using the existing command-server protocol.
 
 set lhn_tempfile=%music_work_dir%\.last-head-number
-find %ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work | sort -V | tail -n 1 >%lhn_tempfile%
+"%UNIX_FIND_EXE%" "%ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work" | "%UNIX_SORT_EXE%" -V | tail -n 1 >%lhn_tempfile%
 set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
