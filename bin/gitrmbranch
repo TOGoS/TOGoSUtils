@@ -6,10 +6,20 @@
 # (it probably should just continue if the branch doesn't exist, but I don't know an easy way to do that)
 
 set -euo pipefail
-set -x
+
+success=1
 
 for branchname in "$@"
 do
-    git branch -d "$branchname"
-    git remote | xargs -r -n1 -i'{}' git push '{}' :"$branchname"
+    set -x
+    git branch -d "$branchname" || success=0
+    git remote | xargs -r -i'{}' git push '{}' :"$branchname" || success=0
+    set +x
 done
+
+if [[ "$success" -ne "1" ]] ; then
+    echo "gitrmbranch was not entirely successful." >&2
+    echo "That might just be due to branches being already-gone." >&2
+    echo "See output of commands, above, for details." >&2
+    exit 1
+fi
