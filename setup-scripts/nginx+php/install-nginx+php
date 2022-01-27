@@ -13,7 +13,7 @@ sudo apt-get install -y nginx php7.4-fpm php7.4-bcmath
 sudo cp "${self_dir}/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default"
 sudo mkdir -p /etc/nginx/snippets
 if [[ ! -f "/etc/nginx/snippets/phpn2r.conf" ]] ; then
- sudo    cp "${self_dir}/etc/nginx/snippets/phpn2r.placeholder.conf" "/etc/nginx/snippets/phpn2r.conf" 
+    sudo cp "${self_dir}/etc/nginx/snippets/phpn2r.placeholder.conf" "/etc/nginx/snippets/phpn2r.conf"
 fi
 sudo cp "${self_dir}/var/www/html/info.php" "/var/www/html/info.php"
 sudo nginx -t
