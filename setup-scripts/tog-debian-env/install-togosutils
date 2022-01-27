@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+
+. "$(dirname "$0")/../../src/lib/bash/bashrc-manipulation.bash"
+
+mkdir -p $HOME/proj/TOGoSUtils
+
+cd $HOME/proj/TOGoSUtils
+git init
+git remote add github-http https://github.com/TOGoS/TOGoSUtils.git || true
+git remote add fs.marvin ssh://tog@fs.marvin.nuke24.net/~tog/git/TOGoS/proj/TOGoSUtils.git || true
+git pull fs.marvin master || git pull github-http master
+
+add_to_bashrc ". $HOME/proj/TOGoSUtils/dotfiles/.bash_aliases"
+add_to_bashrc "export PATH=\$PATH:\$HOME/proj/TOGoSUtils/bin"

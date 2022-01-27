@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euo pipefail
+
+sudo mkdir /var/www/PHPN2R
+sudo chown tog:tog /var/www/PHPN2R
+cd /var/www/PHPN2R
+git init
+git remote add github ssh://git@github.com/TOGoS/PHPN2R.git
+git remote add github-http https://github.com/TOGoS/PHPN2R.git
+git pull --ff-only github-http master

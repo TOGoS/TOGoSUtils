@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -euo pipefail
+
+self_dir="$(dirname "$0")"
+
+sudo mkdir -p /var/www/phpn2r
+sudo chown $USER:$USER /var/www/phpn2r
+sudo cp "${self_dir}/etc/nginx/snippets/phpn2r.conf" "/etc/nginx/snippets/phpn2r.conf"
+cp "${self_dir}/var/www/phpn2r/config.php" "/var/www/phpn2r/config.php"
+
+sudo mkdir -p /var/ccouch
+sudo chown $USER:$USER /var/ccouch
+mkdir -p /var/ccouch/data /var/ccouch/heads
+
+cd /var/www/phpn2r
+git init
+git remote add github ssh://git@github.com/TOGoS/PHPN2R.git || true
+git remote add github-http https://github.com/TOGoS/PHPN2R.git || true
+git pull --ff-only github-http master
+
+
+sudo nginx -t
+sudo service nginx reload

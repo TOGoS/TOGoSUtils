@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -euo pipefail
+
+. "$(dirname "$0")/../../src/lib/bash/bashrc-manipulation.bash"
+
+if [[ ! -d "$HOME/.deno" ]] ; then
+    curl -fsSL https://deno.land/install.sh | sh
+fi
+add_to_bashrc 'export DENO_INSTALL="$HOME/.deno"'
+add_to_bashrc 'export PATH="$DENO_INSTALL/bin:$PATH"'

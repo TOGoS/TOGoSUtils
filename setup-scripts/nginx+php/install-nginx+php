@@ -1,0 +1,20 @@
+#!/bin/bash
+# Based on https://develike.com/en/articles/configuring-nginx-to-support-php-on-debian-ubuntu.
+# Should be idempotent.
+
+set -euo pipefail
+
+self_dir="$(dirname "$0")"
+
+# As of 2022-01-26, PHP 8.1 is out, and might be fine,
+# but Debian doesn't know about it.
+# 7.4 is the latest apt-gettable, and also what is referenced by https://develike.com/en/articles/configuring-nginx-to-support-php-on-debian-ubuntu
+sudo apt-get install nginx php7.4-fpm
+sudo cp "${self_dir}/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default"
+sudo mkdir -p /etc/nginx/snippets
+if [[ ! -f "/etc/nginx/snippets/phpn2r.conf" ]] ; then
+ sudo    cp "${self_dir}/etc/nginx/snippets/phpn2r.placeholder.conf" "/etc/nginx/snippets/phpn2r.conf" 
+fi
+sudo cp "${self_dir}/var/www/html/info.php" "/var/www/html/info.php"
+sudo nginx -t
+sudo service nginx reload
