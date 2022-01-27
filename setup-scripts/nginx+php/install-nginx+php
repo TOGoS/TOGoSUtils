@@ -6,6 +6,18 @@ set -euo pipefail
 
 self_dir="$(dirname "$0")"
 
+function ln_unless_exists() {
+    cmd="ln -s"
+    if [[ "$1" == "sudo" ]] ; then
+	cmd="sudo $cmd"
+	shift
+    fi
+    if [[ ! -e "$2" ]] ; then
+	$cmd "$1" "$2"
+    fi
+}
+
+
 # As of 2022-01-26, PHP 8.1 is out, and might be fine,
 # but Debian doesn't know about it.
 # 7.4 is the latest apt-gettable, and also what is referenced by https://develike.com/en/articles/configuring-nginx-to-support-php-on-debian-ubuntu
@@ -18,3 +30,7 @@ fi
 sudo cp "${self_dir}/var/www/html/info.php" "/var/www/html/info.php"
 sudo nginx -t
 sudo service nginx reload
+
+mkdir -p "$HOME/www"
+ln_unless_exists "$HOME/git" "$HOME/www/git"
+ln_unless_exists --sudo "$HOME/www" "/var/www/html/~$USER"
