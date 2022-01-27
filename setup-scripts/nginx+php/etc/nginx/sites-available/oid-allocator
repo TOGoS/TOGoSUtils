@@ -1,0 +1,11 @@
+server {
+	listen 80;
+	listen [::]:80;
+
+	#root /var/www/html;
+	#index index.php index.html index.htm index.nginx-debian.html;
+
+	server_name oid-allocator.nuke24.net;
+
+	include snippets/oid-allocator.conf;
+}

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -euo pipefail
+
+self_dir="$(dirname "$0")"
+
+sudo mkdir -p /var/www/oid-allocator
+sudo chown $USER:$USER /var/www/oid-allocator
+
+(
+    cd /var/www/oid-allocator
+    git init
+    git remote add fs.marvin ssh://tog@fs.marvin.nuke24.net/~tog/git/EarthIT/OIDAllocator.git || true
+    git remote add toggh1 ssh://tog@toggh1.nuke24.net/~tog/git/EarthIT/OIDAllocator.git || true
+    git pull --ff-only toggh1 master || git pull --ff-only fs.marvin master
+    composer install
+    sudo chgrp -R www-data spaces
+    sudo chmod -R g+w spaces
+)
+
+pwd
+
+sudo cp "${self_dir}/etc/nginx/snippets/oid-allocator.conf" "/etc/nginx/snippets/oid-allocator.conf"
+sudo cp "${self_dir}/etc/nginx/sites-available/oid-allocator" "/etc/nginx/sites-available/oid-allocator"
+if [ ! -f "/etc/nginx/sites-enabled/oid-allocator" ] ; then
+    sudo ln -s "/etc/nginx/sites-available/oid-allocator" "/etc/nginx/sites-enabled/oid-allocator"
+fi
+
+sudo nginx -t
+sudo service nginx reload
