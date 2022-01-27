@@ -1,7 +1,7 @@
 COMPOSER_EXE = /usr/local/bin/composer
 
-.PHONY: all
-all: .nginx+php-installed .phpn2r-installed .oid-allocator-installed
+.PHONY: default
+default: .nginx+php-installed .phpn2r-installed
 
 .apt-updated:
 	sudo apt-get update
