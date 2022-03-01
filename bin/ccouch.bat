@@ -3,7 +3,7 @@
 setlocal
 
 if defined ccouch_jar goto ccouch_jar_found
-if exist %UserProfile%\stuff\proj\ContentCouch\Contentcouch.jar (set "ccouch_jar=%UserProfile%\stuff\proj\ContentCouch\Contentcouch.jar" & goto ccouch_jar_found)
+if exist "%UserProfile%\stuff\proj\ContentCouch\ContentCouch.jar" (set "ccouch_jar=%UserProfile%\stuff\proj\ContentCouch\ContentCouch.jar" & goto ccouch_jar_found)
 
 echo Couldn't find ContentCouch.jar.  Try setting the ccouch_jar environment variable. >&2
 exit /b 1
