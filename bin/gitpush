@@ -1,4 +1,6 @@
 #!/bin/bash
 
+set -euo pipefail
+
 BRANCH=`git branch | grep '* ' | sed 's/* //'`
 git remote | grep -v -- '-http' | xargs -I '{}' -n 1 -P 4 git push "$@" '{}' "$BRANCH"

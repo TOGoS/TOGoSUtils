@@ -1,1 +1,5 @@
-@bash %~dp0\gitpush %*
+@echo off
+
+setlocal
+
+bash %~dp0\gitpush %*
