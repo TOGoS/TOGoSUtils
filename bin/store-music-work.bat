@@ -20,7 +20,11 @@ echo %self_name%: Error: Neither music_work_dir nor tog_stuff_dir is set >&2 & g
 :find_music_work_dir_done
 
 if not defined ccouch_store_sector set ccouch_store_sector=music
-if not defined UNIX_FIND_EXE set UNIX_FIND_EXE=find
+if defined UNIX_FIND_EXE goto find_found
+find --version
+if errorlevel 1 (echo 'find' appears to be the wrong one.  please set UNIX_FIND_EXE.>&2 && goto fail)
+set UNIX_FIND_EXE=find
+:find_found
 if not defined UNIX_SORT_EXE set UNIX_SORT_EXE=sort
 
 call clean-music-work
