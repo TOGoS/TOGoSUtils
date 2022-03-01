@@ -25,7 +25,11 @@ find --version
 if errorlevel 1 (echo 'find' appears to be the wrong one.  please set UNIX_FIND_EXE.>&2 && goto fail)
 set UNIX_FIND_EXE=find
 :find_found
-if not defined UNIX_SORT_EXE set UNIX_SORT_EXE=sort
+if defined UNIX_SORT_EXE goto sort_found
+sort --version
+if errorlevel 1 (echo 'sort' appears to be the wrong one.  please set UNIX_SORT_EXE.>&2 && goto fail)
+set UNIX_SORT_EXE=sort
+:sort_found
 
 call clean-music-work
 if errorlevel 1 goto fail
@@ -44,21 +48,37 @@ rem there has GOT to be a better way to do this stuff!
 rem (there is; it's rsync; I seem to recall having trouble finding an rsync for windows)
 rem does command-server not write heads?
 rem Yes, it does.  I could script something to push those using the existing command-server protocol.
+rem 
+rem I could also add a command to ccouch3 to spit out .bat files or something
 
 set lhn_tempfile=%music_work_dir%\.last-head-number
 "%UNIX_FIND_EXE%" "%ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work" | "%UNIX_SORT_EXE%" -V | tail -n 1 >%lhn_tempfile%
 set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
+if not defined latest_head_file goto latest_head_not_found
 @echo on
-if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% %latest_head_file% tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
-if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% %latest_head_file% tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% "%latest_head_file%" tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% "%latest_head_file%" tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
 @echo off
+goto ccouch3_upload
 
-call ccouch3-upload-to-marvin -recurse x-ccouch-head:%ccouch_repo_name%/tog/music/work/latest
+:latest_head_not_found
+echo %self_name%: Failed to find latest head using command: >&2
+echo %self_name%:   "%UNIX_FIND_EXE%" "%ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work" >&2
+echo %self_name%: which is then piped to: >&2
+echo %self_name%:   "%UNIX_SORT_EXE%" -V >&2
+echo %self_name%: Maybe check %lhn_tempfile% >&2
+
+:ccouch3_upload
+
+call ccouch3-upload-to-marvin -recurse "x-ccouch-head:%ccouch_repo_name%/tog/music/work/latest"
 
 :stdbatfooter
 goto eof
+
+
+
 :fail
 echo %~f0 exiting with errorlevel 1 due to errors >&2
 exit /B 1
