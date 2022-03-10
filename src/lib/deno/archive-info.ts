@@ -45,3 +45,82 @@ export function findRepo(repoName:string) : Promise<FilePath[]> {
 	}
 	return findDirs(stuffDirs.map(sd => sd + '/' + postStuffPath));
 }
+
+export function findRepoFile(repoName:string, file:string) : Promise<FilePath> {
+	return findRepo(repoName).then( async repoDirs => {
+		for( const repoDir of repoDirs ) {
+			const fullPath = `${repoDir}/${file}`;
+			try {
+				await Deno.stat(fullPath);
+				return fullPath;
+			} catch( _e ) {
+				// I guess it wasn't there.
+			}
+		}
+		throw new Error(`Couldn't find ${file} in any of ${repoDirs.length} instances of ${repoName}`);
+	})
+}
+
+interface RepoMetadata {
+	repoTypeName: "git-repo"|"ccouch-repo";
+	name: string;
+	title?: string;
+	preferredCcouchSector?: string;
+}
+
+import { parseTefPieces } from 'https://deno.land/x/tef@0.3.3/tef.ts';
+
+async function* denoReaderToAsyncIterable(reader:Deno.Reader&Deno.Closer) : AsyncIterable<Uint8Array> {
+	const buffer = new Uint8Array(65536);
+	let read;
+	try {
+		while( (read = await reader.read(buffer)) != null ) {
+			yield buffer.subarray(0, read);
+		}
+	} finally {
+		reader.close();
+	}
+}
+
+async function* fetchRepoMetadata() : AsyncIterable<RepoMetadata> {
+	const repoInfoTefPath = await findRepoFile("TOGoS/docs/ArchiveInfo", "info/repos.tef");
+	let currentEntry : RepoMetadata|undefined = undefined;
+	for await( const tefPiece of parseTefPieces(denoReaderToAsyncIterable(await Deno.open(repoInfoTefPath))) ) {
+		if( tefPiece.type == "new-entry" ) {
+			if( currentEntry ) {
+				yield currentEntry;
+			}
+			if( tefPiece.typeString == "git-repo" || tefPiece.typeString == "ccouch-repo" ) {
+				currentEntry = {
+					repoTypeName: tefPiece.typeString,
+					name: tefPiece.idString,
+				}
+			} else {
+				currentEntry = undefined;	
+			}
+		} else if( tefPiece.type == "header" && currentEntry != undefined ) {
+			switch( tefPiece.key ) {
+			case "title":
+				currentEntry.title = tefPiece.value;
+				break;
+			case "sector":
+				currentEntry.preferredCcouchSector = tefPiece.value;
+				break;
+			}
+		}
+	}
+	if( currentEntry ) {
+		yield currentEntry;
+	}
+}
+
+if( import.meta.main ) {
+	for await( const repoInfo of fetchRepoMetadata() ) {
+		const repoPaths = await findRepo(repoInfo.name);
+		const extendedRepoInfo = {
+			...repoInfo,
+			paths: repoPaths,
+		};
+		console.log(extendedRepoInfo);
+	}
+}
