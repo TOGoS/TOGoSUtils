@@ -134,7 +134,7 @@ end
 
 def find_input( basename )
   dirs = [".", ".wav"]
-  exts = [".wav"]
+  exts = [".wav",".flac"]
   tried = []
   for dir in dirs
     for ext in exts
