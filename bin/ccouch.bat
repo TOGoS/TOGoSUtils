@@ -16,10 +16,16 @@ set "ccouch_args="
 if not defined ccouch_repo_dir goto end_build_repo_arg
 if not defined ccouch_repo_name goto end_build_repo_arg
 
-set "ccouch_args=-repo:%ccouch_repo_name% "%ccouch_repo_dir%""
+rem I replace backslash with slash here because OTHERWISE A TRAILING BACKSLASH
+rem GETS INTERPRETED AS AN ESCAPE SEQUENCE AND ccouch WILL COMPLAIN THAT 'No command given'.
+rem This can also be worked aound by appending a '.' (e.g. `set ccouch_repo_dir=%~dp0.` in .env.bat)
+rem but I figure just switching them to forward slashes is a bit more foolproof.
+
+set "ccouch_args=-repo:%ccouch_repo_name% "%ccouch_repo_dir:\=/%""
 
 :end_build_repo_arg
 
-rem echo args: %ccouch_args%
+set "cmd=java -jar "%ccouch_jar%" %ccouch_args% %*"
 
-java -jar "%ccouch_jar%" %*
+rem echo %cmd%
+%cmd%
