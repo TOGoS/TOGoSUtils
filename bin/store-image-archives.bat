@@ -2,7 +2,7 @@
 
 setlocal
 
-set script_version=2020-02-06
+set script_version=2022-04-12
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
@@ -35,6 +35,7 @@ java -jar %ccouch_jar% -repo:%ccouch_repo_name% %ccouch_repo_dir% store ^
 
 call ccouch3-upload-to-marvin -recurse x-ccouch-head:%ccouch_repo_name%/archives/images/latest
 
+mkdir %UserProfile%\temp
 set push_image_archives_bat=%UserProfile%\temp\push-image-archives.bat
 del %push_image_archives_bat%
 call togutil list-ccouch-heads %ccouch_repo_name%/archives/images ^
