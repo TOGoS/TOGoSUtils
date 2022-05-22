@@ -21,7 +21,7 @@ set command=%command% %*
 @echo on
 %command%
 if errorlevel 1 goto fail
-	
+
 @echo off
 goto eof
 
