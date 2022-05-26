@@ -186,10 +186,12 @@ def walk( dir, &prok )
   end
 end
 
-# This relies on the coreutils version of the touch command being installed.
+# Some versions of 'touch', such as that included with UnxUtils, don't work.
 # The UnxUtils version's -t argument takes a different syntax that is incompatible
-# with that of touch found on my Linux machines.  Get the coreutils version from
-# http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
+# with that of touch found on my Linux machines.
+# Versions that work:
+# - The one included with Git for Windows (e.g. v2.34.1 as installed by Chocolatey)
+# - Coreutils http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 def touch( file, mtime )
   FileUtils.touch file, :mtime => mtime
   #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
@@ -273,6 +275,7 @@ def process_image( infile )
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
   return unless transfer_file( infile, outfile )
+  # TODO: Probably move touching into copy_file; don't really want to mess with linked files' timestamps
   touch( outfile, mtime )
   if outfile =~ /\.jpe?g/
     system "jhead -autorot \"#{outfile}\""
