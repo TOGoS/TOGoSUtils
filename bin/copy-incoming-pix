@@ -123,13 +123,17 @@ def copy_file( source, dest )
       FileUtils.rm( temp )
       return false
     else
+      if opts[:mtime]
+        touch( temp, opts[:mtime] )
+      end
+      
       FileUtils.mv( temp, dest )
       return true
     end
   end
 end
 
-def link_file( source, dest )
+def link_file( source, dest, _opts )
   if $dryrun
     puts "ln '#{source}' '#{dest}'"
     return
@@ -156,14 +160,14 @@ def maybe_mkdir( dir )
   $dirs_mkd[dir] = dir
 end
 
-def transfer_file( source, dest )
+def transfer_file( source, dest, opts={} )
   maybe_mkdir File.dirname(dest)
   
   case $transfer_mode
   when :copy
-    return copy_file( source, dest )
+    return copy_file( source, dest, opts )
   when :hardlink
-    return link_file( source, dest )
+    return link_file( source, dest, opts )
   else
     raise "Unrecognized transfer mode (indicates bug in #{File.basename($0)}): '#{$transfer_mode}'"
   end
@@ -274,9 +278,7 @@ def process_image( infile )
   return if $older_than and mtime >= $older_than
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
-  return unless transfer_file( infile, outfile )
-  # TODO: Probably move touching into copy_file; don't really want to mess with linked files' timestamps
-  touch( outfile, mtime )
+  return unless transfer_file( infile, outfile, :mtime => mtime )
   if outfile =~ /\.jpe?g/
     system "jhead -autorot \"#{outfile}\""
   end
@@ -291,8 +293,7 @@ def process_video( infile )
   return if $older_than and mtime >= $older_than
   outfile = $video_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
-  return unless transfer_file( infile, outfile )
-  touch( outfile, mtime )
+  return unless transfer_file( infile, outfile, :mtime => mtime )
   $files_copied += 1
 end
 
