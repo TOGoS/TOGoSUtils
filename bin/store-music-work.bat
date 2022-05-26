@@ -58,8 +58,8 @@ del %lhn_tempfile%
 
 if not defined latest_head_file goto latest_head_not_found
 @echo on
-if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% "%latest_head_file%" tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
-if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% "%latest_head_file%" tog@external.marvin.nuke24.net:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% "%latest_head_file%" tog@%fs_marvin_ssh_hostname%:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% "%latest_head_file%" tog@%togos_fbs_ssh_hostname%:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
 @echo off
 goto ccouch3_upload
 
