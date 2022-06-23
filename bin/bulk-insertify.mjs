@@ -25,17 +25,17 @@ class BulkInsertificator {
 	 * @param {NodeJS.WritableStream} output
 	 */
 	constructor( output ) {
-		/** @member {NodeJS.WritableStream} output */
+		/** @type {NodeJS.WritableStream} */
 		this.output = output;
 
-		/** @member {string|undefined} currentColumnList */
+		/** @type {string|undefined} */
 		this.currentColumnList = undefined;
-		/** @member {string|undefined} currentTableName */
+		/** @type {string|undefined} */
 		this.currentTableName = undefined;
-		/** @member {"newline"|"post-value"} state */
+		/** @type {"newline"|"post-value"} */
 		this.state = "newline";
 
-		/** @member {HandleInputStats} stats */
+		/** @type {HandleInputStats} */
 		this.stats = {
 			processedFileCount: 0,
 			processedLineCount: 0,
@@ -51,9 +51,6 @@ class BulkInsertificator {
 	 * @returns Promise<void>
 	 */
 	#write( line ) {
-		this.output.write(line);
-		return Promise.resolve();
-
 		return new Promise( (resolve,reject) => {
 			if( this.output.write(line, (err) => {
 				if( err ) reject(err);
@@ -115,7 +112,7 @@ class BulkInsertificator {
 
 	async processFile(filename) {
 		++this.stats.processedFileCount;
-		/** @var {NodeJS.ReadStream} input */
+		/** @type {NodeJS.ReadableStream & { close?():void }} */
 		let input;
 		if( filename == "-" ) {
 			input = process.stdin;
@@ -134,8 +131,8 @@ class BulkInsertificator {
 		return new Promise( (resolve,reject) => {
 			rl.on('close', async () => {
 				this.#flushSection();
-				this.#write(`-- Finished reading ${filename}\n`)
-				input.close();
+				//this.#write(`-- Finished reading ${filename}\n`)
+				if( input.close ) input.close();
 				rl.close();
 				resolve(lineProm);
 			});
@@ -165,6 +162,7 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 	let showStats = false;
 	let optionsDone = false;
 	const filesToProcess = [];
+	let outputFile = "-";
 	const selfName = basename(import.meta.url);
 
 	for( let i=2; i<process.argv.length; ++i ) {
@@ -173,13 +171,19 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 			filesToProcess.push(arg);
 		} else if( arg == "--show-stats" ) {
 			showStats = true;
+		} else if( arg == '-o' ) {
+			if( process.argv.length <= i+1 ) {
+				console.error(`${selfName}: Error: '-o' requires a filename as the following argument, but was itself the last argument`);
+				process.exit(1);
+			}
+			outputFile = process.argv[++i];
 		} else if( arg == '--' ) {
 			optionsDone = true;
 		} else if( arg == '--help' ) {
 			console.log(`${selfName}: Turn mulitiple INSERT INTO sometable (x,y,z) VALUES (1,2,3)`)
 			console.log(`into one big insert, passing everything else through unchanged.`);
 			console.log();
-			console.log(`Usage: ${selfName} [--show-stats] <input file(s)...>`)
+			console.log(`Usage: ${selfName} [--show-stats] [-o <output file>] <input file(s)...>`)
 			console.log();
 			console.log(`Zero or more input files may be indicated.  Use '-' to read from standard input.`);
 			process.exit(0);
@@ -190,10 +194,18 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 	}
 
 	if( filesToProcess.length == 0 ) {
-		console.warn(`No input files specified; use '-' to indicate standard input`);
+		console.warn(`${selfName}: Warning: No input files specified.  Output will be empty.`)
+		console.warn(`${selfName}:          Use '-' to indicate standard input`);
 	}
 
-	const output = process.stdout;
+	/** @type {NodeJS.WritableStream} */
+	let output;
+	if( outputFile == "-" ) {
+		output = process.stdout;
+	} else {
+		await fs.rm(outputFile, {force: true});
+		output = await fs.open(outputFile, "w").then( fh => fh.createWriteStream());
+	}
 
 	const bulkInsertificator = new BulkInsertificator(output);
 	for( const inputFilename of filesToProcess ) {
