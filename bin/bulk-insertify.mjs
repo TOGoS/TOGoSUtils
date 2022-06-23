@@ -203,11 +203,11 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 
 	if( showStats ) {
 		output.write(`-- bulk-insertify processing stats:\n`);
-		output.write(`-- Files read:           ${leftPad(stats.processedFileCount         , 10)}\n`);
-		output.write(`-- Lines read:           ${leftPad(stats.processedLineCount         , 10)}\n`);
-		output.write(`-- Inserts read:         ${leftPad(stats.processedInsertCount       , 10)}\n`);
-		output.write(`-- Inserts emitted:      ${leftPad(stats.emittedInsertCount    , 10)}\n`);
-		output.write(`-- Values emitted:       ${leftPad(stats.emittedValueCount     , 10)}\n`);
-		output.write(`-- Lines passed through: ${leftPad(stats.passedLineCount, 10)}\n`);
+		output.write(`-- Files read:           ${leftPad(stats.processedFileCount   , 10)}\n`);
+		output.write(`-- Lines read:           ${leftPad(stats.processedLineCount   , 10)}\n`);
+		output.write(`-- Inserts read:         ${leftPad(stats.processedInsertCount , 10)}\n`);
+		output.write(`-- Inserts emitted:      ${leftPad(stats.emittedInsertCount   , 10)}\n`);
+		output.write(`-- Values emitted:       ${leftPad(stats.emittedValueCount    , 10)}\n`);
+		output.write(`-- Lines passed through: ${leftPad(stats.passedLineCount      , 10)}\n`);
 	}
 }
