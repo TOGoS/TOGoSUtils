@@ -21,12 +21,17 @@ import * as fs from 'node:fs/promises';
  */
 
 class BulkInsertificator {
+	/** @type {NodeJS.WritableStream} */
+	#output;
+	#lineEnding;
+	#writePromise;
+
 	/**
-	 * @param {NodeJS.WritableStream} output
+	 * @param {{ output:NodeJS.WritableStream, lineEnding?:string }} options
 	 */
-	constructor( output ) {
-		/** @type {NodeJS.WritableStream} */
-		this.output = output;
+	constructor( options ) {
+		this.#output = options.output;
+		this.#lineEnding = options.lineEnding ?? "\n";
 
 		/** @type {string|undefined} */
 		this.currentColumnList = undefined;
@@ -44,40 +49,50 @@ class BulkInsertificator {
 			emittedValueCount: 0,
 			passedLineCount: 0,
 		};
+
+		/** @type {Promise<void>} */
+		this.#writePromise = Promise.resolve();
 	}
 
 	/**
-	 * @param {string} line
+	 * @param {string} text
 	 * @returns Promise<void>
 	 */
-	#write( line ) {
-		return new Promise( (resolve,reject) => {
-			if( this.output.write(line, (err) => {
+	#write( text ) {
+		return this.#writePromise = this.#writePromise.then(() => new Promise( (resolve,reject) => {
+			if( this.#output.write(text, (err) => {
 				if( err ) reject(err);
 			}) ) {
 				resolve(undefined);
 			} else {
-				this.output.once('drain', () => {
+				this.#output.once('drain', () => {
 					resolve(undefined);
 				});
 			}
-		});
+		}));
 	}
 
-	async #flushSection() {
+	#flushSection() {
 		if( this.state == "post-value" ) {
-			await this.#write(";\n");
+			this.#write(`;${this.#lineEnding}`);
 			this.state = "newline";
 		}
-	}	
+	}
+
+	// Sanity checking...
+	#processingLine = false;
 
 	/**
 	 * 
 	 * @param {string} line
-	 * @return {Promise<void>}
+	 * @return void
 	 */
-	async processLine( line ) {
-		//await this.#write(`-- Processing, state=${this.state}: ${line}\n`);
+	processLine( line ) {
+		if( this.#processingLine ) {
+			throw new Error("#processLine called while already processing a line!");
+		}
+		this.#processingLine = true;
+
 		++this.stats.processedLineCount;
 		let m;
 		if( (m = /^INSERT INTO (\w+) \(([^\)]*)\) VALUES \(([^\)]*)\);$/.exec(line)) != null ) {
@@ -86,13 +101,13 @@ class BulkInsertificator {
 			const columnList = m[2];
 			const value = m[3];
 			if( this.state == "post-value" && this.currentColumnList == columnList && this.currentTableName == tableName ) {
-				this.output.write(`,\n(${value})`);
+				this.#write(`,${this.#lineEnding}(${value})`);
 				this.state = "post-value";
 				++this.stats.emittedValueCount;
 			} else {
-				await this.#flushSection();
+				this.#flushSection();
 				//await this.#write(`-- ${columnList} did not match ${this.currentColumnList}; opening new section\n`);
-				await this.#write(`INSERT INTO ${tableName}\n(${columnList}) VALUES\n(${value})`);
+				this.#write(`INSERT INTO ${tableName}${this.#lineEnding}(${columnList}) VALUES${this.#lineEnding}(${value})`);
 				this.state = "post-value";
 				this.currentColumnList = columnList;
 				this.currentTableName = tableName;
@@ -100,44 +115,56 @@ class BulkInsertificator {
 				++this.stats.emittedValueCount;
 			}
 		} else {
-			await this.#flushSection();
-			await this.#write(line + "\n");
+			this.#flushSection();
+			this.#write(line + this.#lineEnding);
 			++this.stats.passedLineCount;
 		}
+
+		this.#processingLine = false;
 	}
 
 	close() {
-		return this.#flushSection().then( () => this.stats );
+		this.#flushSection();
+		return this.#writePromise.then( () => this.stats );
 	}
 
+	#processingFile = undefined;
+
 	async processFile(filename) {
-		++this.stats.processedFileCount;
-		/** @type {NodeJS.ReadableStream & { close?():void }} */
-		let input;
-		if( filename == "-" ) {
-			input = process.stdin;
-		} else {
-			const inputFh = await fs.open(filename);
-			input = inputFh.createReadStream();
+		if( this.#processingFile != undefined ) {
+			throw new Error(`Already processing ${this.#processingFile}`);
 		}
-		const rl = readline.createInterface({
-			input,
-			terminal: false,
-		});
-		let lineProm = Promise.resolve();
-		rl.on('line', (line) => {
-			lineProm = lineProm.then(() => this.processLine(line));
-		});
-		return new Promise( (resolve,reject) => {
-			rl.on('close', async () => {
-				this.#flushSection();
-				//this.#write(`-- Finished reading ${filename}\n`)
-				if( input.close ) input.close();
-				rl.close();
-				resolve(lineProm);
+		this.#processingFile = filename;
+		try {
+			/** @type {NodeJS.ReadableStream & { close?():void }} */
+			let input;
+			if( filename == "-" ) {
+				input = process.stdin;
+			} else {
+				const inputFh = await fs.open(filename);
+				input = inputFh.createReadStream();
+			}
+			
+			++this.stats.processedFileCount;
+			
+			const rl = readline.createInterface({
+				input,
+				terminal: false,
 			});
-			rl.on('SIGINT', () => reject(new Error("SIGINT")));
-		});
+			rl.on('line', this.processLine.bind(this));
+			await new Promise( (resolve,reject) => {
+				rl.on('close', () => {
+					this.#flushSection();
+					//this.#write(`-- Finished reading ${filename}\n`)
+					if( input.close ) input.close();
+					rl.close();
+					this.#writePromise.then(resolve);
+				});
+				rl.on('SIGINT', () => reject(new Error("SIGINT")));
+			});
+		} finally {
+			this.#processingFile = undefined;
+		}
 	}
 }
 
@@ -163,6 +190,7 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 	let optionsDone = false;
 	const filesToProcess = [];
 	let outputFile = "-";
+	let lineEnding = "\n";
 	const selfName = basename(import.meta.url);
 
 	for( let i=2; i<process.argv.length; ++i ) {
@@ -171,6 +199,10 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 			filesToProcess.push(arg);
 		} else if( arg == "--show-stats" ) {
 			showStats = true;
+		} else if( arg == "--o-crlf" ) {
+			lineEnding = "\r\n";
+		} else if( arg == "--o-lf" ) {
+			lineEnding = "\r\n";
 		} else if( arg == '-o' ) {
 			if( process.argv.length <= i+1 ) {
 				console.error(`${selfName}: Error: '-o' requires a filename as the following argument, but was itself the last argument`);
@@ -183,7 +215,12 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 			console.log(`${selfName}: Turn mulitiple INSERT INTO sometable (x,y,z) VALUES (1,2,3)`)
 			console.log(`into one big insert, passing everything else through unchanged.`);
 			console.log();
-			console.log(`Usage: ${selfName} [--show-stats] [-o <output file>] <input file(s)...>`)
+			console.log(`Usage: ${selfName} [<options>] [-o <output file>] <input file(s)...>`)
+			console.log();
+			console.log("Options:");
+			console.log("  --show-stats ; emit a comment block of information at the end");
+			console.log("  --o-crlf     ; terminate output lines with CRLF sequence");
+			console.log("  --o-lf       ; terminate output lines with LF character");
 			console.log();
 			console.log(`Zero or more input files may be indicated.  Use '-' to read from standard input.`);
 			process.exit(0);
@@ -207,7 +244,10 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 		output = await fs.open(outputFile, "w").then( fh => fh.createWriteStream());
 	}
 
-	const bulkInsertificator = new BulkInsertificator(output);
+	const bulkInsertificator = new BulkInsertificator({
+		output,
+		lineEnding,
+	});
 	for( const inputFilename of filesToProcess ) {
 		await bulkInsertificator.processFile(inputFilename);
 	}
