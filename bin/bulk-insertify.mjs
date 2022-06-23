@@ -2,6 +2,7 @@
 
 import * as readline from 'node:readline';
 import * as process from 'node:process';
+import * as fs from 'node:fs/promises';
 
 /**
  * @typedef {Object} HandleInputOptions
@@ -11,83 +12,136 @@ import * as process from 'node:process';
 
 /**
  * @typedef {Object} HandleInputStats
- * @property {number} linesReadCount
- * @property {number} insertsReadCount
- * @property {number} insertsEmittedCount
- * @property {number} valuesEmittedCount
- * @property {number} linesPassedThroughCount
+ * @property {number} processedFileCount
+ * @property {number} processedLineCount
+ * @property {number} processedInsertCount
+ * @property {number} emittedInsertCount
+ * @property {number} emittedValueCount
+ * @property {number} passedLineCount
  */
 
-/**
- * 
- * @param {HandleInputOptions} opts
- * @returns {Promise<HandleInputStats>}
- */
-function handleInput(opts) {
-	const output = opts.output;
-	return new Promise( (resolve,reject) => {
-		/** @var {HandleInputStats} stats */
-		const stats = {
-			linesReadCount: 0,
-			insertsReadCount: 0,
-			insertsEmittedCount: 0,
-			valuesEmittedCount: 0,
-			linesPassedThroughCount: 0,
+class BulkInsertificator {
+	/**
+	 * @param {NodeJS.WritableStream} output
+	 */
+	constructor( output ) {
+		/** @member {NodeJS.WritableStream} output */
+		this.output = output;
+
+		/** @member {string|undefined} currentColumnList */
+		this.currentColumnList = undefined;
+		/** @member {string|undefined} currentTableName */
+		this.currentTableName = undefined;
+		/** @member {"newline"|"post-value"} state */
+		this.state = "newline";
+
+		/** @member {HandleInputStats} stats */
+		this.stats = {
+			processedFileCount: 0,
+			processedLineCount: 0,
+			processedInsertCount: 0,
+			emittedInsertCount: 0,
+			emittedValueCount: 0,
+			passedLineCount: 0,
 		};
-		
-		/** @var {string|undefined} currentColumnList */
-		let currentColumnList = undefined;
-		/** @var {string|undefined} */
-		let currentTableName = undefined;
-		/** @var {"newline"|"post-value"} state */ 
-		let state = "newline";
+	}
 
-		state = "asd";
+	/**
+	 * @param {string} line
+	 * @returns Promise<void>
+	 */
+	#write( line ) {
+		this.output.write(line);
+		return Promise.resolve();
 
-		currentTableName = 32;
-
-		function flushSection() {
-			if( state == "post-value" ) {
-				output.write(";\n");
-				state = "newline";
+		return new Promise( (resolve,reject) => {
+			if( this.output.write(line, (err) => {
+				if( err ) reject(err);
+			}) ) {
+				resolve(undefined);
+			} else {
+				this.output.once('drain', () => {
+					resolve(undefined);
+				});
 			}
-		}
+		});
+	}
 
+	async #flushSection() {
+		if( this.state == "post-value" ) {
+			await this.#write(";\n");
+			this.state = "newline";
+		}
+	}	
+
+	/**
+	 * 
+	 * @param {string} line
+	 * @return {Promise<void>}
+	 */
+	async processLine( line ) {
+		//await this.#write(`-- Processing, state=${this.state}: ${line}\n`);
+		++this.stats.processedLineCount;
+		let m;
+		if( (m = /^INSERT INTO (\w+) \(([^\)]*)\) VALUES \(([^\)]*)\);$/.exec(line)) != null ) {
+			++this.stats.processedInsertCount;
+			const tableName = m[1];
+			const columnList = m[2];
+			const value = m[3];
+			if( this.state == "post-value" && this.currentColumnList == columnList && this.currentTableName == tableName ) {
+				this.output.write(`,\n(${value})`);
+				this.state = "post-value";
+				++this.stats.emittedValueCount;
+			} else {
+				await this.#flushSection();
+				//await this.#write(`-- ${columnList} did not match ${this.currentColumnList}; opening new section\n`);
+				await this.#write(`INSERT INTO ${tableName}\n(${columnList}) VALUES\n(${value})`);
+				this.state = "post-value";
+				this.currentColumnList = columnList;
+				this.currentTableName = tableName;
+				++this.stats.emittedInsertCount;
+				++this.stats.emittedValueCount;
+			}
+		} else {
+			await this.#flushSection();
+			await this.#write(line + "\n");
+			++this.stats.passedLineCount;
+		}
+	}
+
+	close() {
+		return this.#flushSection().then( () => this.stats );
+	}
+
+	async processFile(filename) {
+		++this.stats.processedFileCount;
+		/** @var {NodeJS.ReadStream} input */
+		let input;
+		if( filename == "-" ) {
+			input = process.stdin;
+		} else {
+			const inputFh = await fs.open(filename);
+			input = inputFh.createReadStream();
+		}
 		const rl = readline.createInterface({
-			...opts,
+			input,
 			terminal: false,
 		});
+		let lineProm = Promise.resolve();
 		rl.on('line', (line) => {
-			let m;
-			if( (m = /^INSERT INTO (\w+) \(([^\)]*)\) VALUES \(([^\)]*)\);$/.exec(line)) != null ) {
-				const tableName = m[1];
-				const columnList = m[2];
-				const value = m[3];
-				if( state == "post-value" && currentColumnList == columnList && currentTableName == tableName ) {
-					output.write(`,\n(${value})`);
-					++stats.valuesEmittedCount;
-				} else {
-					flushSection();
-					output.write(`-- ${columnList} did not match ${currentColumnList}; opening new section`);
-					output.write(`INSERT INTO\n${columnList} VALUES\n(${value})`);
-					state = "post-value";
-					currentColumnList = columnList;
-					currentTableName = tableName;
-					++stats.insertsEmittedCount;
-					++stats.valuesEmittedCount;
-				}
-			} else {
-				flushSection();
-				output.write(line + "\n");
-				++stats.linesPassedThroughCount;
-			}
+			lineProm = lineProm.then(() => this.processLine(line));
 		});
-		rl.on('close', () => {
-			flushSection();
-			resolve(stats);
+		return new Promise( (resolve,reject) => {
+			rl.on('close', async () => {
+				this.#flushSection();
+				this.#write(`-- Finished reading ${filename}\n`)
+				input.close();
+				rl.close();
+				resolve(lineProm);
+			});
+			rl.on('SIGINT', () => reject(new Error("SIGINT")));
 		});
-		rl.on('SIGINT', () => reject(new Error("SIGINT")));
-	});
+	}
 }
 
 function leftPad(str, len, padding=" ") {
@@ -113,34 +167,47 @@ if( /* import.meta.main */ true /* why isn't this a thing yet: https://github.co
 	const filesToProcess = [];
 	const selfName = basename(import.meta.url);
 
-	for( const arg of process.argv ) {
+	for( let i=2; i<process.argv.length; ++i ) {
+		const arg = process.argv[i];
 		if( optionsDone || !arg.startsWith("-") || arg == "-" ) {
-			console.error(`${selfName}: Error: Input files not yet supported`);
-			process.exit(1);
 			filesToProcess.push(arg);
 		} else if( arg == "--show-stats" ) {
 			showStats = true;
 		} else if( arg == '--' ) {
 			optionsDone = true;
+		} else if( arg == '--help' ) {
+			console.log(`${selfName}: Turn mulitiple INSERT INTO sometable (x,y,z) VALUES (1,2,3)`)
+			console.log(`into one big insert, passing everything else through unchanged.`);
+			console.log();
+			console.log(`Usage: ${selfName} [--show-stats] <input file(s)...>`)
+			console.log();
+			console.log(`Zero or more input files may be indicated.  Use '-' to read from standard input.`);
+			process.exit(0);
 		} else {
 			console.error(`${selfName}: Error: Unrecognized option: ${arg}`);
 			process.exit(1);
 		}
 	}
 
-	const input = process.stdin;
+	if( filesToProcess.length == 0 ) {
+		console.warn(`No input files specified; use '-' to indicate standard input`);
+	}
+
 	const output = process.stdout;
-	const stats = await handleInput({
-		input,
-		output,
-	});
+
+	const bulkInsertificator = new BulkInsertificator(output);
+	for( const inputFilename of filesToProcess ) {
+		await bulkInsertificator.processFile(inputFilename);
+	}
+	const stats = await bulkInsertificator.close();
 
 	if( showStats ) {
 		output.write(`-- bulk-insertify processing stats:\n`);
-		output.write(`-- Lines read:           ${leftPad(stats.linesReadCount         , 10)}\n`);
-		output.write(`-- Inserts read:         ${leftPad(stats.insertsReadCount       , 10)}\n`);
-		output.write(`-- Inserts emitted:      ${leftPad(stats.insertsEmittedCount    , 10)}\n`);
-		output.write(`-- Values emitted:       ${leftPad(stats.valuesEmittedCount     , 10)}\n`);
-		output.write(`-- Lines passed through: ${leftPad(stats.linesPassedThroughCount, 10)}\n`);
+		output.write(`-- Files read:           ${leftPad(stats.processedFileCount         , 10)}\n`);
+		output.write(`-- Lines read:           ${leftPad(stats.processedLineCount         , 10)}\n`);
+		output.write(`-- Inserts read:         ${leftPad(stats.processedInsertCount       , 10)}\n`);
+		output.write(`-- Inserts emitted:      ${leftPad(stats.emittedInsertCount    , 10)}\n`);
+		output.write(`-- Values emitted:       ${leftPad(stats.emittedValueCount     , 10)}\n`);
+		output.write(`-- Lines passed through: ${leftPad(stats.passedLineCount, 10)}\n`);
 	}
 }
