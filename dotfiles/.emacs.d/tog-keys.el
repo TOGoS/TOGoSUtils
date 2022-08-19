@@ -61,6 +61,8 @@
 (global-set-key (kbd "M-g t t") 'visit-tog-todo)
 (global-set-key (kbd "M-g e b") 'visit-bodylog)
 (global-set-key (kbd "M-g e h") 'visit-self-help)
+(global-set-key (kbd "M-g a l") 'visit-alvin-log)
+(global-set-key (kbd "M-g k l") 'visit-kia-log)
 (global-set-key (kbd "M-g l n") 'visit-love-notes)
 (global-set-key (kbd "M-g l c") 'visit-love-complaints)
 (global-set-key (kbd "M-g j t") 'visit-todays-jht-notes)
