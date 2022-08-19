@@ -47,7 +47,9 @@ done
 set -x
 exec ccouch3 upload \
      $recurse_opt \
-     -http-server:piccouch piccouch.appspot.com \
-     -command-server:zappie1 ssh tog@zappie1.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
      -command-server:fs.marvin ssh tog@fs.marvin.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
      ${things[@]+"${things[@]}"}
+
+# Not currently using...
+     -http-server:piccouch piccouch.appspot.com \
+     -command-server:zappie1 ssh tog@zappie1.nuke24.net "ccouch3 cmd-server -sector '$sector'" ';' \
