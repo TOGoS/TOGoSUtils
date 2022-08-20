@@ -72,7 +72,7 @@
 (global-set-key (kbd "M-g 9 t") 'visit-4909-transfers)
 (global-set-key (kbd "M-g m m") 'visit-togos-music-metadata)
 (global-set-key (kbd "M-g m n") 'visit-togos-music-notes)
-(global-set-key (kbd "M-g m t") 'visit-togos-music-todo)
+(global-set-key (kbd "M-g m t") 'visit-togos-music-tasks)
 (global-set-key (kbd "M-g s t") 'visit-todays-sa-meeting-notes)
 (global-set-key (kbd "M-g s g d") 'visit-synthgen2100-devlog)
 (global-set-key (kbd "M-g w p") 'visit-workshop-parts-file)

@@ -174,9 +174,9 @@
 (defun visit-togos-music-notes ()
   (interactive)
   (visit-tog-proj-file "music/TOGoSMusicMetadata" "notes.tef"))
-(defun visit-togos-music-todo ()
+(defun visit-togos-music-tasks ()
   (interactive)
-  (visit-tog-proj-file "music/TOGoSMusicMetadata" "todo.org"))
+  (visit-tog-proj-file "music/TOGoSMusicMetadata" "tasks.tef"))
 
 (defun visit-eit-timelog ()
   (interactive)
