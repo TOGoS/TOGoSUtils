@@ -122,12 +122,34 @@ async function *tefPiecesToEntries( pieces : AsyncIterable<tef.TEFPiece> ) : Asy
 	}
 }
 
-function tefEntryToJson(e : Readonly<TEFEntry> ) : {[k:string]: string} {
+// TODO: Librarify all that boilerplate!
+
+interface Item {
+	idString?: string;
+	typeString?: string;
+	title?: string;
+	subtaskOf?: string;
+	content?: string;
+	status?: string;
+}
+interface ItemEtc extends Item {
+	[k: string]: string|undefined;
+}
+
+function toCamelCase(phrase:string) {
+	const words = phrase.split(/[ -_]/g).map( word => word.toLowerCase() );
+	for( let i=1; i<words.length; ++i ) {
+		words[i] = words[i].charAt(0).toUpperCase() + words[i].substring(1);
+	}
+	return words.join('');
+}
+
+function tefEntryToItem(e : Readonly<TEFEntry> ) : ItemEtc {
 	// Might want to drive translation based on some schema.
 	// Not yet sure exactly what that would look like.
 	const trimIds = true;
 
-	const obj : {[k:string]: string} = {};
+	const obj : ItemEtc = {};
 
 	// Parse ID string
 	let effectiveIdString : string;
@@ -142,15 +164,18 @@ function tefEntryToJson(e : Readonly<TEFEntry> ) : {[k:string]: string} {
 	}
 
 	// Parse type string and headers
-	if( effectiveIdString != "" ) obj.id = effectiveIdString;
+	if( effectiveIdString != "" ) obj.idString = effectiveIdString;
 	if( effectiveTitleString != "" ) obj.title = effectiveTitleString;
-	if( e.typeString != "" ) obj.type = e.typeString;
+	if( e.typeString != "" ) obj.typeString = e.typeString;
 	for( const header of e.headers ) {
+		const ccKey = toCamelCase(header.key);
+
 		if( header.value == "" ) continue;
-		const appendTo = obj[header.key] != undefined ? obj[header.key] + "\n" : "";
-		obj[header.key] = appendTo + header.value;
+		let value = obj[ccKey] ?? "";
+		if( value.length > 0 ) value += "\n";
+		obj[ccKey] = value + header.value;
 	}
-	
+
 	// Stringify content
 	let contentLength = 0;
 	for( const chunk of e.contentChunks ) {
@@ -174,11 +199,139 @@ function tefEntryToJson(e : Readonly<TEFEntry> ) : {[k:string]: string} {
 }
 
 
-// TODO: Librarify all that boilerplate!
 
-for await( const entry of tefPiecesToEntries(tef.parseTefPieces(readerToIterator(Deno.stdin))) ) {
-	console.log(JSON.stringify(tefEntryToJson(entry)));
-	//if( entry.typeString == "task" ) {
-	//
-	//}
+import * as colors from 'https://deno.land/std@0.154.0/fmt/colors.ts';
+
+const separatorLine = colors.gray("#".repeat(74));
+
+type ItemPrinter = (item:Item) => Promise<void>;
+
+function collectItemAndParentIds(items:Map<string,Item>, itemId:string, into:string[]) {
+	const item = items.get(itemId);
+	if( item == undefined ) {
+		throw new Error(`Referenced item ${itemId} not found in items map!`);
+	}
+	if( item.subtaskOf != undefined ) {
+		const parentIds = item.subtaskOf.split(/\s+/);
+		for( const parentId of parentIds ) {
+			collectItemAndParentIds(items, parentId, into);
+		}
+	}
+	into.push(itemId);
 }
+
+interface ToDoListingOptions {
+	selectionMode : "all"|"random-todo-task"|"todo";
+	outputFormat : "pretty"|"json";
+}
+
+function prettifyKey(k:string) {
+	// Seems like I want this to just revert to TEF-format headers,
+	// which makes sense as TEF was intended to be human-readable!
+	switch(k) {
+	case 'subtaskOf': return 'subtask-of';
+	default: return k;
+	}
+}
+
+function prettyPrintItem(item:Item) : Promise<void> {
+	console.log("=" +
+		colors.rgb24(item.typeString ?? "item", 0xCCAAAA) + " " +
+		colors.rgb24(item.idString ?? "", 0xAACCAA) +
+		(item.title ? " - " + colors.brightWhite(item.title) : '')
+	);
+	for( const k in item ) {
+		if( k == 'typeString' || k == 'idString' || k == 'title' || k == 'content' ) continue;
+		console.log(`${prettifyKey(k)}: ${(item as ItemEtc)[k]?.replaceAll("\n", ", ")}`);
+	}
+	if( item.content != undefined ) {
+		console.log();
+		console.log(item.content.trim());
+	}
+	return Promise.resolve();
+}
+
+async function main(options:ToDoListingOptions) {
+	const items : Map<string, Item> = new Map();
+	for await( const entry of tefPiecesToEntries(tef.parseTefPieces(readerToIterator(Deno.stdin))) ) {
+		const item = tefEntryToItem(entry);
+		if( item.idString ) {
+			items.set(item.idString, item);
+		}
+	}
+	let itemIds : string[] = [];
+	for( const [itemId, item] of items ) {
+		if( options.selectionMode == "all" ) {
+			itemIds.push(itemId);
+		} else if( options.selectionMode == "todo" ) {
+			if( item.status != "done" ) {
+				itemIds.push(itemId);
+			}
+		} else {
+			if( item.typeString == "task" && item.status != "done" ) {
+				itemIds.push(itemId);
+			}
+		}
+	}
+	if( options.selectionMode == "random-todo-task" ) {
+		itemIds.sort( (a,b) => a == b ? 0 : Math.random() < 0.5 ? -1 : 1 );
+		const taskId = itemIds[0];
+		itemIds = [];
+		collectItemAndParentIds(items, taskId, itemIds);
+	}
+	
+	if( options.outputFormat == "json" ) {
+		for( const itemId of itemIds ) {
+			console.log(JSON.stringify(items.get(itemId)));
+		}
+	} else {
+		console.log();
+		console.log(colors.yellow("Welcome to list-todo!"));
+		console.log(`selection mode: ${options.selectionMode}`);
+		console.log();
+		console.log();
+		console.log(separatorLine);
+		for( const itemId of itemIds ) {
+			console.log(separatorLine);
+			console.log();
+			const item = items.get(itemId)
+			if( item ) {
+				prettyPrintItem(item);
+			} else {
+				console.log(`Bad item ID: ${itemId}`);
+			}
+			console.log();
+		}
+		console.log(separatorLine);
+		console.log(separatorLine);
+		console.log();
+		console.log();	
+	}
+}
+
+function parseOptions(args:string[]) : ToDoListingOptions {
+	let selectionMode : "all"|"random-todo-task"|"todo" = "all";
+	let outputFormat : "pretty"|"json" = "json";
+
+	for( const arg of args ) {
+		if( arg == "--output-format=json" ) {
+			outputFormat = "json";
+		} else if( arg == "--output-format=pretty" ) {
+			outputFormat = "pretty";
+		} else if( arg == "-p" ) {
+			outputFormat = "pretty";
+			selectionMode = "random-todo-task";
+		} else if( arg == "--select=all" ) {
+			selectionMode = "all";
+		} else if( arg == "--select=incomplete" ) {
+			selectionMode = "todo";
+		}
+	}
+
+	return {
+		selectionMode,
+		outputFormat,
+	}
+}
+
+main(parseOptions(Deno.args));
