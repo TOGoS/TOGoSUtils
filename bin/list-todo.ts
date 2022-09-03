@@ -251,6 +251,10 @@ function prettyPrintItem(item:Item) : Promise<void> {
 	return Promise.resolve();
 }
 
+function itemIsDone(item:Item) : boolean {
+	return item.status?.startsWith("done") || false;
+}
+
 async function main(options:ToDoListingOptions) {
 	const items : Map<string, Item> = new Map();
 	for await( const entry of tefPiecesToEntries(tef.parseTefPieces(readerToIterator(Deno.stdin))) ) {
@@ -264,11 +268,11 @@ async function main(options:ToDoListingOptions) {
 		if( options.selectionMode == "all" ) {
 			itemIds.push(itemId);
 		} else if( options.selectionMode == "todo" ) {
-			if( item.status != "done" ) {
+			if( !itemIsDone(item) ) {
 				itemIds.push(itemId);
 			}
-		} else {
-			if( item.typeString == "task" && item.status != "done" ) {
+		} else if( options.selectionMode == "random-todo-task" ) {
+			if( item.typeString == "task" && !itemIsDone(item) ) {
 				itemIds.push(itemId);
 			}
 		}
@@ -323,8 +327,13 @@ function parseOptions(args:string[]) : ToDoListingOptions {
 			selectionMode = "random-todo-task";
 		} else if( arg == "--select=all" ) {
 			selectionMode = "all";
+		} else if( arg == "--select=random-todo-task" ) {
+			selectionMode = "random-todo-task";
 		} else if( arg == "--select=incomplete" ) {
 			selectionMode = "todo";
+		} else {
+			console.error(`Error: unrecognized argument ${arg}`);
+			Deno.exit(1);
 		}
 	}
 
