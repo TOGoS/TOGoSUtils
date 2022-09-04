@@ -1,76 +1,7 @@
 /// <reference lib="deno.ns"/>
 
 import * as tef from "https://deno.land/x/tef@0.3.3/tef.ts";
-
-type FilePath = string;
-
-interface BlobLike1 {
-	/** If this blob is backed by a file, filePath is the path to it */
-	filePath? : FilePath;
-	/**
-	 * Return an [async] iteratable that wil provide the blob's chunks.
-	 * 
-	 * 3 modes of operation regarding re-use of buffers:
-	 * - default (buffer = undefined) :: each chunk is a unique, immutable Uint8Array
-	 * - zero-length buffer provided :: iterator may re-use a buffer, but not the one provided
-	 * - non-zero-length buffer provided :: iterator may re-use a buffer, and it may be the one provided
-	 * 
-	 * @param {Uint8Array} [buffer] a buffer into which chunk data MAY be stored.
-	 *   If undefined, each Uint8Array from the resulting iterator should be unique and immutable.
-	 *   If a buffer is provided, chunks may re-use the same buffer, which MAY
-	 *   be the one provided.  If the provided buffer is of length zero,
-	 *   (e.g. if ALLOW_BUFFER_REUSE is passed in) then that buffer cannot be used for non-empty
-	 *   chunks, and the iterator must provide its own (either unique per chunk).
-	 */
-	getChunkIterable(buffer?:Uint8Array) : AsyncIterable<Uint8Array>;
-}
-
-class FileBlobLike implements BlobLike1 {
-	constructor(protected _filePath:FilePath) {}
-
-	public get filePath() { return this._filePath; }
-
-	public getChunkIterable(buffer?:Uint8Array) : AsyncIterable<Uint8Array> {
-		const filePath = this._filePath;
-		return {
-			[Symbol.asyncIterator]: async function*() {
-				const bufferReuseAllowed = buffer != undefined;
-				if( buffer == undefined || buffer.length == 0 ) {
-					buffer = new Uint8Array(65536);
-				}
-				const bufferSlice = (bufferReuseAllowed ? buffer.subarray : buffer.slice).bind(buffer);
-
-				const reader = await Deno.open(filePath, {read:true});
-				try {
-					let readCount : number|null;
-					while( (readCount = await reader.read(buffer)) != null ) {
-						yield( bufferSlice(0, readCount) );
-					}
-				} finally {
-					reader.close();
-				}
-			}
-		}
-	}
-}
-
-function readerToIterator(reader : Deno.Reader, buffer? : Uint8Array) : AsyncIterable<Uint8Array> {
-	const bufferReuseAllowed = buffer != undefined;
-	if( buffer == undefined || buffer.length == 0 ) {
-		buffer = new Uint8Array(65536);
-	}
-
-	const bufferSlice = (bufferReuseAllowed ? buffer.subarray : buffer.slice).bind(buffer);
-	const _buffer = buffer;
-	return {
-		[Symbol.asyncIterator]: async function*() {
-			let readCount : number|null;
-			while( (readCount = await reader.read(_buffer)) != null ) {
-				yield( bufferSlice(0, readCount) );
-			}
-		}
-	}
-}
+import { readerToIterable } from "https://deno.land/x/tef@0.3.4/util/denostreamutil.ts";
 
 interface TEFHeader {
 	key : string;
@@ -297,7 +228,7 @@ function itemIsDone(item:Item) : boolean {
 
 async function main(options:ToDoListingOptions) {
 	const items : Map<string, Item> = new Map();
-	for await( const entry of tefPiecesToEntries(tef.parseTefPieces(readerToIterator(Deno.stdin))) ) {
+	for await( const entry of tefPiecesToEntries(tef.parseTefPieces(readerToIterable(Deno.stdin))) ) {
 		const item = tefEntryToItem(entry);
 		if( item.idString ) {
 			items.set(item.idString, item);
