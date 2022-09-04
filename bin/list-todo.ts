@@ -122,6 +122,62 @@ async function *tefPiecesToEntries( pieces : AsyncIterable<tef.TEFPiece> ) : Asy
 	}
 }
 
+//// Phrase translator
+
+interface Phrase {
+	english : string;
+	camelCase : string;
+	dashSeparated : string;
+}
+
+class PhraseTranslator {
+	phrases : Map<string,Phrase> = new Map();
+	addEnglish(english : string) {
+		if( this.phrases.has(english) ) return;
+
+		const words = english.split(' ');
+
+		const lcWords = words.map(w => (w == 'e-mail' ? 'email' : w).toLowerCase());
+
+		const ccWords = [lcWords[0]];
+		for( let i=1; i<lcWords.length; ++i ) {
+			ccWords[i] = lcWords[i].charAt(0).toUpperCase() + lcWords[i].substring(1);
+		}
+		const camelCase = ccWords.join('');
+		const dashSeparated = lcWords.join('-');
+		const phrase : Phrase = { english, camelCase, dashSeparated };
+		this.phrases.set(english, phrase);
+		this.phrases.set(camelCase, phrase);
+		this.phrases.set(dashSeparated, phrase);
+	}
+	addDashed(dashed : string) {
+		this.addEnglish(dashed.split('-').join(' '));
+	}
+	get(phraseStr : string) : Phrase {
+		const phrase = this.phrases.get(phraseStr);
+		if( phrase == undefined ) throw new Error(`"${phraseStr}" to not in phrase database`);
+		return phrase;
+	}
+	toDashSeparated(phraseStr : string) : string {
+		return this.get(phraseStr).dashSeparated;
+	}
+	toCamelCase(phraseStr : string) : string {
+		return this.get(phraseStr).camelCase;
+	}
+}
+
+import { assertEquals } from "https://deno.land/std@0.154.0/testing/asserts.ts";
+
+Deno.test("phrase translator does what is expected of it", () => {
+	const pt = new PhraseTranslator();
+	pt.addDashed("foo-bar-baz");
+	assertEquals("fooBarBaz", pt.toCamelCase("foo bar baz"));
+	assertEquals("fooBarBaz", pt.toCamelCase("foo-bar-baz"));
+	assertEquals("fooBarBaz", pt.toCamelCase("fooBarBaz"));
+});
+
+const phraseTranslator = new PhraseTranslator();
+
 // TODO: Librarify all that boilerplate!
 
 interface Item {
@@ -134,14 +190,6 @@ interface Item {
 }
 interface ItemEtc extends Item {
 	[k: string]: string|undefined;
-}
-
-function toCamelCase(phrase:string) {
-	const words = phrase.split(/[ -_]/g).map( word => word.toLowerCase() );
-	for( let i=1; i<words.length; ++i ) {
-		words[i] = words[i].charAt(0).toUpperCase() + words[i].substring(1);
-	}
-	return words.join('');
 }
 
 function tefEntryToItem(e : Readonly<TEFEntry> ) : ItemEtc {
@@ -168,7 +216,8 @@ function tefEntryToItem(e : Readonly<TEFEntry> ) : ItemEtc {
 	if( effectiveTitleString != "" ) obj.title = effectiveTitleString;
 	if( e.typeString != "" ) obj.typeString = e.typeString;
 	for( const header of e.headers ) {
-		const ccKey = toCamelCase(header.key);
+		phraseTranslator.addDashed(header.key);
+		const ccKey = phraseTranslator.toCamelCase(header.key);
 
 		if( header.value == "" ) continue;
 		let value = obj[ccKey] ?? "";
@@ -212,7 +261,7 @@ function collectItemAndParentIds(items:Map<string,Item>, itemId:string, into:str
 		throw new Error(`Referenced item ${itemId} not found in items map!`);
 	}
 	if( item.subtaskOf != undefined ) {
-		const parentIds = item.subtaskOf.split(/\s+/);
+		const parentIds = item.subtaskOf.split(/,?\s+/);
 		for( const parentId of parentIds ) {
 			collectItemAndParentIds(items, parentId, into);
 		}
@@ -225,15 +274,6 @@ interface ToDoListingOptions {
 	outputFormat : "pretty"|"json";
 }
 
-function prettifyKey(k:string) {
-	// Seems like I want this to just revert to TEF-format headers,
-	// which makes sense as TEF was intended to be human-readable!
-	switch(k) {
-	case 'subtaskOf': return 'subtask-of';
-	default: return k;
-	}
-}
-
 function prettyPrintItem(item:Item) : Promise<void> {
 	console.log("=" +
 		colors.rgb24(item.typeString ?? "item", 0xCCAAAA) + " " +
@@ -242,7 +282,7 @@ function prettyPrintItem(item:Item) : Promise<void> {
 	);
 	for( const k in item ) {
 		if( k == 'typeString' || k == 'idString' || k == 'title' || k == 'content' ) continue;
-		console.log(`${prettifyKey(k)}: ${(item as ItemEtc)[k]?.replaceAll("\n", ", ")}`);
+		console.log(`${phraseTranslator.toDashSeparated(k)}: ${(item as ItemEtc)[k]?.replaceAll("\n", ", ")}`);
 	}
 	if( item.content != undefined ) {
 		console.log();
