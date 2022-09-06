@@ -2,26 +2,26 @@
 (setq delete-selection-mode t) ; So I can overwrite stuff without polluting the clipboard
 ;; Some stuff from https://github.com/susam/emfy/blob/main/.emacs
 (column-number-mode)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 ;; Actually loading this stuff up takes a bunch of time and I don't really need to every time I start emacs,
 ;;(package-initialize)
 ;;(setq package-list '(php-mode markdown-mode paredit rainbow-delimiters))
 ;;(dolist (package package-list)
 ;;  (unless (package-installed-p package)
 ;;    (package-install package)))
+;;(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
 (add-to-list 'load-path (file-name-directory (or load-file-name buffer-file-name)))
 
 (load "tog-functions")
 (load "tog-keys")
 (load "tog-hooks")
-(load "tog-org-stuff")
 
 (autoload 'typescript-mode "typescript-mode" "Edit TypeScript source" t)
 (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
 (autoload 'powershell-mode "powershell-mode" "Edit PowerShell scripts" t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
+
 
 ;; In timelog files, color '###...' lines even if part of content.
 ;; This keyword list is prefixed onto tef-mode's,

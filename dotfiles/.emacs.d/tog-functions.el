@@ -1,5 +1,3 @@
-(require 'seq)
-
 (defun replace-last-sexp ()
   (interactive)
   (let ((value (eval (preceding-sexp))))
@@ -96,6 +94,7 @@
       result)))
 
 (defun latest-file-in (dirs filter)
+  (require 'seq)
   (if (eq '() dirs)
       nil
     (first-matching dirs

@@ -13,8 +13,9 @@
   (local-set-key "\t" 'org-cycle)
 ;; Careful!!  Emacs might think you mean Shift + "r" followed by "e" "t" "u" 'r" "n"!
 ;; I need to figure out how that all works.
-;  (local-set-key "S-RET" 'org-table-copy-down)
-  )
+;;(local-set-key "S-RET" 'org-table-copy-down)
+  (load "tog-org-stuff")
+)
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
 
 (defun tog-cargo-build ()
