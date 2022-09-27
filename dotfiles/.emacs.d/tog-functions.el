@@ -12,15 +12,15 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
 
-(defun tog-tabs ()
+;; Additional [tog]tab stuff
+
+(defun tog-tabs (&optional width)
   (interactive)
-  (setq tab-width 3)
-  (setq c-basic-offset tab-width)
-  (setq js-indent-level tab-width)
-  (setq typescript-indent-level tab-width)
-  (setq powershell-indent tab-width)
-  (setq nxml-child-indent tab-width)
-  (setq indent-tabs-mode t))
+  (togtabs-enable width))
+
+(defun real-tabs ()
+  (interactive)
+  (local-set-key "\t" 'self-insert-command))
 
 (defun tog-tabs-8 ()
   (interactive)
@@ -28,24 +28,11 @@
   (setq indent-tabs-mode t)
   (local-set-key "\t" 'self-insert-command))
 
-(defun real-tabs () (interactive) (local-set-key "\t" 'self-insert-command))
-
+;; When you really just need the tab key to insert a tab
 (defun tog-tabs-harder ()
   (interactive)
-  (tog-tabs)
+  (togtabs-enable)
   (local-set-key "\t" 'self-insert-command))
-
-(defun looks-like-indentation-is-tabs ()
-  (let ((space-count (how-many "^  " (point-min) (point-max)))
-        (tab-count (how-many "^\t" (point-min) (point-max))))
-    (> tab-count space-count)))
-
-(defun infer-indentation-style ()
-  ;; if our source file uses tabs, we use tabs, if spaces spaces, and if
-  ;; neither, we use the current indent-tabs-mode
-  (if (looks-like-indentation-is-tabs)
-      (tog-tabs)
-    (setq indent-tabs-mode nil)))
 
 ;; Me learning elisp
 

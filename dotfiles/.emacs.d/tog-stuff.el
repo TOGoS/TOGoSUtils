@@ -12,6 +12,8 @@
 
 (add-to-list 'load-path (file-name-directory (or load-file-name buffer-file-name)))
 
+(load "togtabs")
+
 (load "tog-functions")
 (load "tog-keys")
 (load "tog-hooks")

@@ -1,10 +1,10 @@
-(add-hook 'c++-mode-hook 'infer-indentation-style)
-(add-hook 'c-mode-hook 'infer-indentation-style)
+(add-hook 'c++-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'c-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'text-mode-hook 'tog-tabs-8)
-(add-hook 'php-mode-hook 'infer-indentation-style)
-(add-hook 'js-mode-hook 'infer-indentation-style)
-(add-hook 'typescript-mode-hook 'infer-indentation-style)
-(add-hook 'powershell-mode-hook 'infer-indentation-style)
+(add-hook 'php-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'js-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'typescript-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'powershell-mode-hook 'togtabs-infer-indentation-style)
 
 ;; Seems like this should be default!
 ;; Maybe one of my other scripts messes it up?
