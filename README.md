@@ -2,9 +2,13 @@
 
 Personal command-line utilities to automate my life.
 
-- `bin/` - Command-line programs
-- `src/` - Source code for commands/libraries
-- `ext-bin/` - Binaries imported from elsewhere
+- [bin/](./bin/) - Command-line programs
+- [src/](./src/) - Source code for commands/libraries, organized by sub-project and language (Maven-style)
+  - [src/lib/](./src/lib/) - TOGoSUtils libs, primarily for use by scripts in `bin/` or `setup-scripts/`
+- [ext-bin/](./ext-bin/) - Binaries imported from elsewhere
+- [dotfiles/](./dotfiles/) - Common configuration files, especially `.emacs`, but also others.
+  Structured to match home directory, so you should be able to `ln -s TOGoSUtils/dotfiles/xyz/123 ~/xyz/123`
+- [setup-scripts/](./setup-scripts/) - Scripts to automate installation of...TOGoS modules, for lack of a better term.
 
 ## Regarding windows batch scripts
 
