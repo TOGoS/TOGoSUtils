@@ -52,7 +52,9 @@ function walkHeadFiles(headsDir:FilePath, headPrefix:CCouchHeadPrefix, recurse:b
 	//Log.i("list-ccouch-heads", `Scanning ${dir}...`);
 	return fsu.stat(dir).then( dirStat => {
 		if( !dirStat.isDirectory() ) {
-			//Log.i("list-ccouch-heads", `${dir} is not a directory!`);
+			//return callback(headName, fullPath);
+			console.warn(`list-ccouch-heads: ${dir} is not a directory!`);
+			// Could use everything before last '/' of headPrefix as head name?
 			return RESOLVED_PROMISE;
 		}
 
@@ -134,10 +136,25 @@ export default class CCouchTool {
 				for( let hn in headPrefixes ) {
 					let headName = headPrefixes[hn];
 					repoPromises.push(findLocalHeads2(headsDir, headName, options.recurse).then( (heads:LocalCCouchHead[]) => {
-						let startAt = Math.max(0, heads.length - options.lastN);
+						const headsByPrefix:{[headPrefix:string]: LocalCCouchHead[]} = {};
+						for( let head of heads ) {
+							const m = /(.*)\/[^/]+$/.exec(head.headName);
+							if( m == null ) {
+								console.warn(`Hmm, couldn't determine prefix of head ${head.headName}; weird`);
+								continue;
+							}
+							const headPrefix = m[1];
+							if( headsByPrefix[headPrefix] == undefined ) headsByPrefix[headPrefix] = [];
+							headsByPrefix[headPrefix].push(head);
+						}
 						let cbPromises:Promise<void>[] = [];
-						for( let i=startAt; i<heads.length; ++i ) {
-							cbPromises.push(callback(heads[i]))
+						for( const headPrefix in headsByPrefix ) {
+							const theseHeads = headsByPrefix[headPrefix];
+							console.log(`# Finding last ${options.lastN} of ${theseHeads.length} heads under ${headPrefix}`);
+							const startAt = Math.max(0, theseHeads.length - options.lastN);
+							for( let i=startAt; i<theseHeads.length; ++i ) {
+								cbPromises.push(callback(theseHeads[i]))
+							}
 						}
 						return Promise.all(cbPromises).then(voidify);
 					}));
