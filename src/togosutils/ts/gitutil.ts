@@ -130,7 +130,7 @@ export function parseGitObject(blob:Uint8Array, sourceDesc:string):GitObject {
 
 export function deflate(text:Uint8Array):Promise<Uint8Array> {
     return new Promise( (resolve,reject) => {
-        zlibDeflate(Buffer.from(text), (err:Error,deflated:Uint8Array) => {
+        zlibDeflate(Buffer.from(text), (err:Error|null,deflated:Uint8Array) => {
             if(err) reject(err);
             else resolve(deflated);
         });
@@ -139,7 +139,7 @@ export function deflate(text:Uint8Array):Promise<Uint8Array> {
 
 export function inflate(deflated:Uint8Array):Promise<Uint8Array> {
     return new Promise<Uint8Array>( (resolve,reject) => {
-        zlibInflate(Buffer.from(deflated.buffer), (err:Error, inflated:Uint8Array) => {
+        zlibInflate(Buffer.from(deflated.buffer), (err:Error|null, inflated:Uint8Array) => {
             if(err) reject(err);
             resolve(inflated);
         });

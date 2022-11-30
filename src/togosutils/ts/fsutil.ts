@@ -24,7 +24,7 @@ export function chmod( file:FilePath, mode:number ):Promise<void> {
 	});
 }
 
-export function readFile( file:FilePath, options:{encoding?:string, flag?:string}={} ):Promise<Buffer|string> {
+export function readFile( file:FilePath, options:{encoding?:null, flag?:string}={} ):Promise<Buffer|string> {
 	return new Promise( (resolve,reject) => {
 		fs.readFile(file, options, (err:Error|null,content:Buffer) => {
 			if( err ) reject(err);
