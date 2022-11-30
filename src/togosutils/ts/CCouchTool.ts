@@ -150,7 +150,6 @@ export default class CCouchTool {
 						let cbPromises:Promise<void>[] = [];
 						for( const headPrefix in headsByPrefix ) {
 							const theseHeads = headsByPrefix[headPrefix];
-							console.log(`# Finding last ${options.lastN} of ${theseHeads.length} heads under ${headPrefix}`);
 							const startAt = Math.max(0, theseHeads.length - options.lastN);
 							for( let i=startAt; i<theseHeads.length; ++i ) {
 								cbPromises.push(callback(theseHeads[i]))
