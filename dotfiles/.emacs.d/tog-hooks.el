@@ -41,7 +41,7 @@
 (add-hook 'rust-mode-hook 'tog-rust-mode-hook)
 
 (defun tog-nxml-mode-hook ()
-  (if (looks-like-indentation-is-tabs)
+  (if (togtabs-looks-like-indentation-is-tabs)
       (progn
 	(setq indent-tabs-mode t)
 	(setq tab-width 3)
