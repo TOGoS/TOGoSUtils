@@ -41,6 +41,7 @@
 (add-hook 'rust-mode-hook 'tog-rust-mode-hook)
 
 (defun tog-nxml-mode-hook ()
+  (local-set-key (kbd "C-e") 'end-of-line) ; nxml seems to override 'move-end-of-line' to do something weird
   (if (togtabs-looks-like-indentation-is-tabs)
       (progn
 	(setq indent-tabs-mode t)
