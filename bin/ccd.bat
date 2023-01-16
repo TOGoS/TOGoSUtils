@@ -52,6 +52,7 @@ if exist "%ccd_guess%" goto guess_okay
 
 if "%ccd_target%" == "timelog" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 
+if "%ccd_target%" == "amn" (set "ccd_target=job\ATR-MCAS\notes" & goto guess)
 if "%ccd_target%" == "et" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 if "%ccd_target%" == "en" (set "ccd_target=job\ETF\notes" & goto guess)
 if "%ccd_target%" == "pn2" (set "ccd_target=docs\ProjectNotes2" & goto guess)
