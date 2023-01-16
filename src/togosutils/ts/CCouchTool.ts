@@ -117,10 +117,10 @@ function findLocalHeads2(headsDir:FilePath, headPrefix:CCouchHeadPrefix, recurse
 
 export default class CCouchTool {
 	fetchLocalCcouchDirs():Promise<FilePath[]> {
-		if( process.env.ccouch_repo_dir != undefined ) {
-			return Promise.resolve([process.env.ccouch_repo_dir]);
+		if( process.env.CCOUCH_REPO_DIR != undefined ) {
+			return Promise.resolve([process.env.CCOUCH_REPO_DIR]);
 		} else {
-			return Promise.reject(new Error("ccouch_repo_dir not specified"));
+			return Promise.reject(new Error("CCOUCH_REPO_DIR not specified"));
 		}
 	}    
 

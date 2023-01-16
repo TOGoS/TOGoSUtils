@@ -8,7 +8,7 @@ set ccouch_store_sector=pictures
 
 call ccouch cache-heads //fs.marvin/togthoms1/
 call ccouch3 cache ^
-	-repo:%ccouch_repo_name% %ccouch_repo_dir% ^
+	-repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% ^
 	-remote-repo fs.marvin.nuke24.net ^
 	-recurse -sector pictures ^
 	-remember-missing ^

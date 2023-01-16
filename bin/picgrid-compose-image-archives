@@ -26,8 +26,8 @@ do
 done
 
 
-if [ -z "${ccouch_repo_dir+x}" ] ; then
-    echo "$self_name: error: ccouch_repo_dir not set" >&2
+if [ -z "${CCOUCH_REPO_DIR+x}" ] ; then
+    echo "$self_name: error: CCOUCH_REPO_DIR not set" >&2
     exit 1
 fi
 if [ -z "${archive_info_dir+x}" ] ; then

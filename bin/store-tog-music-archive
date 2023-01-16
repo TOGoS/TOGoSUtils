@@ -4,13 +4,13 @@ set -euo pipefail
 
 self_name="$(basename "$0")"
 
-if [ -z "${ccouch_repo_name+x}" ]
+if [ -z "${CCOUCH_REPO_NAME+x}" ]
 then
-    echo "$selfname: error: ccouch_repo_name not specified" >&2
+    echo "$selfname: error: CCOUCH_REPO_NAME not specified" >&2
     exit 1
 fi
 
-commit_message="TOGoS music archive on $ccouch_repo_name"
+commit_message="TOGoS music archive on $CCOUCH_REPO_NAME"
 
 while [[ $# > 0 ]]
 do

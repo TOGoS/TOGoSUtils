@@ -11,7 +11,7 @@ if errorlevel 1 goto fail
 
 if not defined CCOUCH3_REMOTE_ARGS set "CCOUCH3_REMOTE_ARGS="
 
-java -jar %ccouch3_jar% cache %CCOUCH3_REMOTE_ARGS% %*
+java -jar %CCOUCH3_JAR% cache %CCOUCH3_REMOTE_ARGS% %*
 if errorlevel 1 goto fail
 goto eof
 

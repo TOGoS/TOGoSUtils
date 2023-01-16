@@ -4,17 +4,17 @@ set -euo pipefail
 
 self_name="$(basename "$0")"
 
-if [ -z "${ccouch_repo_name+x}" ]
+if [ -z "${CCOUCH_REPO_NAME+x}" ]
 then
-    echo "$selfname: error: ccouch_repo_name not specified" >&2
+    echo "$selfname: error: CCOUCH_REPO_NAME not specified" >&2
     exit 1
 fi
 
 # Don't propagate error until after both have been tried, maybe in parallel.
 
 rsync --ignore-existing -rt \
-      $HOME/.ccouch/heads/$ccouch_repo_name/ \
-      tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/$ccouch_repo_name/
+      $HOME/.ccouch/heads/$CCOUCH_REPO_NAME/ \
+      tog@fs.marvin.nuke24.net:/home/tog/.ccouch/heads/$CCOUCH_REPO_NAME/
 rsync --ignore-existing -rt \
-      $HOME/.ccouch/heads/$ccouch_repo_name/ \
-      tog@zappie1.nuke24.net:/home/tog/.ccouch/heads/$ccouch_repo_name/
+      $HOME/.ccouch/heads/$CCOUCH_REPO_NAME/ \
+      tog@zappie1.nuke24.net:/home/tog/.ccouch/heads/$CCOUCH_REPO_NAME/

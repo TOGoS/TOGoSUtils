@@ -12,7 +12,7 @@ call require-ccouch-env.bat
 if errorlevel 1 goto fail
 
 if "%~1" EQU "-m" set commit_message=%~2
-if not defined commit_message set commit_message=Music work on %ccouch_repo_name%
+if not defined commit_message set commit_message=Music work on %CCOUCH_REPO_NAME%
 
 if defined music_work_dir goto find_music_work_dir_done
 if defined tog_stuff_dir (set music_work_dir=%tog_stuff_dir%\music\work & goto find_music_work_dir_done)
@@ -35,7 +35,7 @@ call clean-music-work
 if errorlevel 1 goto fail
 
 @echo on
-java -jar %ccouch_jar% -repo:%ccouch_repo_name% %ccouch_repo_dir% store ^
+java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 	-link ^
 	-sector "%ccouch_store_sector%" ^
 	-n tog/music/work ^
@@ -52,27 +52,27 @@ rem
 rem I could also add a command to ccouch3 to spit out .bat files or something
 
 set lhn_tempfile=%music_work_dir%\.last-head-number
-"%UNIX_FIND_EXE%" "%ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work" | "%UNIX_SORT_EXE%" -V | tail -n 1 >%lhn_tempfile%
+"%UNIX_FIND_EXE%" "%CCOUCH_REPO_DIR%\heads\%CCOUCH_REPO_NAME%\tog\music\work" | "%UNIX_SORT_EXE%" -V | tail -n 1 >%lhn_tempfile%
 set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
 if not defined latest_head_file goto latest_head_not_found
 @echo on
-if defined fs_marvin_ssh_port pscp -P %fs_marvin_ssh_port% "%latest_head_file%" tog@%fs_marvin_ssh_hostname%:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
-if defined togos_fbs_ssh_port pscp -P %togos_fbs_ssh_port% "%latest_head_file%" tog@%togos_fbs_ssh_hostname%:/home/tog/.ccouch/heads/%ccouch_repo_name%/tog/music/work/
+if defined FS_MARVIN_SSH_PORT pscp -P %FS_MARVIN_SSH_PORT% "%latest_head_file%" tog@%FS_MARVIN_SSH_HOSTNAME%:/home/tog/.ccouch/heads/%CCOUCH_REPO_NAME%/tog/music/work/
+if defined TOGOS_FBS_SSH_PORT pscp -P %TOGOS_FBS_SSH_PORT% "%latest_head_file%" tog@%TOGOS_FBS_SSH_HOSTNAME%:/home/tog/.ccouch/heads/%CCOUCH_REPO_NAME%/tog/music/work/
 @echo off
 goto ccouch3_upload
 
 :latest_head_not_found
 echo %self_name%: Failed to find latest head using command: >&2
-echo %self_name%:   "%UNIX_FIND_EXE%" "%ccouch_repo_dir%\heads\%ccouch_repo_name%\tog\music\work" >&2
+echo %self_name%:   "%UNIX_FIND_EXE%" "%CCOUCH_REPO_DIR%\heads\%CCOUCH_REPO_NAME%\tog\music\work" >&2
 echo %self_name%: which is then piped to: >&2
 echo %self_name%:   "%UNIX_SORT_EXE%" -V >&2
 echo %self_name%: Maybe check %lhn_tempfile% >&2
 
 :ccouch3_upload
 
-call ccouch3-upload-to-marvin -recurse "x-ccouch-head:%ccouch_repo_name%/tog/music/work/latest"
+call ccouch3-upload-to-marvin -recurse "x-ccouch-head:%CCOUCH_REPO_NAME%/tog/music/work/latest"
 
 :stdbatfooter
 goto eof

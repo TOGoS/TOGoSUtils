@@ -9,14 +9,14 @@ call require-ccouch-env.bat
 if errorlevel 1 goto fail
 
 if "%~1" EQU "-m" set commit_message=%~2
-if not defined commit_message set commit_message=Image archives on %ccouch_repo_name%
+if not defined commit_message set commit_message=Image archives on %CCOUCH_REPO_NAME%
 rem TODO: datastore_root isn't really required if image_archives_dir is set...
 if not defined datastore_root (echo datastore_root not specified >&2 & goto fail)
 if not defined image_archives_dir set image_archives_dir=%datastore_root%\archives\images
 if not defined ccouch_store_sector set ccouch_store_sector=pictures
 
 @echo on
-java -jar %ccouch_jar% -repo:%ccouch_repo_name% %ccouch_repo_dir% store ^
+java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 	-link ^
 	-sector %ccouch_store_sector% ^
 	-n archives/images ^
@@ -33,12 +33,12 @@ java -jar %ccouch_jar% -repo:%ccouch_repo_name% %ccouch_repo_dir% store ^
 : call togutil list-ccouch-heads eng-lap-426-2019/archives/images --last=1
 : echo You must upload that manually for now.
 
-call ccouch3-upload-to-marvin -recurse x-ccouch-head:%ccouch_repo_name%/archives/images/latest
+call ccouch3-upload-to-marvin -recurse x-ccouch-head:%CCOUCH_REPO_NAME%/archives/images/latest
 
 mkdir %UserProfile%\temp
 set push_image_archives_bat=%UserProfile%\temp\push-image-archives.bat
 del %push_image_archives_bat%
-call togutil list-ccouch-heads %ccouch_repo_name%/archives/images ^
+call togutil list-ccouch-heads %CCOUCH_REPO_NAME%/archives/images ^
 	--recurse --last=1 ^
 	--output-format="" ^
 	--output-format+="plink -P %FS_MARVIN_SSH_PORT% -batch tog@%FS_MARVIN_SSH_HOSTNAME% mkdir -p ""/home/tog/.ccouch/heads/{parentName}""{nl}" ^
