@@ -10,6 +10,7 @@ if [ -z "${picgrid_docker_image_name+x}" ] ; then
 fi
 
 exec docker run \
+       --user `id -u` \
        -v "$CCOUCH_REPO_DIR":/.ccouch \
        "$picgrid_docker_image_name" compose \
        -datastore /.ccouch/data/picgrid \
