@@ -54,6 +54,7 @@
 
 ; Visiting common files
 
+(global-set-key (kbd "M-g a s") 'visit-archived-stuff)
 (global-set-key (kbd "M-g d e") 'visit-doke-entry)
 (global-set-key (kbd "M-g d l") 'visit-latest-doke-entry)
 (global-set-key (kbd "M-g d t") 'visit-todays-doke-entry)
