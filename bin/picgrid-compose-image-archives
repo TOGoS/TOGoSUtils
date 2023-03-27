@@ -30,14 +30,14 @@ if [ -z "${CCOUCH_REPO_DIR+x}" ] ; then
     echo "$self_name: error: CCOUCH_REPO_DIR not set" >&2
     exit 1
 fi
-if [ -z "${archive_info_dir+x}" ] ; then
-    echo "$self_name: error: archive_info_dir not set" >&2
+if [ -z "${ARCHIVE_INFO_DIR+x}" ] ; then
+    echo "$self_name: error: ARCHIVE_INFO_DIR not set" >&2
     exit 1
 fi
 
-latest_head_urn_file="$archive_info_dir"/heads/master/ccouch/archives/images.urn
-latest_picgrid_urn_file="$archive_info_dir"/heads/master/ccouch/archives/images.picgrid.urn
-latest_picgrid_urn_temp_file="$archive_info_dir"/heads/master/ccouch/archives/images.picgrid.urn.temp
+latest_head_urn_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.urn
+latest_picgrid_urn_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.picgrid.urn
+latest_picgrid_urn_temp_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.picgrid.urn.temp
 
 if [ ! -r "$latest_head_urn_file" ] ; then
     echo "$self_name: error: $latest_head_urn_file is not readable" >&2
