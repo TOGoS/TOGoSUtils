@@ -70,7 +70,7 @@ do
 	    # something I should probably fix by changing the algorithm.
 	    # Until then, we just try again until it works.
 	    echo "Generating randomized playlist to $alarm_playlist_temp_file ..."
-	    sort -R "$playlist_dir/misc/2022/2022-alarm-superset.m3u" | grep -v '^#' > "$alarm_playlist_temp_file"
+	    sort -R "$playlist_dir/misc/2023/2023-alarm-superset.m3u" | grep -v '^#' > "$alarm_playlist_temp_file"
 	    echo "process-m3u $alarm_playlist_temp_file into $alarm_playlist_file ..."
 	    if process-m3u -add-extinf $reduce_args "$alarm_playlist_temp_file" > "$alarm_playlist_file" && [ "$(playlist_length "$alarm_playlist_file")" -gt 0 ] ; then
 		echo "process-m3u generated a non-zero-length playlist, so we'll use that"
