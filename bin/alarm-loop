@@ -88,5 +88,5 @@ do
     echo "Alarm playlist file: $alarm_playlist_file ($(playlist_length "$alarm_playlist_file") tracks)"
     echo "Alarm will play at: $alarm_time_of_day"
     sleepuntil --next "$use_to_time_string"
-    mplayer -volume 100 -playlist "$alarm_playlist_file"
+    mplayer -vo none -volume 100 -playlist "$alarm_playlist_file"
 done
