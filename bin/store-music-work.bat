@@ -41,6 +41,7 @@ java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 	-n tog/music/work ^
 	-a "%script_name_and_version%" ^
 	-m "%commit_message%" ^
+	-use-uri-dot-files -create-uri-dot-files ^
 	%music_work_dir%
 @echo off
 
