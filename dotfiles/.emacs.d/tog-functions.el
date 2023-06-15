@@ -12,6 +12,12 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
 
+(defun tog-fix-openscad-json ()
+  (interactive)
+  (query-replace "    " "\t")
+  (set-buffer-file-coding-system 'utf-8-unix)
+  (save-buffer))
+
 ;; Additional [tog]tab stuff
 
 (defun tog-tabs (&optional width)
