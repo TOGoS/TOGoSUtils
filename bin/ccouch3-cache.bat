@@ -9,9 +9,7 @@ setlocal
 call require-ccouch-env.bat
 if errorlevel 1 goto fail
 
-if not defined CCOUCH3_REMOTE_ARGS set "CCOUCH3_REMOTE_ARGS="
-
-java -jar %CCOUCH3_JAR% cache %CCOUCH3_REMOTE_ARGS% %*
+java -jar %CCOUCH3_JAR% cache %ccouch3_collected_remote_args% %*
 if errorlevel 1 goto fail
 goto eof
 
