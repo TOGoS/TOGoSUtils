@@ -5,6 +5,7 @@
 (add-hook 'js-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'typescript-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'powershell-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'scad-mode-hook 'togtabs-infer-indentation-style)
 
 ;; Seems like this should be default!
 ;; Maybe one of my other scripts messes it up?
