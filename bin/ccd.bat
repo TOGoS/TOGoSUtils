@@ -38,6 +38,10 @@ set "ccd_guess=%UserProfile%\stuff\proj\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
+set "ccd_guess=%UserProfile%\stuff\sites\%ccd_target%"
+%ccd_debug% Trying %ccd_guess%
+if exist "%ccd_guess%" goto guess_okay
+
 set "ccd_guess=D:\stuff\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
@@ -47,6 +51,10 @@ set "ccd_guess=D:\stuff\docs\%ccd_target%"
 if exist "%ccd_guess%" goto guess_okay
 
 set "ccd_guess=D:\stuff\proj\%ccd_target%"
+%ccd_debug% Trying %ccd_guess%
+if exist "%ccd_guess%" goto guess_okay
+
+set "ccd_guess=D:\stuff\sites\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
