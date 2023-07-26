@@ -9,6 +9,7 @@ togosutils_dir="$(dirname "$0")"/..
 self_name="$(basename "$0")"
 
 picgrid_flags="-tolerate-compose-errors"
+debugging=0
 
 while [[ $# > 0 ]]
 do
@@ -16,6 +17,7 @@ do
     case $key in
 	-debug|-v)
 	    picgrid_flags="$picgrid_flags $key"
+	    debugging=1
 	    ;;
 	*)
 	    echo "$self_name: error: Unrecognized argument: $key" >&2
@@ -25,7 +27,6 @@ do
     shift
 done
 
-
 if [ -z "${CCOUCH_REPO_DIR+x}" ] ; then
     echo "$self_name: error: CCOUCH_REPO_DIR not set" >&2
     exit 1
@@ -33,6 +34,10 @@ fi
 if [ -z "${ARCHIVE_INFO_DIR+x}" ] ; then
     echo "$self_name: error: ARCHIVE_INFO_DIR not set" >&2
     exit 1
+fi
+
+if [ $debugging == 1 ] ; then
+    set -x
 fi
 
 latest_head_urn_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.urn
