@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "${CCOUCH_REPO_DIR+x}" ] ; then
+    echo "Please set CCOUCH_REPO_DIR" >&2
+    exit 1
+fi
+
+if [ -z "${PICGRID_DOCKER_IMAGE_NAME+x}" ] ; then
+    PICGRID_DOCKER_IMAGE_NAME=togos/picgrid:latest
+fi
+
+exec docker run \
+     --rm \
+     -v "$CCOUCH_REPO_DIR":/.ccouch \
+     -ti --entrypoint /bin/sh \
+     "$PICGRID_DOCKER_IMAGE_NAME" \
+     "$@"
