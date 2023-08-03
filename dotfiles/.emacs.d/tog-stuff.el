@@ -21,6 +21,9 @@
 (autoload 'typescript-mode "typescript-mode" "Edit TypeScript source" t)
 (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
+(autoload 'funda-haxe-mode "funda-haxe-mode" "Edit Haxe source" t)
+(add-to-list 'auto-mode-alist '("\\.hx\\'" . funda-haxe-mode))
+
 (autoload 'powershell-mode "powershell-mode" "Edit PowerShell scripts" t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
 
