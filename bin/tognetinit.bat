@@ -1,7 +1,10 @@
 @echo off
 
-if "%~1"=="4909" goto init_4909net
-if "%~1"=="internet" goto init_internet
+set "tognetinit_network=%~1"
+
+if "%tognetinit_network%"=="4909" goto init_4909net
+if "%tognetinit_network%"=="1301" goto init_internet
+if "%tognetinit_network%"=="internet" goto init_internet
 echo Please specify '4909' or 'internet'>&2
 exit /B 1
 
@@ -34,4 +37,11 @@ setx TOGOS_FBS_SSH_PORT %TOGOS_FBS_SSH_PORT%
 setx TOGOS_FBS_SSH_HOSTNAME %TOGOS_FBS_SSH_HOSTNAME%
 setx CCOUCH3_TOGNET_REMOTE_ARGS "%CCOUCH3_TOGNET_REMOTE_ARGS%"
 
+if not exist C:\Windows\system32\drivers\etc\always.hosts goto eof
+
+type C:\Windows\system32\drivers\etc\always.hosts > C:\Windows\system32\drivers\etc\hosts
+if exist "C:\Windows\system32\drivers\etc\%tognetinit_network%.hosts" type "C:\Windows\system32\drivers\etc\%tognetinit_network%.hosts" >> C:\Windows\system32\drivers\etc\hosts
+
 :eof
+
+set "tognetinit_network="
