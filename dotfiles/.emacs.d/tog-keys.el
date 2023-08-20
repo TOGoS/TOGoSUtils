@@ -41,6 +41,8 @@
 (defun insert-close-angle-double-quote () (interactive) (insert "»"))
 (global-set-key (kbd "C-x a >") 'insert-close-angle-double-quote)
 
+(global-set-key (kbd "C-x a u") 'tog-insert-new-uuid-urn)
+
 ; I like to use em-dashes for quotes, since org-mode things I'm making a list if I just use a hyphen.
 (defun insert-emdash () (interactive) (insert "—"))
 (global-set-key (kbd "C-x a m") 'insert-emdash)

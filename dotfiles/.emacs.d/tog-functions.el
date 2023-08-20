@@ -12,6 +12,10 @@
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
 
+(defun tog-insert-new-uuid-urn ()
+  (interactive)
+  (insert (uuid-urn (uuid-4))))
+
 (defun tog-fix-openscad-json ()
   (interactive)
   (query-replace "    " "\t")

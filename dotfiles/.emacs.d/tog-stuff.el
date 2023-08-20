@@ -27,6 +27,9 @@
 (autoload 'powershell-mode "powershell-mode" "Edit PowerShell scripts" t)
 (add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
 
+(autoload 'uuid-urn "uuid" "Prepend a UUID string with 'urn:uuid:'" t)
+(autoload 'uuid-4 "uuid" "Generate a version 4 UUID string" t)
+
 
 ;; In timelog files, color '###...' lines even if part of content.
 ;; This keyword list is prefixed onto tef-mode's,
