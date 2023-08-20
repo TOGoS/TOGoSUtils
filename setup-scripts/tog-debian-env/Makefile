@@ -1,5 +1,5 @@
 .PHONY: all
-all: ${HOME}/proj/TOGoSUtils .git-installed .node-installed ${HOME}/.deno ${HOME}/.bashrc
+all: ${HOME}/proj/TOGoSUtils .git-installed .node-installed .java-installed ${HOME}/.deno ${HOME}/.bashrc
 
 .apt-updated:
 	sudo apt-get update
@@ -18,6 +18,10 @@ all: ${HOME}/proj/TOGoSUtils .git-installed .node-installed ${HOME}/.deno ${HOME
 
 .curl-installed: .apt-updated
 	sudo apt install -y curl
+	touch "$@"
+
+.java-installed: .apt-updated
+	sudo apt install -y openjdk-17-jdk
 	touch "$@"
 
 ${HOME}/.deno: .apt-updated .curl-installed install-deno
