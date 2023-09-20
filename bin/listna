@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Download audio/video file(s) using yt-dlp
+# and then play them with mplayer.
+
+mkdir -p ~/incoming/2019/listna
+cd ~/incoming/2019/listna
+
+while [[ $# > 0 ]]
+do
+	item="$1"
+	shift
+	 
+	yt-dlp --compat=filename --extract-audio "$item"
+	mplayer -vo none "$(ls -t | head -n 1)"
+done
