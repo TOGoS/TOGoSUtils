@@ -44,6 +44,10 @@
   (togtabs-enable)
   (local-set-key "\t" 'self-insert-command))
 
+(defun tog-disable-electric-indent-mode ()
+  (interactive)
+  (electric-indent-local-mode -1))
+
 ;; Me learning elisp
 
 (defun tog-parse-query-string-parts-to-alist (qs-parts)

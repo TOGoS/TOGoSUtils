@@ -5,7 +5,7 @@
 (add-hook 'js-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'typescript-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'powershell-mode-hook 'togtabs-infer-indentation-style)
-(add-hook 'scad-mode-hook 'togtabs-infer-indentation-style)
+(add-hook 'lua-mode-hook 'togtabs-infer-indentation-style)
 
 ;; Seems like this should be default!
 ;; Maybe one of my other scripts messes it up?
@@ -18,6 +18,11 @@
   (load "tog-org-stuff")
 )
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
+
+(defun tog-scad-modee-hook ()
+  (togtabs-infer-indentation-style)
+  (tog-disable-electric-indent-mode))
+(add-hook 'scad-mode-hook 'tog-scad-mode-hook)
 
 (defun tog-cargo-build ()
   (interactive)
