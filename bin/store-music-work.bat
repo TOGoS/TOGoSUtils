@@ -57,6 +57,9 @@ set lhn_tempfile=%music_work_dir%\.last-head-number
 set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
 
+echo Skipping pscping of heads because I keep them in Git, now
+goto ccouch3_upload
+
 if not defined latest_head_file goto latest_head_not_found
 @echo on
 if defined FS_MARVIN_SSH_PORT pscp -P %FS_MARVIN_SSH_PORT% "%latest_head_file%" tog@%FS_MARVIN_SSH_HOSTNAME%:/home/tog/.ccouch/heads/%CCOUCH_REPO_NAME%/tog/music/work/

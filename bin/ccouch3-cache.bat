@@ -3,7 +3,8 @@
 rem This exists because ccouch3 can't [as of 3.6.0] take remote args before
 rem the command.  Maybe it should, but currently doesn't.
 rem Jot that down for new versions.
-rem Anyway, set CCOUCH3_REMOTE_ARGS in your environment to make it work good.
+rem Anyway, set CCOUCH3_REMOTE_ARGS and/or CCOUCH3_TOGNET_REMOTE_ARGS in your environment
+rem to make it work good.
 
 setlocal
 call require-ccouch-env.bat

@@ -25,7 +25,7 @@ set "FS_MARVIN_SSH_PORT=22"
 set "FS_MARVIN_SSH_HOSTNAME=fs.marvin.nuke24.net"
 set "TOGOS_FBS_SSH_PORT=31522"
 set "TOGOS_FBS_SSH_HOSTNAME=external.marvin.nuke24.net"
-set "CCOUCH3_TOGNET_REMOTE_ARGS=-remote-repo:togos-fbs external.marvin.nuke24.net:31580 -remote-repo:fs.marvin fs.marvin.nuke24.net"
+set "CCOUCH3_TOGNET_REMOTE_ARGS=-remote-repo:togos-fbs togos-fbs.nuke24.net -remote-repo:fs.marvin fs.marvin.nuke24.net"
 
 goto setx
 

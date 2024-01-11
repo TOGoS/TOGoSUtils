@@ -27,9 +27,9 @@ if not defined CCOUCH_REPO_DIR (echo CCOUCH_REPO_DIR not specified >&2 & goto fa
 if not defined CCOUCH_REPO_NAME (echo CCOUCH_REPO_NAME not specified >&2 & goto fail)
 
 if not defined CCOUCH3_REMOTE_ARGS set "CCOUCH3_REMOTE_ARGS="
-if not defined CCOUCH3_TOGNET_REMOTE_ARGS set "TOGNET_CCOUCH_REMOTE_ARGS=-remote-repo:togos-fbs external.marvin.nuke24.net:31580 -remote-repo:fs.marvin fs.marvin.nuke24.net"
+if not defined CCOUCH3_TOGNET_REMOTE_ARGS set "CCOUCH3_TOGNET_REMOTE_ARGS=-remote-repo:togos-fbs external.marvin.nuke24.net:31580 -remote-repo:fs.marvin fs.marvin.nuke24.net"
 
-set "ccouch3_collected_remote_args=%CCOUCH3_REMOTE_ARGS% %TOGNET_CCOUCH_REMOTE_ARGS%"
+set "ccouch3_collected_remote_args=%CCOUCH3_REMOTE_ARGS% %CCOUCH3_TOGNET_REMOTE_ARGS%"
 
 :stdbatfooter
 goto eof
