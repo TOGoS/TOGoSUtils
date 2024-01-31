@@ -1,17 +1,17 @@
 #!/bin/bash
 
-if [ -z "$music_work_dir" ]
+if [ -z "$TOG_MUSIC_WORK_DIR" ]
 then
-    echo $0: Error: music_work_dir not defined >&2
+    echo $0: Error: TOG_MUSIC_WORK_DIR not defined >&2
     exit 1						       
 fi
 
 set -euo pipefail
 
-ableton_backup_recycle_dir="$music_work_dir\.relocated-ableton-backups"
+ableton_backup_recycle_dir="$TOG_MUSIC_WORK_DIR\.relocated-ableton-backups"
 
 mkdir -p "$ableton_backup_recycle_dir/"
-find "$music_work_dir" -path '*/Backup/*.als' -exec mv "{}" "$ableton_backup_recycle_dir/" ";"
-find "$music_work_dir" -name 'Backup' -type d -delete
+find "$TOG_MUSIC_WORK_DIR" -path '*/Backup/*.als' -exec mv "{}" "$ableton_backup_recycle_dir/" ";"
+find "$TOG_MUSIC_WORK_DIR" -name 'Backup' -type d -delete
 
-find "$music_work_dir/2019/ableton-live-library" -type d -empty -delete
+find "$TOG_MUSIC_WORK_DIR/2019/ableton-live-library" -type d -empty -delete

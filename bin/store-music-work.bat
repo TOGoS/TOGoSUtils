@@ -14,9 +14,9 @@ if errorlevel 1 goto fail
 if "%~1" EQU "-m" set commit_message=%~2
 if not defined commit_message set commit_message=Music work on %CCOUCH_REPO_NAME%
 
-if defined music_work_dir goto find_music_work_dir_done
-if defined tog_stuff_dir (set music_work_dir=%tog_stuff_dir%\music\work & goto find_music_work_dir_done)
-echo %self_name%: Error: Neither music_work_dir nor tog_stuff_dir is set >&2 & goto fail)
+if defined TOG_MUSIC_WORK_DIR goto find_music_work_dir_done
+if defined TOG_STUFF_DIR (set "TOG_MUSIC_WORK_DIR=%TOG_STUFF_DIR%\music\work" & goto find_music_work_dir_done)
+echo %self_name%: Error: Neither TOG_MUSIC_WORK_DIR nor TOG_STUFF_DIR is set >&2 & goto fail)
 :find_music_work_dir_done
 
 if not defined ccouch_store_sector set ccouch_store_sector=music
@@ -42,7 +42,7 @@ java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 	-a "%script_name_and_version%" ^
 	-m "%commit_message%" ^
 	-use-uri-dot-files -create-uri-dot-files ^
-	%music_work_dir%
+	"%TOG_MUSIC_WORK_DIR%"
 @echo off
 
 rem there has GOT to be a better way to do this stuff!
@@ -52,7 +52,7 @@ rem Yes, it does.  I could script something to push those using the existing com
 rem 
 rem I could also add a command to ccouch3 to spit out .bat files or something
 
-set lhn_tempfile=%music_work_dir%\.last-head-number
+set "lhn_tempfile=%TOG_MUSIC_WORK_DIR%\.last-head-number"
 "%UNIX_FIND_EXE%" "%CCOUCH_REPO_DIR%\heads\%CCOUCH_REPO_NAME%\tog\music\work" | "%UNIX_SORT_EXE%" -V | tail -n 1 >%lhn_tempfile%
 set /p latest_head_file= <%lhn_tempfile%
 del %lhn_tempfile%
