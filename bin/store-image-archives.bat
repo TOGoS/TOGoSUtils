@@ -2,7 +2,7 @@
 
 setlocal
 
-set script_version=2022-04-12
+set script_version=2024-01-31
 set script_name_and_version=%~nx0 v%script_version%
 
 call require-ccouch-env.bat
@@ -10,9 +10,9 @@ if errorlevel 1 goto fail
 
 if "%~1" EQU "-m" set commit_message=%~2
 if not defined commit_message set commit_message=Image archives on %CCOUCH_REPO_NAME%
-rem TODO: datastore_root isn't really required if image_archives_dir is set...
-if not defined datastore_root (echo datastore_root not specified >&2 & goto fail)
-if not defined image_archives_dir set image_archives_dir=%datastore_root%\archives\images
+rem TODO: TOG_DATASTORE_DIR isn't really required if image_archives_dir is set...
+if not defined TOG_DATASTORE_DIR (echo TOG_DATASTORE_DIR not specified >&2 & goto fail)
+if not defined image_archives_dir set "image_archives_dir=%TOG_DATASTORE_DIR%\archives\images"
 if not defined ccouch_store_sector set ccouch_store_sector=pictures
 
 @echo on
@@ -24,7 +24,7 @@ java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 	-use-uri-dot-files ^
 	-create-uri-dot-files ^
 	-m "%commit_message%" ^
-	%image_archives_dir%
+	"%image_archives_dir%"
 @if errorlevel 1 goto fail
 @echo off
 
@@ -34,6 +34,9 @@ java -jar %CCOUCH_JAR% -repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% store ^
 : echo You must upload that manually for now.
 
 call ccouch3-upload-to-marvin -recurse x-ccouch-head:%CCOUCH_REPO_NAME%/archives/images/latest
+
+echo Skipping pscping of head files; go git add / commit, instead.
+goto eof
 
 mkdir %UserProfile%\temp
 set push_image_archives_bat=%UserProfile%\temp\push-image-archives.bat
