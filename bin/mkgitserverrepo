@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mode=make
 public=
 repos=()
 
@@ -7,6 +8,9 @@ while [[ $# > 0 ]]
 do
     key="$1"
     case $key in
+	-h | -? | --help)
+	    mode=print-help
+	    ;;
 	--public)
 	    public="ja"
 	    ;;
@@ -16,6 +20,15 @@ do
     esac
     shift
 done
+
+if [ "$mode" = "print-help" ]
+then
+    echo "Create Git repo in specifide directories"
+    echo "Options:"
+    echo "  --help   ; print this help and exit"
+    echo "  --public ; enable post-update hook such that repo is available by HTTP"
+    exit
+fi
 
 for repo in "${repos[@]}"
 do
