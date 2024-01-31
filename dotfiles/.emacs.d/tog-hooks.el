@@ -19,7 +19,7 @@
 )
 (add-hook 'org-mode-hook 'tog-org-mode-hook)
 
-(defun tog-scad-modee-hook ()
+(defun tog-scad-mode-hook ()
   (togtabs-infer-indentation-style)
   (tog-disable-electric-indent-mode))
 (add-hook 'scad-mode-hook 'tog-scad-mode-hook)
