@@ -10,11 +10,16 @@ self_name="$(basename "$0")"
 
 picgrid_flags="-tolerate-compose-errors"
 debugging=0
+root_name="master"
 
 while [[ $# > 0 ]]
 do
     key="$1"
     case $key in
+	-root)
+	    root_name="$2";
+	    shift
+	    ;;
 	-debug|-v)
 	    picgrid_flags="$picgrid_flags $key"
 	    debugging=1
@@ -40,9 +45,9 @@ if [ $debugging == 1 ] ; then
     set -x
 fi
 
-latest_head_urn_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.urn
-latest_picgrid_urn_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.picgrid.urn
-latest_picgrid_urn_temp_file="$ARCHIVE_INFO_DIR"/heads/master/ccouch/archives/images.picgrid.urn.temp
+latest_head_urn_file="${ARCHIVE_INFO_DIR}/heads/${root_name}/ccouch/archives/images.urn"
+latest_picgrid_urn_file="${ARCHIVE_INFO_DIR}/heads/${root_name}/ccouch/archives/images.picgrid.urn"
+latest_picgrid_urn_temp_file="${ARCHIVE_INFO_DIR}/heads/${root_name}/ccouch/archives/images.picgrid.urn.temp"
 
 if [ ! -r "$latest_head_urn_file" ] ; then
     echo "$self_name: error: $latest_head_urn_file is not readable" >&2
