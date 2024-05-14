@@ -30,6 +30,8 @@
 (autoload 'uuid-urn "uuid" "Prepend a UUID string with 'urn:uuid:'" t)
 (autoload 'uuid-4 "uuid" "Generate a version 4 UUID string" t)
 
+(autoload 'unisonlang-mode "unisonlang-mode" "Mode fore editing Unison source code" t)
+(add-to-list 'auto-mode-alist '("\\.u\\'" . unisonlang-mode))
 
 ;; In timelog files, color '###...' lines even if part of content.
 ;; This keyword list is prefixed onto tef-mode's,

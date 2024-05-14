@@ -54,3 +54,5 @@
 	(setq tab-width 3)
 	(setq nxml-child-indent tab-width))))
 (add-hook 'nxml-mode-hook 'tog-nxml-mode-hook)
+
+(add-hook 'unisonlang-mode-hook 'tog-tabs)
