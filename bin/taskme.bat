@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-if not defined LIST_TODO_TS set "LIST_TODO_TS=https://deno.land/x/listtodo27@v0.1.5/list-todo.ts"
+if not defined LIST_TODO_TS set "LIST_TODO_TS=https://deno.land/x/listtodo27@v0.1.6/list-todo.ts"
 
 set "self_name=%~nx0"
 set "input_set=all"
@@ -46,9 +46,10 @@ goto eof
 echo.
 echo %self_name%: Pick a task to work on and pretty-print it.
 echo.
-echo Options:
+echo Modes:
 echo   --dry-run  ; print the command that would be run
 echo   --help     ; print this help text and exit
+echo Input file selection:
 echo   --music    ; pick only from music-related tasks
 echo   --workshop ; pick only from ProjectNotes2/2022/Projects.tef tasks
 echo   --tog      ; pick only from project-tasks.tef
