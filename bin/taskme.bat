@@ -6,6 +6,8 @@ if not defined LIST_TODO_TS set "LIST_TODO_TS=https://deno.land/x/listtodo27@v0.
 set "self_name=%~nx0"
 set "input_set=all"
 set "mode=pick"
+set "select_arg=--select=random-shovel-ready-task"
+set "output_format_arg=--output-format=pretty"
 
 :process_arg
 if "" == "%1" goto no_more_args
@@ -14,6 +16,7 @@ if "--help" == "%~1" (set "mode=help" & goto process_next_arg)
 if "--music" == "%~1" (set "input_set=music" & goto process_next_arg)
 if "--workshop" == "%~1" (set "input_set=workshop" & goto process_next_arg)
 if "--tog" == "%~1" (set "input_set=tog" & goto process_next_arg)
+if "--shovel-ready" == "%~1" (set "select_arg=--select=shovel-ready" & goto process_next_arg)
 set "remaining_args=%remaining_args% "%~1""
 :process_next_arg
 shift
@@ -29,7 +32,7 @@ if "%input_set%" == "music" set "input_files="%mt_file%""
 if "%input_set%" == "tog" set "input_files="%tt_file%""
 if "%input_set%" == "workshop" set "input_files="%pt_file%""
 
-set "pick_cmd=type %input_files% | deno run "%LIST_TODO_TS%" -p %remaining_args%"
+set "pick_cmd=type %input_files% | deno run "%LIST_TODO_TS%" %output_format_arg% %select_arg% %remaining_args%"
 
 if "%mode%" == "pick" goto pick
 if "%mode%" == "help" goto print_help
