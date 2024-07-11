@@ -68,6 +68,7 @@ if "%ccd_target%" == "osd" (set "ccd_target=proj\OpenSCADDesigns" & goto guess)
 if "%ccd_target%" == "sg" (set "ccd_target=proj\SynthGen2100" & goto guess)
 if "%ccd_target%" == "sgdl" (set "ccd_target=proj\SynthGen2100-devlog" & goto guess)
 if "%ccd_target%" == "9t" (set "ccd_target=docs\financial\4909" & goto guess)
+if "%ccd_target%" == "taxes" (set "ccd_target=docs\financial\taxes" & goto guess)
 
 goto not_found
 
