@@ -22,6 +22,11 @@ For help: flacify --help
 
 To convert .wavs to .flacs: flacify [-q] <file or directory> ...
 
+Options:
+  --flac  ; convert to flac (implied)
+  --ogg   ; convert to ogg vorbis
+  
+
 -q tells me to shut up about not getting any arguments.
 EOS
 
