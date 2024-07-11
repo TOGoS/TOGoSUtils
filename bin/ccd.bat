@@ -8,23 +8,16 @@ set "ccd_self_name=%~nx0"
 rem set "ccd_debug=echo %ccd_self_name%:"
 set ccd_debug=rem
 
-set "ccd_target_drive=%~d1"
-set "ccd_target_title=%~n1"
 set "ccd_target=%~1"
-
-if not exist "%ccd_target%" goto guess
-
-
-:go_ahead
-%ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
-title %ccd_target_title%
-%ccd_target_drive%
-cd "%ccd_target%"
-goto clean_up_and_exit
+goto guess
 
 
 :guess
 %ccd_debug% %ccd_target% does not exist.  Trying some guesses...
+
+set "ccd_guess=%ccd_target%"
+%ccd_debug% Trying %ccd_guess%
+if exist "%ccd_guess%" goto guess_okay
 
 set "ccd_guess=%UserProfile%\stuff\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
@@ -63,6 +56,8 @@ if "%ccd_target%" == "timelog" (set "ccd_target=job\EarthIT\timelog" & goto gues
 if "%ccd_target%" == "amn" (set "ccd_target=job\ATR-MCAS\notes" & goto guess)
 if "%ccd_target%" == "et" (set "ccd_target=job\EarthIT\timelog" & goto guess)
 if "%ccd_target%" == "en" (set "ccd_target=job\ETF\notes" & goto guess)
+if "%ccd_target%" == "h" (set "ccd_target=%UserProfile%" & goto guess)
+if "%ccd_target%" == "home" (set "ccd_target=%UserProfile%" & goto guess)
 if "%ccd_target%" == "pn2" (set "ccd_target=docs\ProjectNotes2" & goto guess)
 if "%ccd_target%" == "tu" (set "ccd_target=proj\TOGoSUtils" & goto guess)
 if "%ccd_target%" == "ln" (set "ccd_target=docs\LoveNotes" & goto guess)
@@ -74,9 +69,7 @@ if "%ccd_target%" == "sg" (set "ccd_target=proj\SynthGen2100" & goto guess)
 if "%ccd_target%" == "sgdl" (set "ccd_target=proj\SynthGen2100-devlog" & goto guess)
 if "%ccd_target%" == "9t" (set "ccd_target=docs\financial\4909" & goto guess)
 
-
 goto not_found
-
 
 
 :guess_okay
@@ -97,6 +90,14 @@ set ccd_target=
 set ccd_target_drive=
 set ccd_target_title=
 exit /B 1
+
+
+:go_ahead
+%ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
+title %ccd_target_title%
+%ccd_target_drive%
+cd "%ccd_target%"
+goto clean_up_and_exit
 
 
 :clean_up_and_exit
