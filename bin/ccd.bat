@@ -5,10 +5,21 @@ rem - Also switch drive
 rem - Also set the window title to the last path section
 
 set "ccd_self_name=%~nx0"
+
 rem set "ccd_debug=echo %ccd_self_name%:"
 set ccd_debug=rem
 
+
+
 set "ccd_target=%~1"
+set "ccd_target_drive=%~d1"
+set "ccd_target_title=%~n1"
+%ccd_debug% ccd_target_drive = %ccd_target_drive%
+rem Later logic guesses target drive based on the first two characters
+rem of some supposedly-absolute path.
+rem For the '%1 exists' case, we can't make that assumption,
+rem so short-circuit to avoid that logic:
+if exist "%ccd_target%" goto go_ahead
 goto guess
 
 
@@ -75,6 +86,7 @@ goto not_found
 
 :guess_okay
 set "ccd_target=%ccd_guess%"
+rem This assumes that %ccd_guess% is a full path, which is maybe not a good assumption to make
 set "ccd_target_drive=%ccd_guess:~0,2%"
 for /F "delims=" %%i in ("%ccd_target%") do set "ccd_target_title=%%~ni"
 %ccd_debug% Found %ccd_target%! 
@@ -96,7 +108,7 @@ exit /B 1
 :go_ahead
 %ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
 title %ccd_target_title%
-%ccd_target_drive%
+if defined ccd_target_drive %ccd_target_drive%
 cd "%ccd_target%"
 goto clean_up_and_exit
 
