@@ -56,3 +56,7 @@
 (add-hook 'nxml-mode-hook 'tog-nxml-mode-hook)
 
 (add-hook 'unisonlang-mode-hook 'tog-tabs)
+
+(defun tog-no-electric-indent ()
+  (setq electric-indent-mode nil))
+(add-hook 'html-mode-hook 'tog-no-electric-indent)
