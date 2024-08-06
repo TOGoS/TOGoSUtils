@@ -4,6 +4,7 @@ set -euo pipefail
 
 self_name="$(basename "$0")"
 
+mode=alarm
 alarm_time_of_day=08:00
 playlist_dir="/home/tog/music/playlists"
 generate_playlist=
@@ -11,82 +12,100 @@ max_duration=
 
 while [[ $# > 0 ]]
 do
-    key="$1"
-    case $key in
-	--time)
-	    alarm_time_of_day="$2"
-	    shift
-	    ;;
-	--max-duration)
-	    max_duration="$2"
-	    shift
-	    ;;
-	--playlist)
-	    alarm_playlist_file="$2"
-	    shift
-	    ;;
-	--generate)
-	    generate_playlist="$1"
-	    ;;
-	*)
-	    echo "$self_name: error: Unrecognized argument: '$1'" >&2
-	    exit 1
-	    ;;
-    esac
-    shift
+	key="$1"
+	case $key in
+		--time)
+			alarm_time_of_day="$2"
+			shift
+			;;
+		--max-duration)
+			max_duration="$2"
+			shift
+			;;
+		--playlist)
+			alarm_playlist_file="$2"
+			shift
+			;;
+		--generate)
+			generate_playlist="$1"
+			;;
+		--print-playlist)
+			mode=print-playlist
+			;;
+		*)
+			echo "$self_name: error: Unrecognized argument: '$1'" >&2
+			exit 1
+			;;
+	esac
+	shift
 done
 
 get_alarm_playlist_file() {
-    find "$playlist_dir/misc/" -name '*alarm.m3u' | sort -V -r | head -n 1
+	find "$playlist_dir/misc/" -name '*alarm.m3u' | sort -V -r | head -n 1
 }
 
 playlist_length() {
-    grep -v '^#' "$*" | wc -l
+	grep -v '^#' "$*" | wc -l
 }
 
 if [ -n "$max_duration" ] ; then
-    reduce_args="-reduce-to $max_duration"
+	reduce_args="-reduce-to $max_duration"
 else
-    reduce_args=
+	reduce_args=
 fi
+
+scan_dirs=/home/tog/share/2019/music/mixes/PsyChamber/
+
+generate_shuffled_superset() {
+	sort -R \
+		<(find $scan_dirs -name '*.mp3') \
+		"$playlist_dir/misc/2024/2024-alarm-superset.m3u" \
+		| grep -v '^#' | sort | uniq | sort -R
+}
 
 while true
 do
-    use_to_time_string="tomorrow $alarm_time_of_day"
+	use_to_time_string="tomorrow $alarm_time_of_day"
 
-    if [ -n "${alarm_playlist_file+x}" ] ; then
-	# Cool.
-	true
-    elif [ -n "$generate_playlist" ] ; then
-	alarm_playlist_file_prefix="$playlist_dir/misc/$(date +%Y/%m/%Y%m%d --date="$use_to_time_string")-alarm"
-	alarm_playlist_file="$alarm_playlist_file_prefix.m3u"
-	alarm_playlist_temp_file="$alarm_playlist_file_prefix.temp.m3u"
-	mkdir -p "$(dirname "$alarm_playlist_file")"
+	if [ -n "${alarm_playlist_file+x}" ] ; then
+		# Cool.
+		true
+	elif [ -n "$generate_playlist" ] ; then
+		alarm_playlist_file_prefix="$playlist_dir/misc/$(date +%Y/%m/%Y%m%d --date="$use_to_time_string")-alarm"
+		alarm_playlist_file="$alarm_playlist_file_prefix.m3u"
+		alarm_playlist_temp_file="$alarm_playlist_file_prefix.temp.m3u"
+		mkdir -p "$(dirname "$alarm_playlist_file")"
 
-	generated_len=1
-	while [ "$generated_len" -le 1 ] ; do
-	    sleep 1
-	    # process-m3u -reduce-to sometimes results in empty playlists,
-	    # something I should probably fix by changing the algorithm.
-	    # Until then, we just try again until it works.
-	    echo "Generating randomized playlist to $alarm_playlist_temp_file ..."
-	    sort -R "$playlist_dir/misc/2023/2023-alarm-superset.m3u" | grep -v '^#' > "$alarm_playlist_temp_file"
-	    echo "process-m3u $alarm_playlist_temp_file into $alarm_playlist_file ..."
-	    if process-m3u -add-extinf $reduce_args "$alarm_playlist_temp_file" > "$alarm_playlist_file" && [ "$(playlist_length "$alarm_playlist_file")" -gt 0 ] ; then
-		echo "process-m3u generated a non-zero-length playlist, so we'll use that"
-		rm "$alarm_playlist_temp_file"
-	    else
-		echo "Failed to process-m3u; skipping that step"
-		mv "$alarm_playlist_temp_file" "$alarm_playlist_file"
-	    fi
-	    generated_len="$(playlist_length "$alarm_playlist_file")"
-	done
-    else
-	alarm_playlist_file="$(get_alarm_playlist_file)"
-    fi
-    
-    echo "Alarm playlist file: $alarm_playlist_file ($(playlist_length "$alarm_playlist_file") tracks)"
-    echo "Alarm will play at: $alarm_time_of_day"
-    sleepuntil --next "$use_to_time_string"
-    mplayer -vo none -volume 100 -playlist "$alarm_playlist_file"
+		generated_len=1
+		while [ "$generated_len" -le 1 ] ; do
+			sleep 1
+			# process-m3u -reduce-to sometimes results in empty playlists,
+			# something I should probably fix by changing the algorithm.
+			# Until then, we just try again until it works.
+			echo "# Generating randomized playlist to $alarm_playlist_temp_file ..."
+			generate_shuffled_superset >"$alarm_playlist_temp_file"
+			echo "# process-m3u $alarm_playlist_temp_file into $alarm_playlist_file ..."
+			if (process-m3u -add-extinf $reduce_args "$alarm_playlist_temp_file" 2>&1 > "$alarm_playlist_file" | sed 's/^/# process-m3u err: /') && [ "$(playlist_length "$alarm_playlist_file")" -gt 0 ] ; then
+				echo "# process-m3u generated a non-zero-length playlist, so we'll use that"
+				rm "$alarm_playlist_temp_file"
+			else
+				echo "# Failed to process-m3u; skipping that step"
+				mv "$alarm_playlist_temp_file" "$alarm_playlist_file"
+			fi
+			generated_len="$(playlist_length "$alarm_playlist_file")"
+		done
+	else
+		alarm_playlist_file="$(get_alarm_playlist_file)"
+	fi
+	
+	if [ "$mode" == "print-playlist" ] ; then
+		cat "$alarm_playlist_file"
+		echo "# That was $alarm_playlist_file"
+		exit 0
+	elif [ "$mode" == "alarm" ] ; then
+		echo "# Alarm playlist file: $alarm_playlist_file ($(playlist_length "$alarm_playlist_file") tracks)"
+		echo "# Alarm will play at: $alarm_time_of_day"
+		sleepuntil --next "$use_to_time_string"
+		mplayer -vo none -volume 100 -playlist "$alarm_playlist_file"
+	fi
 done
