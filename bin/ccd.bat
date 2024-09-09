@@ -6,14 +6,36 @@ rem - Also set the window title to the last path section
 
 set "ccd_self_name=%~nx0"
 
-rem set "ccd_debug=echo %ccd_self_name%:"
 set ccd_debug=rem
 
+:parseargs
+%ccd_debug% parseargs: %%1 = "%1"
+if "%~1" == "" goto parseargs_end
+if "%~1" == "-v" goto parseargs_v
+goto parseargs_target
 
 
+:parseargs_target
 set "ccd_target=%~1"
 set "ccd_target_drive=%~d1"
 set "ccd_target_title=%~n1"
+shift
+goto parseargs
+
+
+:parseargs_v
+set "ccd_debug=echo %ccd_self_name%:"
+shift
+goto parseargs
+
+
+:parseargs_end
+%ccd_debug% Done parsing arguments
+
+if not defined ccd_target goto no_target_specified
+
+
+
 %ccd_debug% ccd_target_drive = %ccd_target_drive%
 rem Later logic guesses target drive based on the first two characters
 rem of some supposedly-absolute path.
@@ -30,6 +52,10 @@ set "ccd_guess=%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
+set "ccd_guess=%UserProfile%\%ccd_target%"
+%ccd_debug% Trying %ccd_guess%
+if exist "%ccd_guess%" goto guess_okay
+
 set "ccd_guess=%UserProfile%\stuff\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
@@ -43,6 +69,10 @@ set "ccd_guess=%UserProfile%\stuff\proj\%ccd_target%"
 if exist "%ccd_guess%" goto guess_okay
 
 set "ccd_guess=%UserProfile%\stuff\sites\%ccd_target%"
+%ccd_debug% Trying %ccd_guess%
+if exist "%ccd_guess%" goto guess_okay
+
+set "ccd_guess=%UserProfile%\workspace\%ccd_target%"
 %ccd_debug% Trying %ccd_guess%
 if exist "%ccd_guess%" goto guess_okay
 
@@ -93,8 +123,26 @@ for /F "delims=" %%i in ("%ccd_target%") do set "ccd_target_title=%%~ni"
 goto go_ahead
 
 
+:no_target_specified
+echo %ccd_self_name%: Error: No target specified!>&2
+goto clean_up_and_fail
+
+
 :not_found
 echo %ccd_self_name%: Error: '%ccd_target%' not found. >&2
+%ccd_debug% Time to unset all these ccd vars!
+goto clean_up_and_fail
+
+
+:go_ahead
+%ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
+title %ccd_target_title%
+if defined ccd_target_drive %ccd_target_drive%
+cd "%ccd_target%"
+goto clean_up_and_exit
+
+
+:clean_up_and_fail
 %ccd_debug% Time to unset all these ccd vars!
 set ccd_debug=
 set ccd_guess=
@@ -104,13 +152,6 @@ set ccd_target_drive=
 set ccd_target_title=
 exit /B 1
 
-
-:go_ahead
-%ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
-title %ccd_target_title%
-if defined ccd_target_drive %ccd_target_drive%
-cd "%ccd_target%"
-goto clean_up_and_exit
 
 
 :clean_up_and_exit
