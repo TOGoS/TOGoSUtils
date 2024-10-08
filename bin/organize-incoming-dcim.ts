@@ -84,7 +84,7 @@ async function *decideWhatToDoWithInputFiles(inputFiles: AsyncIterable<WalkEntry
 				type == 'image' ? cmdOpts.imageDests :
 				type == 'video' ? cmdOpts.videoDests :
 				[];
-			for( const destPath of cmdOpts.imageDests ) {
+			for( const destPath of destList ) {
 				yield {
 					classRef: "http://ns.nuke24.net/SynthGen2100/FSAction/LinkFile",
 					sourcePath: entry.path,
