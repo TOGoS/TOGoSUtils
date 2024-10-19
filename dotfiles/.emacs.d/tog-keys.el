@@ -82,6 +82,7 @@
 (global-set-key (kbd "M-g w p") 'visit-workshop-parts-file)
 (global-set-key (kbd "M-g w i a") 'visit-workshop-available-ids-file)
 (global-set-key (kbd "M-g 3 p l") 'visit-3d-printing-log)
+(global-set-key (kbd "M-g w o") 'visit-workshop-orders)
 (global-set-key (kbd "M-g w r") 'visit-workshop-readme)
 (global-set-key (kbd "M-g w s") 'visit-workshop-stained-items-file)
 (global-set-key (kbd "M-g w t") 'visit-workshop-tasks-file)
