@@ -19,6 +19,12 @@
   (interactive)
   (insert "http://picture-files.nuke24.net/uri-res/raw/"))
 (global-set-key (kbd "C-x p f") 'insert-picture-files-url-prefix)
+
+(defun insert-wherever-files-url-prefix ()
+  (interactive)
+  (insert "http://wherever-files.nuke24.net/uri-res/raw/"))
+(global-set-key (kbd "C-x w f") 'insert-wherever-files-url-prefix)
+
 (defun insert-factorio-github-commit-prefix ()
   (interactive)
   (insert "https://github.com/wube/Factorio/commit/"))
