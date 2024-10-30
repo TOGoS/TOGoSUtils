@@ -10,6 +10,10 @@
 ;;    (package-install package)))
 ;;(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
+;; Make UTf-8 the default interpretation of files so that unicode
+;; characters don't become strings of garbage upon loading:
+(set-language-environment "UTF-8")
+
 (add-to-list 'load-path (file-name-directory (or load-file-name buffer-file-name)))
 
 (load "togtabs")
