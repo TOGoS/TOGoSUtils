@@ -13,6 +13,7 @@
   (insert (format-time-string "%Y-%m-%d")))
 
 (defun tog-insert-new-uuid-urn ()
+  "Insert a randomly generated urn:uuid:.... URN at the cursor"
   (interactive)
   (insert (uuid-urn (uuid-4))))
 
