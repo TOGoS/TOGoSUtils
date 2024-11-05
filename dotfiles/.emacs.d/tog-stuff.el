@@ -2,13 +2,6 @@
 (setq delete-selection-mode t) ; So I can overwrite stuff without polluting the clipboard
 ;; Some stuff from https://github.com/susam/emfy/blob/main/.emacs
 (column-number-mode)
-;; Actually loading this stuff up takes a bunch of time and I don't really need to every time I start emacs,
-;;(package-initialize)
-;;(setq package-list '(php-mode markdown-mode paredit rainbow-delimiters))
-;;(dolist (package package-list)
-;;  (unless (package-installed-p package)
-;;    (package-install package)))
-;;(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
 ;; Make UTf-8 the default interpretation of files so that unicode
 ;; characters don't become strings of garbage upon loading:
