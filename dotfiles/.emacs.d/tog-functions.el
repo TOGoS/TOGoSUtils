@@ -189,7 +189,7 @@
   (find-file (find-tog-proj-file "job/EarthIT/timelog" "project-tasks.tef")))
 (defun visit-tog-plan ()
   (interactive)
-  (let ((plan-filename (format-time-string "%Y/%Y%m-plan.org")))
+  (let ((plan-filename (format-time-string "%Y/%m/%Y%m-plan.org")))
     (find-file (find-tog-proj-file "job/EarthIT/timelog" plan-filename))))
 (defun visit-alvin-log ()
   (interactive)
