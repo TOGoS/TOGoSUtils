@@ -17,9 +17,15 @@
   (interactive)
   (insert (uuid-urn (uuid-4))))
 
+(defun tog-search-replace-in-current-buffer (search-regex replacement)
+  (goto-char (point-min))
+  (while (re-search-forward search-regex nil t)
+    (replace-match replacement)))	
+
 (defun tog-fix-openscad-json ()
   (interactive)
-  (query-replace "    " "\t")
+  (tog-search-replace-in-current-buffer "    " "\t")
+  (tog-search-replace-in-current-buffer "\\\\/" "/")
   (set-buffer-file-coding-system 'utf-8-unix)
   (save-buffer))
 
