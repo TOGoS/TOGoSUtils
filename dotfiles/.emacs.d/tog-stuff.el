@@ -1,11 +1,11 @@
+;; Make UTf-8 the default interpretation of files so that unicode
+;; characters don't become strings of garbage upon loading:
+(set-language-environment "UTF-8")
+
 (setq-default buffer-file-coding-system 'utf-8-unix)
 (setq delete-selection-mode t) ; So I can overwrite stuff without polluting the clipboard
 ;; Some stuff from https://github.com/susam/emfy/blob/main/.emacs
 (column-number-mode)
-
-;; Make UTf-8 the default interpretation of files so that unicode
-;; characters don't become strings of garbage upon loading:
-(set-language-environment "UTF-8")
 
 (add-to-list 'load-path (file-name-directory (or load-file-name buffer-file-name)))
 
