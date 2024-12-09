@@ -11,6 +11,7 @@ rem The new and improved way to update heads:
 git --git-dir=%CCOUCH_REPO_DIR%/.git --work-tree=%CCOUCH_REPO_DIR% pull fs.marvin master
 
 goto cache_heads_done
+rem Skipping 'cache-heads' because `git pull` has replaced it.
 call ccouch cache-heads ^
 	//fs.marvin/togthoms1/tog/music/work/ //togos-fbs/togthoms1/tog/music/work/ ^
 	//fs.marvin/wsitem-3306.1/tog/music/work/ //togos-fbs/wsitem-3306.1/tog/music/work/ ^
