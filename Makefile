@@ -5,7 +5,7 @@ install:
 	echo "# TOGoSUils" >> "${HOME}/.bashrc"
 	echo ". $$(pwd)/dotfiles/.bash_aliases" >> "${HOME}/.bashrc"
 	echo 'export PATH=$$PATH':"$$(pwd)/bin" >> "${HOME}/.bashrc"
-	cp dotfiles/.screenrc "${HOME}/.screenrc"
+	if [ ! -f "${HOME}/.screenrc" ] ; then cp dotfiles/.screenrc "${HOME}/.screenrc" ; else echo '~/.screenrc already exists; skipping' ; fi
 
 # Probably also want
 # emacs24-nox
