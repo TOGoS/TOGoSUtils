@@ -57,8 +57,10 @@
 
 (global-set-key (kbd "C-x r e") 'replace-last-sexp)
 
-(global-set-key (kbd "C-x t t t") 'tog-tabs)
-(global-set-key (kbd "C-x t t h") 'tog-tabs-harder)
+; In newer versions of emacs, 'C-x t t' means something else,
+; so I can't use it as a prefix.  Oh well.
+; (global-set-key (kbd "C-x t t t") 'tog-tabs)
+; (global-set-key (kbd "C-x t t h") 'tog-tabs-harder)
 
 ; Visiting common files
 
