@@ -102,6 +102,10 @@ var sshServers = {
 		//sshHost: "external.marvin.nuke24.net:31522",
 		sshSessionName: "togos-fbs", // Only YOU can define this in PuTTY or whatever
 		remoteGitRootDir: "/home/tog/git",
+	},
+	"togos-mini1": {
+		sshSessionName: "togos-mini1", // Only YOU can define this in PuTTY or whatever
+		remoteGitRootDir: "/home/tog/git",
 	}
 };
 
