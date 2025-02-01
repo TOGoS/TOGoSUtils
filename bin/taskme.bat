@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-if not defined LIST_TODO_TS set "LIST_TODO_TS=https://deno.land/x/listtodo27@v0.1.6/list-todo.ts"
+if not defined LIST_TODO_TS set "LIST_TODO_TS=https://deno.land/x/listtodo27@v0.1.7/list-todo.ts"
 
 set "self_name=%~nx0"
 set "input_set=all"
