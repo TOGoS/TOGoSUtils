@@ -1,12 +1,17 @@
 @echo off
 
+setlocal
+
 call require-ccouch-env.bat
 if not defined datastore_root (echo datastore_root not specified >&2 & goto fail)
 
 set image_archives_dir=%datastore_root%\archives\images
 set ccouch_store_sector=pictures
 
-call ccouch cache-heads //fs.marvin/togthoms1/
+cd "%CCOUCH_REPO_DIR%"
+call gitpull
+
+rem call ccouch cache-heads //fs.marvin/togthoms1/
 call ccouch3 cache ^
 	-repo:%CCOUCH_REPO_NAME% %CCOUCH_REPO_DIR% ^
 	-remote-repo fs.marvin.nuke24.net ^
