@@ -9,6 +9,7 @@ echo %self_name%: Error: Neither TOG_MUSIC_WORK_DIR nor TOG_STUFF_DIR is set >&2
 
 rem The new and improved way to update heads:
 git --git-dir=%CCOUCH_REPO_DIR%/.git --work-tree=%CCOUCH_REPO_DIR% pull fs.marvin master
+if errorlevel 1 echo "Failed to git pull .ccouch">&2 & goto fail
 
 goto cache_heads_done
 rem Skipping 'cache-heads' because `git pull` has replaced it.
