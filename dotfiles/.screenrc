@@ -2,8 +2,6 @@ escape ^Tt
 startup_message off
 vbell off
 
-setenv SSH_AUTH_SOCK "/home/stevens/.ssh/authsock"
-
 # Define a bigger scrollback, default is 100 lines
 defscrollback 10000
 
