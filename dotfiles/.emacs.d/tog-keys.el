@@ -69,7 +69,7 @@
 (global-set-key (kbd "M-g d l") 'visit-latest-doke-entry)
 (global-set-key (kbd "M-g d t") 'visit-todays-doke-entry)
 (global-set-key (kbd "M-g e t") 'visit-eit-timelog)
-(global-set-key (kbd "M-g e p") 'visit-tog-plan)
+(global-set-key (kbd "M-g e p") 'visit-tog-weekly-plan)
 (global-set-key (kbd "M-g t t") 'visit-tog-tasks)
 (global-set-key (kbd "M-g e b") 'visit-bodylog)
 (global-set-key (kbd "M-g e h") 'visit-self-help)

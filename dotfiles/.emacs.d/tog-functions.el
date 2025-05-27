@@ -193,10 +193,51 @@
 (defun visit-tog-tasks ()
   (interactive)
   (find-file (find-tog-proj-file "job/EarthIT/timelog" "project-tasks.tef")))
-(defun visit-tog-plan ()
+
+;; ISO week stuff: (format-time-string "%s = %a, %Y-%m-%dT%H:%M:%S; regular week = %Y-W%U; ISO8601 week = %G-W%V" 1735700000)
+;; Sometimes it is 2024 but the ISO week is 2025-W01, because Thursday is in 2025, I guess.
+;; Anyway, good enough for weekly plan purposes.
+;; See https://emacsdocs.org/docs/elisp/Time-Parsing
+
+(defun tog-iso8601-week-begin-end (time)
+  "Return the beginning and end dates of the ISO 8601 week for the given TIME."
+  ;; Duck.ai's GPT-4o mini may have written this function for me
+  (let* ((input-time time)
+         (day (calendar-extract-day input-time))
+         (weekday (calendar-day-of-week input-time))
+         (days-to-monday (if (= weekday 0) 6 (1- weekday)))
+         (beginning-of-week (time-subtract input-time (days-to-time days-to-monday)))
+         (end-of-week (time-add beginning-of-week (days-to-time 6))))
+    (list beginning-of-week end-of-week)))
+
+(defun tog-weekly-plan-file-info (&optional time)
+  (let* ((plantime (or time (current-time)))
+         (plan-filename (format-time-string "%G/W%V/%GW%V-plan.org" plantime))
+         (begin-end (tog-iso8601-week-begin-end plantime)))
+    (list plan-filename
+      (concat
+        "#+TITLE: Plan for "
+        (format-time-string "%G-W%V (" plantime)
+        (format-time-string "%Y-%m-%d" (car begin-end))
+        " to "
+        (format-time-string "%Y-%m-%d" (cadr begin-end))
+        ")"
+        "\n\n"
+      )
+    )
+  )
+)
+
+(defun visit-tog-weekly-plan (&optional time)
   (interactive)
-  (let ((plan-filename (format-time-string "%Y/%m/%Y%m-plan.org")))
-    (find-file (find-tog-proj-file "job/EarthIT/timelog" plan-filename))))
+  (let* ((info (tog-weekly-plan-file-info time))
+         (plan-filename (car info))
+         (default-content (cadr info)))
+    (find-file (find-tog-proj-file "job/EarthIT/timelog" plan-filename))
+    (if (= (buffer-size) 0)
+      (progn
+        (insert default-content)))))
+
 (defun visit-alvin-log ()
   (interactive)
   (find-file (find-tog-proj-file "job/EarthIT/timelog" "alvinlog.txt")))
