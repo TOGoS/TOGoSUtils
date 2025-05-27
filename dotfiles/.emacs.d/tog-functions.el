@@ -20,7 +20,7 @@
 (defun tog-search-replace-in-current-buffer (search-regex replacement)
   (goto-char (point-min))
   (while (re-search-forward search-regex nil t)
-    (replace-match replacement)))	
+    (replace-match replacement)))
 
 (defun tog-fix-openscad-json ()
   (interactive)
@@ -61,8 +61,8 @@
   (if (eq 0 (length qs-parts)) '()
     (let ((part (car qs-parts)) (remaining-parts (cdr qs-parts)))
       (let ((asploded (split-string part "=")))
-	(cons (cons (intern (car asploded)) (cadr asploded))
-	      (tog-parse-query-string-parts-to-alist remaining-parts))))))
+        (cons (cons (intern (car asploded)) (cadr asploded))
+              (tog-parse-query-string-parts-to-alist remaining-parts))))))
 
 (defun tog-parse-query-string-to-alist (qs)
   (if (or (eq nil qs) (string= "" qs))
@@ -79,7 +79,7 @@
 (defun tog-generate-git-commit-web-link (commit-id repository-url)
   (let ((repository-url (if (eq repository-url nil) "" repository-url)))
     (if (string-match "^\\(https?://github\\.com/.*?\\)\\(?:\\.git\\)?$" repository-url)
-	(concat (match-string 1 repository-url) "/commit/" commit-id)
+        (concat (match-string 1 repository-url) "/commit/" commit-id)
       (concat "http://wherever-files.nuke24.net/uri-res/brows/x-git-commit:" commit-id))))
 
 
@@ -96,9 +96,9 @@
   (let ((result nil))
     (progn
       (while (and things (not result))
-	(let ((thing (car things)))
-	  (setq result (funcall matcher thing)))
-	(setq things (cdr things)))
+        (let ((thing (car things)))
+          (setq result (funcall matcher thing)))
+        (setq things (cdr things)))
       result)))
 
 (defun latest-file-in (dirs filter)
@@ -106,28 +106,28 @@
   (if (eq '() dirs)
       nil
     (first-matching dirs
-		    (lambda (dir)
-		      (if (not (file-directory-p dir))
-			  (if (funcall filter dir) dir)
-			(let ((sorted-subdirs (mapcar (lambda (filename) (concat dir "/" filename))
-						      (let ((filenames (directory-files dir)))
-							(sort (seq-filter (lambda (a) (not (= ?. (string-to-char a)))) filenames)
-							      (lambda (a b) (string> a b)))))))
-			  (latest-file-in sorted-subdirs filter)))))))
+                    (lambda (dir)
+                      (if (not (file-directory-p dir))
+                          (if (funcall filter dir) dir)
+                        (let ((sorted-subdirs (mapcar (lambda (filename) (concat dir "/" filename))
+                                                      (let ((filenames (directory-files dir)))
+                                                        (sort (seq-filter (lambda (a) (not (= ?. (string-to-char a)))) filenames)
+                                                              (lambda (a b) (string> a b)))))))
+                          (latest-file-in sorted-subdirs filter)))))))
 
 (defun find-tog-proj-dir-in (projname stuffdirlist)
   (if stuffdirlist
       (let ((potentialprojdir (concat (car stuffdirlist) "/" projname)))
-	(if (file-directory-p potentialprojdir) potentialprojdir
-	  (find-tog-proj-dir-in projname (cdr stuffdirlist))))
+        (if (file-directory-p potentialprojdir) potentialprojdir
+          (find-tog-proj-dir-in projname (cdr stuffdirlist))))
     (error (concat "Couln't find proj dir: " projname))))
 
 (defun find-tog-proj-dir (projname)
   (find-tog-proj-dir-in projname
-			(list (getenv "HOME")
-			      (getenv "USERPROFILE")
-			      (concat (getenv "USERPROFILE") "/stuff")
-			      "D:/stuff")))
+                        (list (getenv "HOME")
+                              (getenv "USERPROFILE")
+                              (concat (getenv "USERPROFILE") "/stuff")
+                              "D:/stuff")))
 
 (defun find-tog-proj-file (projname file)
   (let ((dir (find-tog-proj-dir projname)))
@@ -135,21 +135,21 @@
 
 (defun find-eit-timelog-file ()
   (latest-file-in (list (find-tog-proj-dir "job/EarthIT/timelog"))
-		  (lambda (f) (string-match "-timelog\\.txt$" f))))
+                  (lambda (f) (string-match "-timelog\\.txt$" f))))
 
 (defun find-todays-jht-notes-file ()
   (let ((jhtnotesdir (find-tog-proj-dir "job/JHT/notes"))
-	(datestr (format-time-string "%Y/%m/%Y%m%d")))
+        (datestr (format-time-string "%Y/%m/%Y%m%d")))
     (if jhtnotesdir (concat jhtnotesdir "/" datestr "-jht-notes.org") nil)))
 
 (defun find-latest-jht-notes-file ()
   (latest-file-in (list (find-tog-proj-dir "job/JHT/notes"))
-		  (lambda (f) (string-match "-jht-notes\\.org$" f))))
+                  (lambda (f) (string-match "-jht-notes\\.org$" f))))
 
 (defun find-latest-doke-file ()
   (latest-file-in (list (find-tog-proj-dir "docs/doke/entries"))
-		  ; Only look at year-based for lack of a natural string comparison function
-		  (lambda (f) (string-match "^[0-9]\\{4\\}" (file-name-nondirectory f)))))
+                  ; Only look at year-based for lack of a natural string comparison function
+                  (lambda (f) (string-match "^[0-9]\\{4\\}" (file-name-nondirectory f)))))
 
 (defun visit-tog-proj-file (projname file)
   (interactive "MProject name:\nMFile:")
@@ -166,7 +166,7 @@
   (visit-doke-entry (format-time-string "%Y-%m-%d"))
   (if (= (buffer-size) 0)
       (progn
-	(insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n"))))
+        (insert "date: " (format-time-string "%Y-%m-%d") "\nstatus: draft\n\n"))))
 (defun visit-latest-doke-entry ()
   (interactive)
   (find-file (find-latest-doke-file)))
@@ -308,15 +308,15 @@
   (find-file (find-tog-proj-file "job/JHT/notes" (format-time-string "%Y/%m/%Y%m-bullshit.org")))
   (if (= (buffer-size) 0)
       (progn
-	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Bullshit\n\n** Any vaguely notable contributions")
-	(goto-end-of-buffer))))
+        (insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Bullshit\n\n** Any vaguely notable contributions")
+        (goto-end-of-buffer))))
 (defun visit-todays-jht-notes ()
   (interactive)
   (find-file (find-todays-jht-notes-file))
   (if (= (buffer-size) 0)
       (progn
-	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n")
-	(goto-end-of-buffer))))
+        (insert "#TITLE: " (format-time-string "%Y-%m-%d") " JHT Notes\n\n")
+        (goto-end-of-buffer))))
 (defun visit-latest-jht-notes ()
   (interactive)
   (find-file (find-latest-jht-notes-file)))
@@ -326,8 +326,8 @@
   (find-file (find-tog-proj-file "job/SA" (format-time-string "notes/%Y/%m/%Y%m%d-sa-meeting-notes.org")))
   (if (= (buffer-size) 0)
       (progn
-	(insert "#TITLE: " (format-time-string "%Y-%m-%d") " SA meeting notes\n\n")
-	(goto-end-of-buffer))))
+        (insert "#TITLE: " (format-time-string "%Y-%m-%d") " SA meeting notes\n\n")
+        (goto-end-of-buffer))))
 
 (defun visit-synthgen2100-devlog ()
   (interactive)
@@ -344,19 +344,19 @@
     (progn
       (org-add-link-type "factorio-git-commit" 'org-factorio-git-commit-open)
       (defun org-factorio-git-commit-open (commit-hash)
-	"Visit the commit on GitHub"
-	(org-open-link-from-string
-	 (tog-generate-git-commit-web-link
-	  commit-hash
-	  "https://github.com/Wube/Factorio")))
+        "Visit the commit on GitHub"
+        (org-open-link-from-string
+         (tog-generate-git-commit-web-link
+          commit-hash
+          "https://github.com/Wube/Factorio")))
       (org-add-link-type "x-git-commit" 'org-x-git-commit-open)
       (defun org-x-git-commit-open (linkbody)
-	"Visit the commit in some web interface"
-	(org-open-link-from-string
-	 (let ((link-info (tog-parse-x-git-commit-url-body linkbody)))
-	   (tog-generate-git-commit-web-link
-	    (alist-get 'commit-id link-info)
-	    (alist-get 'repository link-info)))))
+        "Visit the commit in some web interface"
+        (org-open-link-from-string
+         (let ((link-info (tog-parse-x-git-commit-url-body linkbody)))
+           (tog-generate-git-commit-web-link
+            (alist-get 'commit-id link-info)
+            (alist-get 'repository link-info)))))
       ))
 
 ;; Functions to fix stuff
@@ -387,15 +387,19 @@ which will remind you to sort things out later after you clean off your hands.
   :init-value nil
   :lighter " Stain Log [s,f,c]"
   :keymap '(
-	    ("s" . (lambda () (interactive)
-		     (insert (format-time-string "%Y-%m-%dT%H:%M"))))
-	    ("f" . (lambda () (interactive)
-		     (insert "-" (format-time-string "%H:%M\n"))))
-	    ("c" . (lambda () (interactive)
-		     (insert "Oops!\n")))
-	    ("w" . (lambda () (interactive)
-		     (insert (format-time-string "%Y-%m-%dT%H:%M") " - wiped\n")))
-	    ("q" . (lambda () (interactive)
-		     (insert (format-time-string "%Y-%m-%dT%H:%M") " - end stain log\n")
-		     (stain-log-mode 'toggle)))
-	    ))
+            ("s" . (lambda () (interactive)
+                     (insert (format-time-string "%Y-%m-%dT%H:%M"))))
+            ("f" . (lambda () (interactive)
+                     (insert "-" (format-time-string "%H:%M\n"))))
+            ("c" . (lambda () (interactive)
+                     (insert "Oops!\n")))
+            ("w" . (lambda () (interactive)
+                     (insert (format-time-string "%Y-%m-%dT%H:%M") " - wiped\n")))
+            ("q" . (lambda () (interactive)
+                     (insert (format-time-string "%Y-%m-%dT%H:%M") " - end stain log\n")
+                     (stain-log-mode 'toggle)))
+            ))
+
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
