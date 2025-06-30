@@ -202,11 +202,10 @@
 (defun tog-iso8601-week-begin-end (time)
   "Return the beginning and end dates of the ISO 8601 week for the given TIME."
   ;; Duck.ai's GPT-4o mini may have written this function for me
-  (let* ((input-time time)
-         (day (calendar-extract-day input-time))
-         (weekday (calendar-day-of-week input-time))
-         (days-to-monday (if (= weekday 0) 6 (1- weekday)))
-         (beginning-of-week (time-subtract input-time (days-to-time days-to-monday)))
+  ;; I later 'fixed it up'.  It still doesn't work.
+  (let* ((weekday (calendar-day-of-week time))
+         (days-since-monday (if (= weekday 0) 6 (1- weekday)))
+         (beginning-of-week (time-subtract time (days-to-time days-since-monday)))
          (end-of-week (time-add beginning-of-week (days-to-time 6))))
     (list beginning-of-week end-of-week)))
 
@@ -217,11 +216,12 @@
     (list plan-filename
       (concat
         "#+TITLE: Plan for "
-        (format-time-string "%G-W%V (" plantime)
-        (format-time-string "%Y-%m-%d" (car begin-end))
-        " to "
-        (format-time-string "%Y-%m-%d" (cadr begin-end))
-        ")"
+        (format-time-string "%G-W%V" plantime)
+        ;; "("
+        ;; (format-time-string "%Y-%m-%d" (car begin-end))
+        ;; " to "
+        ;; (format-time-string "%Y-%m-%d" (cadr begin-end))
+        ;; ")"
         "\n\n"
       )
     )
