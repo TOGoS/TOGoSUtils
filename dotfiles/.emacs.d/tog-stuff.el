@@ -54,6 +54,7 @@
 (progn
   (autoload 'tef-mode "tef-mode" "Edit TEF files" t)
   (add-to-list 'auto-mode-alist '("\\.tef\\'" . tef-mode))
+  (add-to-list 'auto-mode-alist '("\\.ino\\'" . c++-mode))
   (add-to-list 'auto-mode-alist '("music\\.txt\\'" . tef-mode))
   (add-to-list 'auto-mode-alist '("timelog\\.txt\\'" . timelog-mode))
   (add-to-list 'auto-mode-alist '("alvinlog\\.txt\\'" . timelog-mode))
