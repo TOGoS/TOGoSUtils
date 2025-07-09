@@ -210,9 +210,12 @@
     (list beginning-of-week end-of-week)))
 
 (defun tog-weekly-plan-file-info (&optional time)
-  (let* ((plantime (or time (current-time)))
-         (plan-filename (format-time-string "%G/W%V/%GW%V-plan.org" plantime))
-         (begin-end (tog-iso8601-week-begin-end plantime)))
+  (let*
+    (
+      (plantime (or time (current-time)))
+      (plan-filename (format-time-string "%G/W%V/%GW%V-plan.org" plantime))
+    ;; (begin-end (tog-iso8601-week-begin-end plantime))
+    )
     (list plan-filename
       (concat
         "#+TITLE: Plan for "
