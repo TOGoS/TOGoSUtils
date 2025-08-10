@@ -28,5 +28,5 @@ set "ccouch_args=-repo:%CCOUCH_REPO_NAME% "%CCOUCH_REPO_DIR:\=/%" %CCOUCH_REMOTE
 
 set "cmd=java -jar "%CCOUCH_JAR%" %ccouch_args% %*"
 
-echo %cmd%
+:echo %cmd%
 %cmd%
