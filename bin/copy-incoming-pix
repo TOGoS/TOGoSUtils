@@ -289,9 +289,11 @@ def process_image( infile )
   outfile = $image_dest + '/' + mtime.strftime('%Y/%m/%Y_%m_%d/') + name_file(File.basename(infile), mtime)
   return if File.exist? outfile
   return unless transfer_file( infile, outfile, :mtime => mtime )
-  if outfile =~ /\.jpe?g/
-    system "jhead -autorot \"#{outfile}\""
-  end
+  # [2025-09-22]: Uhh, this seems dangerous, especially if $dryrun?
+  # Maybe transfer_file returns nil in that case, or always?
+  #if outfile =~ /\.jpe?g/
+  #  system "jhead -autorot \"#{outfile}\""
+  #end
   $files_copied += 1
 end
 
