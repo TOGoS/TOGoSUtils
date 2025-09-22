@@ -8,7 +8,14 @@ require 'date'
 
 USAGE = <<EOS
 Usage: copy-incoming-pix [options] [input dir] ...
+
+Copy (or link, or just print) input files into the specified
+output directories based on modification timestamp, which hopefully
+is indicative of the time the photo/video was taken!
+(You should double-check that this is true.)
+
 Options:
+  -dry-run          ; print pseudo-sh commands instead of actually munging the filesystem
   -image-dest <dir> ; dir to put images
   -video-dest <dir> ; dir to put videos
   -older-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime < given
@@ -328,7 +335,7 @@ for indir in $input_dirs
       when /^\./
         # Explicitly ignore dot-files
         $files_ignored += 1
-      when /\.(jpe?g|png|gif|bmp|tiff)$/i
+      when /\.(cr2|jpe?g|png|gif|bmp|tiff)$/i
         process_image( file )
       when /\.(?:avi|mov|wmv|asf|mkv|ogv|mp4|3gp)$/i
         process_video( file )
