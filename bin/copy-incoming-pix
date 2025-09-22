@@ -92,7 +92,7 @@ if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
-def copy_file( source, dest )
+def copy_file( source, dest, _opts )
   if $dryrun
     puts "cp '#{source}' '#{dest}'"
     return
