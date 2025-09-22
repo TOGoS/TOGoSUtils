@@ -7,12 +7,15 @@ require 'time'
 require 'date'
 
 USAGE = <<EOS
-Usage: copy-incoming-pix [options] [input dir] ...
+Usage: copy-incoming-pix [options] [input files/dirs] ...
 
 Copy (or link, or just print) input files into the specified
 output directories based on modification timestamp, which hopefully
 is indicative of the time the photo/video was taken!
 (You should double-check that this is true.)
+
+Input directories will be recursed into,
+skipping entries whose names begin with ".".
 
 Options:
   -dry-run          ; print pseudo-sh commands instead of actually munging the filesystem
