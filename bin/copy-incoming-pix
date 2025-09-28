@@ -1,7 +1,14 @@
 #!/usr/bin/ruby
 
-# See note about the required 'touch' version below...
+# Changelog
+# 
+# 2025-09-28:
+# - Add support for --gnu-style=options
+# - Refactor dryrun and verbose modes to use Shellwords
+# - Add support for --transfer-command=<command>, so you can do things like
+#   --transfer-command="cp --reflink=auto"
 
+require 'shellwords'
 require 'fileutils'
 require 'time'
 require 'date'
@@ -18,14 +25,31 @@ Input directories will be recursed into,
 skipping entries whose names begin with ".".
 
 Options:
-  -dry-run          ; print pseudo-sh commands instead of actually munging the filesystem
-  -image-dest <dir> ; dir to put images
-  -video-dest <dir> ; dir to put videos
-  -older-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime < given
-  -newer-than "YYYY-mm-dd [HH:MM:SS]" ; only process files with mtime > given
-  -newer-than-file <file> ; only process files with mtime > that of given one
-  -mtime-offset [+-]<seconds> ; add this many seconds when determining file modification times
+  --dry-run ; print pseudo-sh commands instead of actually munging the filesystem
+  --image-dest=<dir> ; dir to put images
+  --video-dest=<dir> ; dir to put videos
+  --older-than=<YYYY-mm-dd [HH:MM:SS]> ; only process files with mtime < given
+  --newer-than=<YYYY-mm-dd [HH:MM:SS]> ; only process files with mtime > given
+  --newer-than-file=<file> ; only process files with mtime > that of given one
+  --mtime-offset=[+-]<duration> ; add this many seconds when determining file modification times
+  --transfer-command=<command> ; use <command>
   -link ; Hardlink files instead of copying
+
+Durations are of the form <digit>+[d|H|h|m|s]; i.e. integer and unit
+(days, hours, minutes, or seconds).
+
+Most options support a '-single-dash version' in addition to the
+preferred '--two-dash=version' shown above, e.g. `-image-dest <dir>`.
+
+Note on 'touch' command, which is only relevant if using the commands emitted
+by --dry-run mode:
+
+Some versions of 'touch', such as that included with UnxUtils, don't work.
+The UnxUtils version's -t argument takes a different syntax that is incompatible
+with that of touch found on my Linux machines.
+Versions that work:
+- The one included with Git for Windows (e.g. v2.34.1 as installed by Chocolatey)
+- Coreutils http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 EOS
 
 $dryrun = false
@@ -60,25 +84,37 @@ end
 args = $*.clone
 while arg = args.shift
   case arg
-  when '-dry-run'
+  when '--dry-run', '-dry-run'
     $dryrun = true
-  when '-link'
+  when '--link', '-link'
     $transfer_mode = :hardlink
+  when /^--mtime-offset=(.*)/
+    $mtime_offset = parse_time_offset($1)
   when '-mtime-offset'
     $mtime_offset = parse_time_offset(args.shift)
+  when /^--image-dest=(.*)/
+    $image_dest = $1
   when '-image-dest'
     $image_dest = args.shift
   when '-video-dest'
     $video_dest = args.shift
+  when /^--newer-than=(.*)/
+    $newer_than = Time.parse($1)
   when '-newer-than'
     $newer_than = Time.parse(args.shift)
+  when /^--older-than=(.*)/
+    $older_than = Time.parse($1)
   when '-older-than'
     $older_than = Time.parse(args.shift)
+  when /^--newer-than-file=(.*)/
+    $newer_than = File.mtime($1)
   when '-newer-than-file'
     $newer_than = File.mtime(args.shift)
   when '-v', '-show-progress'
     $verbose = true
-  when '-h', '-?', '--help'
+  when /--transfer-command=(.*)/
+    $transfer_mode = $1.split(/\s/)
+  when '-h', '-?', '-help', '--help'
     STDOUT << USAGE
     exit 0
   when /^[^-]/
@@ -102,12 +138,30 @@ if $video_dest == nil
   STDERR.puts "No video dest dir specified"
 end
 
-def copy_file( source, dest, _opts )
-  if $dryrun
-    puts "cp '#{source}' '#{dest}'"
-    return
-  end
-  
+
+def emit_command( argv )
+  puts Shellwords.join(argv)
+  # puts argv.map(&Shellwords.method(:escape))
+end
+
+# Emit the specified command if it should be emitted ($dryrun or $verbose).
+# Execute the given block if we should be 'actualy doing' stuff ($dryrun = false).
+def emit_command_or( argv, &impl )
+  should_emit = $dryrun || $verbose
+  should_exec = !$dryrun
+
+  if should_emit then emit_command(argv) end
+  if should_exec then impl.call() end
+end
+
+def do_command( argv )
+  emit_command_or(argv) { system(Shellwords.join(argv)) }
+end
+
+
+
+
+def _copy_file( source, dest, opts )
   temp = File.dirname(dest)+"/."+File.basename(dest)+".temp"
   
   buf = ""
@@ -143,13 +197,21 @@ def copy_file( source, dest, _opts )
   end
 end
 
+def copy_file( source, dest, opts )
+  emit_command_or(['cp', source, dest]) { _copy_file(source, dest, opts) }
+end
+
 def link_file( source, dest, _opts )
-  if $dryrun
-    puts "ln '#{source}' '#{dest}'"
-    return
+  emit_command_or(['ln', source, dest]) {
+    FileUtils.ln( source, dest )
+  }
+end
+
+def transfer_file_by_command( cmd, source, dest, opts )
+  do_command cmd + [source, dest]
+  if opts[:mtime]
+    touch( dest, opts[:mtime] )
   end
-  
-  FileUtils.ln( source, dest )
 end
 
 $dirs_mkd = {}
@@ -157,23 +219,22 @@ def maybe_mkdir( dir )
   # If we've already made it, no nothing!
   return if $dirs_mkd[dir]
 
-  # If it doesn't exist, make it, or pretend do
-  unless File.directory? dir
-    if $dryrun
-      puts "mkdir '#{dir}'"
-    else
+  emit_command_or(['mkdir', '-p', dir]) {
+    unless File.directory? dir
       FileUtils.mkdir_p(dir)
     end
-  end
-
-  # And remember that we made it so we don't waste any more time
+  }
+  
+  # Remember that we made it so we don't waste any more time
   $dirs_mkd[dir] = dir
 end
 
 def transfer_file( source, dest, opts={} )
   maybe_mkdir File.dirname(dest)
-  
+
   case $transfer_mode
+  when Array
+    transfer_file_by_command( $transfer_mode, source, dest, opts )
   when :copy
     return copy_file( source, dest, opts )
   when :hardlink
@@ -200,15 +261,10 @@ def walk( dir, &prok )
   end
 end
 
-# Some versions of 'touch', such as that included with UnxUtils, don't work.
-# The UnxUtils version's -t argument takes a different syntax that is incompatible
-# with that of touch found on my Linux machines.
-# Versions that work:
-# - The one included with Git for Windows (e.g. v2.34.1 as installed by Chocolatey)
-# - Coreutils http://gnuwin32.sourceforge.net/packages/coreutils.htm (bin and dlls)
 def touch( file, mtime )
-  FileUtils.touch file, :mtime => mtime
-  #system("touch -t #{mtime.strftime('%Y%m%d%H%M.%S')} #{file.inspect}")
+  emit_command_or(['touch', '-t', mtime.strftime('%Y%m%d%H%M.%S'), file]) {
+    FileUtils.touch(file, :mtime => mtime)
+  }
 end
 
 def figger_mtime( file )
@@ -291,6 +347,7 @@ def process_image( infile )
   return unless transfer_file( infile, outfile, :mtime => mtime )
   # [2025-09-22]: Uhh, this seems dangerous, especially if $dryrun?
   # Maybe transfer_file returns nil in that case, or always?
+  # It might also mess up the original file if hardlinked!
   #if outfile =~ /\.jpe?g/
   #  system "jhead -autorot \"#{outfile}\""
   #end
