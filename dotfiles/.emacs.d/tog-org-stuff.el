@@ -48,6 +48,16 @@
       (add-to-list 'org-structure-template-alist '("e" . "EXAMPLE\n"))
       ))
 
+;; Define in your .org like `#+TODO: TODO COULDDO | TABLED MOVED DONE`,
+;; but faces seem to need to be defined globally in elisp.
+;; See also: https://emacs.stackexchange.com/questions/4104/how-to-put-todo-faces-in-the-file
+(setq org-todo-keyword-faces
+	'(
+		("COULDDO" . "orange")
+		("TABLED" . "lightblue")
+		("MOVED" . "lightblue")
+	)
+)
 
 
 ;; Maybe this should be set in mode customization somehow?
