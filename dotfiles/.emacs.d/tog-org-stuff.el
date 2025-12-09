@@ -53,6 +53,7 @@
 ;; See also: https://emacs.stackexchange.com/questions/4104/how-to-put-todo-faces-in-the-file
 (setq org-todo-keyword-faces
 	'(
+		("INPROGRESS" . "yellow")
 		("COULDDO" . "orange")
 		("TABLED" . "lightblue")
 		("MOVED" . "lightblue")
