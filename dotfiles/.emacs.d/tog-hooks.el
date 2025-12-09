@@ -1,3 +1,6 @@
+(defun tog-no-electric-indent ()
+  (electric-indent-mode -1))
+
 (add-hook 'c++-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'c-mode-hook 'togtabs-infer-indentation-style)
 (add-hook 'text-mode-hook 'tog-tabs-8)
@@ -57,6 +60,11 @@
 
 (add-hook 'unisonlang-mode-hook 'tog-tabs)
 
-(defun tog-no-electric-indent ()
-  (setq electric-indent-mode nil))
+(defun tog-scad-mode-hook ()
+  (tog-tabs)
+  (local-set-key (kbd "TAB") 'self-insert-command)
+  (tog-no-electric-indent)
+)
+(add-hook 'scad-mode-hook 'tog-scad-mode-hook)
+
 (add-hook 'html-mode-hook 'tog-no-electric-indent)
