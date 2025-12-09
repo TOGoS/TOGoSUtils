@@ -60,6 +60,20 @@
 	)
 )
 
+(defun tog-insert-org-header (level title id)
+	(if level (insert level " "))
+	(insert title "\n")
+	(insert ":PROPERTIES:\n")
+	(insert ":CUSTOM_ID: " id "\n")
+	(insert ":END:\n")
+)
+
+(defun tog-insert-org-header-from-clipboard ()
+	(interactive)
+	(let ((id (current-kill 0)))
+		(tog-insert-org-header nil id id)
+	)
+)
 
 ;; Maybe this should be set in mode customization somehow?
 (setq org-adapt-indentation nil)

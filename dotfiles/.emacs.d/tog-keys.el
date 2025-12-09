@@ -53,6 +53,8 @@
 (defun insert-emdash () (interactive) (insert "—"))
 (global-set-key (kbd "C-x a m") 'insert-emdash)
 
+(global-set-key (kbd "C-x a o h") 'tog-insert-org-header-from-clipboard)
+
 ;
 
 (global-set-key (kbd "C-x r e") 'replace-last-sexp)
