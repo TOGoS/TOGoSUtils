@@ -55,6 +55,7 @@
 	'(
 		("INPROGRESS" . "yellow")
 		("COULDDO" . "orange")
+		("DAILY" . "white")
 		("TABLED" . "lightblue")
 		("MOVED" . "lightblue")
 	)
