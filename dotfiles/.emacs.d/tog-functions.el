@@ -226,12 +226,39 @@
         ;; " to "
         ;; (format-time-string "%Y-%m-%d" (cadr begin-end))
         ;; ")"
-        "\n\n"
+        "\n"
+        "#+TODO: COULDDO(c) TODO(t) INPROGRESS(p) DAILY(i) | TABLED(b) MOVED(m) DONE(d)\n"
+        "\n"
       )
     )
   )
 )
 
+(defun tog-monthly-plan-file-info (&optional time)
+  (let*
+    (
+      (plantime (or time (current-time)))
+      (plan-filename (format-time-string "%G/%m/%G%m-plan.org" plantime))
+    )
+    (list plan-filename
+      (concat
+        "#+TITLE: Plan for " (format-time-string "%G-%m" plantime) "\n"
+        "#+TODO: COULDDO(c) TODO(t) INPROGRESS(p) DAILY(i) | TABLED(b) MOVED(m) DONE(d)\n"
+        "\n"
+      )
+    )
+  )
+)
+
+(defun visit-tog-monthly-plan (&optional time)
+  (interactive)
+  (let* ((info (tog-monthly-plan-file-info time))
+         (plan-filename (car info))
+         (default-content (cadr info)))
+    (find-file (find-tog-proj-file "job/EarthIT/timelog" plan-filename))
+    (if (= (buffer-size) 0)
+      (progn
+        (insert default-content)))))
 (defun visit-tog-weekly-plan (&optional time)
   (interactive)
   (let* ((info (tog-weekly-plan-file-info time))
