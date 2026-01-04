@@ -27,6 +27,7 @@
   (tog-search-replace-in-current-buffer "    " "\t")
   (tog-search-replace-in-current-buffer "\\\\/" "/")
   (set-buffer-file-coding-system 'utf-8-unix)
+  (tog-tabs)
   (save-buffer))
 
 ;; Additional [tog]tab stuff
