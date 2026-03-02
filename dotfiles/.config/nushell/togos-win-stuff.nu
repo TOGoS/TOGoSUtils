@@ -22,3 +22,7 @@ export def --env --wrapped ccd [...rest] {
     let target = (ccd.bat /print ...$rest)
     cd $target
 }
+
+export def --wrapped ccouch [...rest] {
+	java -jar C:/Users/TOGoS/stuff/proj/ContentCouch/ContentCouch.jar $"-repo:($env.CCOUCH_REPO_NAME)" $env.CCOUCH_REPO_DIR ...$rest
+}
