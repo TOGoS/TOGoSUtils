@@ -7,11 +7,14 @@ rem - Also set the window title to the last path section
 set "ccd_self_name=%~nx0"
 
 set ccd_debug=rem
+set ccd_mode=cd
 
 :parseargs
 %ccd_debug% parseargs: %%1 = "%1"
 if "%~1" == "" goto parseargs_end
 if "%~1" == "-v" goto parseargs_v
+if "%~1" == "/v" goto parseargs_v
+if "%~1" == "/print" goto parseargs_mode_print
 goto parseargs_target
 
 
@@ -25,6 +28,12 @@ goto parseargs
 
 :parseargs_v
 set "ccd_debug=echo %ccd_self_name%:"
+shift
+goto parseargs
+
+
+:parseargs_mode_print
+set ccd_mode=print
 shift
 goto parseargs
 
@@ -136,16 +145,32 @@ goto clean_up_and_fail
 
 :go_ahead
 %ccd_debug% Okay; target_drive="%ccd_target_drive%", target_title="%ccd_target_title%", target="%ccd_target%"
+
+if "%ccd_mode%" == "print" goto go_ahead_and_print
+if "%ccd_mode%" == "cd" goto go_ahead_and_cd
+
+echo %ccd_self_name%: Error: bad ccd_mode: '%ccd_mode%'>&2
+goto clean_up_and_fail
+
+
+:go_ahead_and_cd
 title %ccd_target_title%
 if defined ccd_target_drive %ccd_target_drive%
+
 cd "%ccd_target%"
 goto clean_up_and_exit
+
+:go_ahead_and_print
+echo %ccd_target%
+goto :clean_up_and_exit
+
 
 
 :clean_up_and_fail
 %ccd_debug% Time to unset all these ccd vars!
 set ccd_debug=
 set ccd_guess=
+set ccd_mode=
 set ccd_self_name=
 set ccd_target=
 set ccd_target_drive=
@@ -158,6 +183,7 @@ exit /B 1
 %ccd_debug% Time to unset all these ccd vars!
 set ccd_debug=
 set ccd_guess=
+set ccd_mode=
 set ccd_self_name=
 set ccd_target=
 set ccd_target_drive=
