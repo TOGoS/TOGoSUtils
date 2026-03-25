@@ -1,13 +1,5 @@
 # NuShell stuff assuming Windows environment
 # and things in the usual places.
-#
-# Maybe add this to your actual nushell/env.nu:
-#
-#   const TOGOSUTILS_DIR = "C:/Users/TOGoS/stuff/proj/TOGoSUtils"
-# 
-# And this to your actual nushell/config.nu:
-# 
-#   use ($TOGOSUTILS_DIR)/dotfiles/.config/nushell/togos-win-stuff.nu [ 'runcl' 'jcr36' 'ccd' ]
 
 export alias jcr36 = java -jar $"($env.USERPROFILE)/stuff/proj/JavaCommandRunner36/JCR36.1.30.jar"
 
