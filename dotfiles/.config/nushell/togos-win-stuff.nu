@@ -18,3 +18,13 @@ export def --env --wrapped ccd [...rest] {
 export def --wrapped ccouch [...rest] {
 	java -jar C:/Users/TOGoS/stuff/proj/ContentCouch/ContentCouch.jar $"-repo:($env.CCOUCH_REPO_NAME)" $env.CCOUCH_REPO_DIR ...$rest
 }
+
+export def --wrapped ucm [...rest] {
+	if $env.UNISON_DIR? == "" {
+		error make { msg: "UNISON_DIR not defined" }
+	} else {
+		# Based on ucm.cmd that came in Unison 1.1.1's zip:
+		# https://github.com/unisonweb/unison/releases/download/release%2F1.1.1/ucm-windows-x64.zip
+		UCM_WEB_UI=$"($env.UNISON_DIR)/ui" ^$"($env.UNISON_DIR)/unison/unison.exe" ...$rest
+	}
+}
