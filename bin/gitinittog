@@ -149,6 +149,10 @@ var getProjectName = projectName ?
 
 var remoteInitErrorCount = 0;
 
+// 'It works on Tuesdays' kind of thing.
+// Should be more expicit about this in options.
+var sshOpts = sshCommand == "plink" ? [] : ['-o', 'ConnectTimeout=10'];
+
 getProjectName().then( function(projectName) {
 	var makePublic = true;
 	var remoteCommandSets = [];
@@ -169,7 +173,7 @@ getProjectName().then( function(projectName) {
 			remoteCommands.push('chmod +x hooks/post-update');
 		}
 		remoteCommandSets.push([
-			[sshCommand, '-o', 'ConnectTimeout=10', hostPart,
+			[sshCommand, ...sshOpts, hostPart,
 				"sh -c '"+remoteCommands.join(' && ')+"'"]
 		]);
 	}
