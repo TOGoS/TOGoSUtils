@@ -13,6 +13,8 @@ exit /b 1
 
 set "ccouch_args="
 
+if "%1" == "touch" goto end_build_repo_arg
+
 if not defined CCOUCH_REPO_DIR goto end_build_repo_arg
 if not defined CCOUCH_REPO_NAME goto end_build_repo_arg
 if not defined CCOUCH_REMOTE_ARGS set "CCOUCH_REMOTE_ARGS="

@@ -16,11 +16,16 @@ export def --env --wrapped ccd [...rest] {
 }
 
 export def --wrapped ccouch [...rest] {
-	java -jar C:/Users/TOGoS/stuff/proj/ContentCouch/ContentCouch.jar $"-repo:($env.CCOUCH_REPO_NAME)" $env.CCOUCH_REPO_DIR ...$rest
+	let subcom = $rest.0
+	if $"($env.CCOUCH_REPO_DIR?)" == "" and ($subcom == "touch") {
+		java -jar C:/Users/TOGoS/stuff/proj/ContentCouch/ContentCouch.jar ...$rest
+	} else {
+		java -jar C:/Users/TOGoS/stuff/proj/ContentCouch/ContentCouch.jar $"-repo:($env.CCOUCH_REPO_NAME)" $env.CCOUCH_REPO_DIR ...$rest
+	}
 }
 
 export def --wrapped ucm [...rest] {
-	if $env.UNISON_DIR? == "" {
+	if $"($env.UNISON_DIR?)" == "" {
 		error make { msg: "UNISON_DIR not defined" }
 	} else {
 		# Based on ucm.cmd that came in Unison 1.1.1's zip:
